@@ -139,8 +139,14 @@
       text-align: left;
       padding: 0.3rem 0.65rem;
       border-right: 1px solid rgba(15, 23, 42, 0.08);
-      white-space: nowrap;
       line-height: 1.15;
+      box-sizing: border-box;
+    }
+    #regular-table thead th {
+      white-space: normal;
+    }
+    #regular-table tbody td {
+      white-space: nowrap;
     }
     #regular-table thead th:first-child,
     #regular-table tbody td:first-child {
@@ -231,6 +237,7 @@
     #regular-table_wrapper .dataTables_scrollHead table {
       border-collapse: separate;
       border-spacing: 0;
+      width: 100% !important;
     }
     #regular-table_wrapper .dataTables_scrollBody {
       border-top: none;
@@ -240,6 +247,7 @@
       border-collapse: separate;
       border-spacing: 0;
       background: #fff;
+      width: 100% !important;
     }
     #regular-table_wrapper .dataTables_paginate .paginate_button {
       border-radius: 999px;
@@ -531,9 +539,9 @@
     let activeColumnIndex = null;
     const headerClickHandlers = new WeakMap();
     const HEADER_HEIGHT = 44;
-    const ROW_HEIGHT = 36;
+    const ROW_HEIGHT = 34;
     const MIN_VISIBLE_ROWS = 6;
-    const MAX_VISIBLE_ROWS = 20;
+    const MAX_VISIBLE_ROWS = 16;
     const TABLE_BOTTOM_MARGIN = 24;
 
     function getStickyOffsetValue() {
@@ -1008,7 +1016,7 @@
             scrollY: initialScrollHeight,
             scrollCollapse: true,
             deferRender: true,
-            autoWidth: false,
+            autoWidth: true,
             order: [],
             paging: false,
             info: false,
