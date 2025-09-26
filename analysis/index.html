@@ -124,9 +124,6 @@
       font-weight: 600;
       text-transform: uppercase;
     }
-    tr:nth-child(even) td {
-      background: rgba(20, 90, 252, 0.05);
-    }
     .table-container {
       position: relative;
       overflow: visible;
@@ -137,16 +134,44 @@
       border-collapse: separate;
       width: 100%;
     }
+    #regular-table thead th,
+    #regular-table tbody td {
+      text-align: left;
+      padding: 0.85rem 1rem;
+      border-right: 1px solid rgba(15, 23, 42, 0.08);
+      white-space: nowrap;
+    }
+    #regular-table thead th:first-child,
+    #regular-table tbody td:first-child {
+      border-left: 1px solid rgba(15, 23, 42, 0.08);
+    }
+    #regular-table thead th:last-child,
+    #regular-table tbody td:last-child {
+      border-right: 1px solid rgba(15, 23, 42, 0.08);
+    }
     #regular-table thead th {
-      font-size: 0.8rem;
-      letter-spacing: 0.04em;
+      font-size: 0.82rem;
+      letter-spacing: 0.02em;
       text-transform: uppercase;
-      color: var(--muted);
+      color: var(--text);
+      font-weight: 700;
+      background: linear-gradient(180deg, rgba(244, 246, 251, 0.95), rgba(221, 229, 244, 0.85));
       position: sticky;
       top: var(--sticky-header-offset);
-      background: var(--card-bg);
       z-index: 6;
-      border-bottom: 1px solid rgba(27, 30, 40, 0.12);
+      border-bottom: 1px solid rgba(15, 23, 42, 0.12);
+    }
+    #regular-table tbody td {
+      font-size: 0.85rem;
+      color: rgba(27, 30, 40, 0.9);
+      font-weight: 500;
+      background: #fff;
+    }
+    #regular-table tbody tr:nth-child(even) td {
+      background: rgba(20, 90, 252, 0.04);
+    }
+    #regular-table tbody tr:hover td {
+      background: rgba(20, 90, 252, 0.12);
     }
     #regular-table thead th.is-filterable {
       cursor: pointer;
@@ -169,9 +194,11 @@
     }
     #regular-table th.cell-product,
     #regular-table td.cell-product {
-      width: 16ch;
-      white-space: normal;
-      word-break: break-word;
+      min-width: 24ch;
+      max-width: 32ch;
+      white-space: nowrap !important;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     #regular-table_wrapper {
       padding-right: 0.5rem;
@@ -185,15 +212,36 @@
       position: sticky;
       top: var(--sticky-header-offset);
       z-index: 5;
-      background: var(--card-bg);
+      background: transparent;
       box-shadow: 0 6px 18px rgba(16, 24, 40, 0.08);
+      border-top-left-radius: 0.85rem;
+      border-top-right-radius: 0.85rem;
+      overflow: hidden;
+    }
+    #regular-table_wrapper .dataTables_scrollHead table {
+      border-collapse: separate;
+      border-spacing: 0;
     }
     #regular-table_wrapper .dataTables_scrollBody {
-      border-bottom-left-radius: 1rem;
-      border-bottom-right-radius: 1rem;
+      border-bottom-left-radius: 0.85rem;
+      border-bottom-right-radius: 0.85rem;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      border-top: none;
+    }
+    #regular-table_wrapper .dataTables_scrollBody table {
+      border-collapse: separate;
+      border-spacing: 0;
+      background: #fff;
     }
     #regular-table_wrapper .dataTables_paginate .paginate_button {
       border-radius: 999px;
+    }
+    table.dataTable thead .sorting,
+    table.dataTable thead .sorting_asc,
+    table.dataTable thead .sorting_desc,
+    table.dataTable thead .sorting_asc_disabled,
+    table.dataTable thead .sorting_desc_disabled {
+      background-image: none !important;
     }
     .header-menu {
       position: absolute;
@@ -594,9 +642,13 @@
       if (!headerMenuElement) return;
 
       activeHeaderCell = headerCell;
-      activeColumnIndex = Number(headerCell.getAttribute('data-dt-column'));
-      if (Number.isNaN(activeColumnIndex)) {
-        activeColumnIndex = Number(headerCell.dataset.columnIndex || 0);
+      const dataTableIndexAttr = headerCell.getAttribute('data-dt-column');
+      if (dataTableIndexAttr !== null && dataTableIndexAttr !== '') {
+        activeColumnIndex = Number(dataTableIndexAttr);
+      } else if (headerCell.dataset.columnIndex) {
+        activeColumnIndex = Number(headerCell.dataset.columnIndex);
+      } else {
+        activeColumnIndex = headerCell.cellIndex ?? 0;
       }
       const columnTitle = headerCell.textContent.trim();
       const options = columnValueOptions[activeColumnIndex] || [];
@@ -712,8 +764,11 @@
     function wireHeaderEvents(table) {
       const container = table.table().container();
       const headerCells = container.querySelectorAll('thead th');
-      headerCells.forEach((cell) => {
+      headerCells.forEach((cell, index) => {
         cell.classList.add('is-filterable');
+        if (!cell.dataset.columnIndex) {
+          cell.dataset.columnIndex = String(index);
+        }
       });
       $(headerCells).off('click.DT');
       headerCells.forEach((cell) => {
