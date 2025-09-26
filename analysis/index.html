@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
   <style>
     :root {
       color-scheme: light;
@@ -31,26 +32,84 @@
       line-height: 1.45;
       display: flex;
       justify-content: center;
+      overflow-y: hidden;
     }
 
     main.dashboard {
-      width: min(1200px, 100%);
-      padding: 1.5rem 1.25rem 2rem;
+      width: min(1320px, 100%);
+      padding: 1.25rem 1.5rem 1.5rem;
       display: flex;
       flex-direction: column;
+      gap: 0.85rem;
+    }
+
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       gap: 1rem;
+    }
+
+    .page-title {
+      margin: 0;
+      font-size: 1.65rem;
+      font-weight: 700;
+    }
+
+    .tablist {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      background: rgba(20, 90, 252, 0.08);
+      border-radius: 999px;
+      padding: 0.2rem;
+    }
+
+    .tablist a,
+    .tablist span {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.4rem 0.95rem;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      color: var(--accent);
+      text-decoration: none;
+      transition: background 150ms ease, color 150ms ease;
+    }
+
+    .tablist a:hover {
+      background: rgba(20, 90, 252, 0.15);
+    }
+
+    .tablist .tab-active {
+      background: var(--card-bg);
+      color: var(--text);
+      box-shadow: 0 6px 18px rgba(20, 90, 252, 0.18);
+    }
+
+    .tablist .tab-disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .tab-hint {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.85rem;
     }
 
     .kpi-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-      gap: 0.75rem;
+      gap: 0.65rem;
     }
 
     .card {
       background: var(--card-bg);
       border-radius: 0.85rem;
-      padding: 0.95rem 1rem;
+      padding: 0.9rem 0.95rem;
       box-shadow: 0 18px 40px rgba(16, 24, 40, 0.08);
     }
 
@@ -75,15 +134,15 @@
 
     .chart-grid {
       display: grid;
-      gap: 0.75rem;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.65rem;
+      grid-template-columns: repeat(auto-fit, minmax(460px, 1fr));
       grid-auto-rows: 1fr;
     }
 
     .chart-card {
       display: flex;
       flex-direction: column;
-      gap: 0.75rem;
+      gap: 0.5rem;
       height: 100%;
     }
 
@@ -95,7 +154,7 @@
     .chart-frame {
       position: relative;
       flex: 1;
-      aspect-ratio: 4 / 3;
+      aspect-ratio: 16 / 9;
     }
 
     .chart-frame canvas {
@@ -110,6 +169,11 @@
         padding: 1.25rem 1rem 1.75rem;
       }
 
+      .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
       .kpi-grid {
         grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
       }
@@ -119,13 +183,31 @@
       }
 
       .chart-frame {
-        aspect-ratio: 3 / 2;
+        aspect-ratio: 4 / 3;
+      }
+
+      body {
+        overflow-y: auto;
+      }
+    }
+
+    @media (max-height: 820px) {
+      body {
+        overflow-y: auto;
       }
     }
   </style>
 </head>
 <body>
   <main class="dashboard">
+    <header class="page-header">
+      <h1 class="page-title">Gross Proceed Dashboard</h1>
+      <nav class="tablist" role="tablist" aria-label="Data views">
+        <a class="tab-active" role="tab" aria-selected="true" href="./index.html">Regular</a>
+        <span class="tab-disabled" role="presentation" aria-hidden="true">More views coming soon</span>
+      </nav>
+    </header>
+    <p class="tab-hint" role="note">Use the tabs above to switch datasets. The Regular view is currently active.</p>
     <section class="kpi-grid" aria-label="Key performance indicators">
       <article class="card kpi-card">
         <div class="kpi-title">Total Units</div>
@@ -186,6 +268,8 @@
   </main>
 
   <script>
+    Chart.register(ChartDataLabels);
+
     const dailySeries = [{"date":"2025-09-01","revenue":3991.5693,"final_net":967.6681849284316},{"date":"2025-09-02","revenue":27004.3933,"final_net":5892.861777578192},{"date":"2025-09-03","revenue":14134.1591,"final_net":3848.7080137782214},{"date":"2025-09-04","revenue":13442.0764,"final_net":3359.390823024803},{"date":"2025-09-05","revenue":11971.5861,"final_net":3618.287882891206},{"date":"2025-09-06","revenue":9740.0052,"final_net":2007.2764533166428},{"date":"2025-09-07","revenue":5705.8661,"final_net":1391.3388444349875},{"date":"2025-09-08","revenue":19917.309,"final_net":5278.163294205369},{"date":"2025-09-09","revenue":16891.3098,"final_net":4104.160668313585},{"date":"2025-09-10","revenue":10983.5059,"final_net":2793.2267988994954},{"date":"2025-09-11","revenue":11534.2453,"final_net":2952.569931535068},{"date":"2025-09-12","revenue":10964.039,"final_net":2845.538930056686},{"date":"2025-09-13","revenue":9547.360700000001,"final_net":2428.2749996529537},{"date":"2025-09-14","revenue":4074.278,"final_net":1013.0330780450196},{"date":"2025-09-15","revenue":19505.498,"final_net":4923.892216865558},{"date":"2025-09-16","revenue":13897.8109,"final_net":3922.1459336448174},{"date":"2025-09-17","revenue":12579.9332,"final_net":3216.836002467571},{"date":"2025-09-18","revenue":14542.710700000001,"final_net":4423.308448747652},{"date":"2025-09-19","revenue":17487.1466,"final_net":5014.889137143346},{"date":"2025-09-20","revenue":8814.6478,"final_net":2244.4181519997564},{"date":"2025-09-21","revenue":4477.4615,"final_net":1095.3186860311882},{"date":"2025-09-22","revenue":17893.8122,"final_net":4893.260047382762},{"date":"2025-09-23","revenue":15576.3226,"final_net":4036.8586775935028}];
 
     const categorySeries = [{"category":"VB","final_net":15140.908496576283},{"category":"FAB","final_net":14584.070977783102},{"category":"CFB","final_net":13558.146840077734},{"category":"RCB","final_net":4736.489908168083},{"category":"JMT","final_net":4668.912872766931},{"category":"PF","final_net":3486.1491063341005},{"category":"GEN","final_net":3349.6331984126987},{"category":"HS","final_net":3252.2734973267548},{"category":"HB","final_net":2622.9348881312512},{"category":"CP","final_net":2139.163595413091}];
@@ -211,6 +295,20 @@
     ];
 
     const fmtCurrency = (value) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
+
+    const fmtCompactCurrency = (value) => {
+      if (value == null || Number.isNaN(value)) {
+        return '';
+      }
+      if (Math.abs(value) >= 1000) {
+        const compactValue = new Intl.NumberFormat('en-US', {
+          notation: 'compact',
+          maximumFractionDigits: 1,
+        }).format(value);
+        return `$${compactValue}`;
+      }
+      return fmtCurrency(value);
+    };
 
     const formatDateLabel = (isoDate) => {
       const [year, month, day] = isoDate.split('-');
@@ -240,7 +338,14 @@
               backgroundColor: 'rgba(20, 90, 252, 0.15)',
               tension: 0.25,
               fill: true,
-              pointRadius: 2.5
+              pointRadius: 2.5,
+              pointHoverRadius: 4,
+              datalabels: {
+                align: 'top',
+                anchor: 'end',
+                formatter: fmtCompactCurrency,
+                color: '#145afc',
+              }
             },
             {
               label: 'Final Net',
@@ -249,7 +354,14 @@
               backgroundColor: 'rgba(255, 125, 79, 0.15)',
               tension: 0.25,
               fill: true,
-              pointRadius: 2.5
+              pointRadius: 2.5,
+              pointHoverRadius: 4,
+              datalabels: {
+                align: 'top',
+                anchor: 'end',
+                formatter: fmtCompactCurrency,
+                color: '#ff7d4f',
+              }
             }
           ]
         },
@@ -263,12 +375,20 @@
               callbacks: {
                 label: currencyTooltip
               }
+            },
+            datalabels: {
+              clamp: true,
+              clip: false,
+              font: {
+                weight: 600,
+                size: 10,
+              }
             }
           },
           scales: {
             y: {
               ticks: {
-                callback: (value) => fmtCurrency(value)
+                callback: (value) => fmtCompactCurrency(value)
               }
             }
           }
@@ -286,7 +406,14 @@
             {
               label: 'Final Net',
               data: categorySeries.map((item) => item.final_net),
-              backgroundColor: '#4f46e5'
+              backgroundColor: '#4f46e5',
+              borderRadius: 6,
+              datalabels: {
+                anchor: 'end',
+                align: 'end',
+                formatter: fmtCompactCurrency,
+                color: '#1b1e28',
+              }
             }
           ]
         },
@@ -299,12 +426,18 @@
               callbacks: {
                 label: currencyTooltip
               }
+            },
+            datalabels: {
+              font: {
+                weight: 600,
+                size: 10,
+              }
             }
           },
           scales: {
             y: {
               ticks: {
-                callback: (value) => fmtCurrency(value)
+                callback: (value) => fmtCompactCurrency(value)
               }
             }
           }
@@ -322,12 +455,26 @@
             {
               label: 'Revenue',
               data: storeMixSeries.map((item) => item.revenue),
-              backgroundColor: 'rgba(20, 90, 252, 0.7)'
+              backgroundColor: 'rgba(20, 90, 252, 0.7)',
+              borderRadius: 6,
+              datalabels: {
+                anchor: 'end',
+                align: 'end',
+                formatter: fmtCompactCurrency,
+                color: '#145afc',
+              }
             },
             {
               label: 'Final Net',
               data: storeMixSeries.map((item) => item.final_net),
-              backgroundColor: 'rgba(255, 125, 79, 0.7)'
+              backgroundColor: 'rgba(255, 125, 79, 0.7)',
+              borderRadius: 6,
+              datalabels: {
+                anchor: 'end',
+                align: 'end',
+                formatter: fmtCompactCurrency,
+                color: '#ff7d4f',
+              }
             }
           ]
         },
@@ -340,13 +487,19 @@
               callbacks: {
                 label: currencyTooltip
               }
+            },
+            datalabels: {
+              font: {
+                weight: 600,
+                size: 10,
+              }
             }
           },
           scales: {
             y: {
               stacked: false,
               ticks: {
-                callback: (value) => fmtCurrency(value)
+                callback: (value) => fmtCompactCurrency(value)
               }
             }
           }
@@ -364,7 +517,14 @@
             {
               label: 'Final Net',
               data: topSkuSeries.map((item) => item.final_net),
-              backgroundColor: '#0ea5e9'
+              backgroundColor: '#0ea5e9',
+              borderRadius: 6,
+              datalabels: {
+                anchor: 'end',
+                align: 'end',
+                formatter: fmtCompactCurrency,
+                color: '#1b1e28',
+              }
             }
           ]
         },
@@ -378,12 +538,18 @@
               callbacks: {
                 label: currencyTooltip
               }
+            },
+            datalabels: {
+              font: {
+                weight: 600,
+                size: 10,
+              }
             }
           },
           scales: {
             x: {
               ticks: {
-                callback: (value) => fmtCurrency(value)
+                callback: (value) => fmtCompactCurrency(value)
               }
             }
           }
