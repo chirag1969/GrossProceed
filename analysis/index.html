@@ -19,7 +19,7 @@
       --text: #1b1e28;
       --muted: #5f677b;
       --accent: #145afc;
-      --sticky-header-offset: 140px;
+      --sticky-header-offset: 72px;
       font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     }
     body {
@@ -28,18 +28,10 @@
       color: var(--text);
       overflow-x: hidden;
     }
-    header {
-      padding: 2.5rem 3rem 1rem;
-    }
-    h1 {
-      margin: 0 0 0.5rem;
-      font-size: 2rem;
-      font-weight: 700;
-    }
     .tab-nav {
       display: flex;
       gap: 1rem;
-      margin: 0 3rem 1.5rem;
+      margin: 1rem 2rem 0.75rem;
       border-bottom: 1px solid rgba(27, 30, 40, 0.1);
     }
     .tab-button {
@@ -70,8 +62,8 @@
     }
     .grid {
       display: grid;
-      gap: 1.5rem;
-      padding: 0 3rem 3rem;
+      gap: 1rem;
+      padding: 0 2rem 1.5rem;
     }
     .grid > * {
       min-width: 0;
@@ -81,9 +73,9 @@
     }
     .card {
       background: var(--card-bg);
-      border-radius: 1rem;
-      padding: 1.5rem;
-      box-shadow: 0 10px 30px rgba(16, 24, 40, 0.08);
+      border-radius: 0.75rem;
+      padding: 1.25rem;
+      box-shadow: 0 8px 24px rgba(16, 24, 40, 0.06);
     }
     .kpi-title {
       color: var(--muted);
@@ -127,8 +119,17 @@
     .table-container {
       position: relative;
       overflow: visible;
-      padding-right: 1.5rem;
-      padding-bottom: 1.5rem;
+      padding-right: 0.75rem;
+      padding-bottom: 0.75rem;
+    }
+    #tab-regular .table-card {
+      background: transparent;
+      box-shadow: none;
+      padding: 0;
+    }
+    #tab-regular .table-container {
+      padding-right: 0;
+      padding-bottom: 0;
     }
     #regular-table {
       border-collapse: separate;
@@ -388,14 +389,11 @@
       border: 0;
     }
     @media (max-width: 900px) {
-      header {
-        padding: 2rem 1.5rem 1rem;
-      }
       .tab-nav {
-        margin: 0 1.5rem 1.5rem;
+        margin: 1rem 1rem 0.75rem;
       }
       .grid {
-        padding: 0 1.5rem 2rem;
+        padding: 0 1rem 1.5rem;
       }
       #regular-table_wrapper .dataTables_scrollHead {
         top: calc(var(--sticky-header-offset) - 24px);
@@ -404,9 +402,6 @@
   </style>
 </head>
 <body>
-  <header>
-    <h1>Gross Proceed</h1>
-  </header>
   <nav class="tab-nav" aria-label="Dashboard views">
     <button class="tab-button active" id="tab-analysis-button" type="button" data-tab="analysis" aria-controls="tab-analysis" aria-selected="true">Analysis</button>
     <button class="tab-button" id="tab-regular-button" type="button" data-tab="regular" aria-controls="tab-regular" aria-selected="false">Regular</button>
@@ -490,9 +485,7 @@
   </div>
   <div class="tab-panel" id="tab-regular" data-tab="regular" role="tabpanel" aria-labelledby="tab-regular-button" aria-hidden="true">
     <section class="grid">
-      <div class="card">
-        <h2 style="margin-top:0">Regular Sheet Records</h2>
-        <p style="margin-top:0;color:var(--muted);">Search, sort, and filter the full dataset directly in the browser.</p>
+      <div class="card table-card">
         <div class="table-container">
           <table id="regular-table" class="display" style="width:100%"></table>
         </div>
