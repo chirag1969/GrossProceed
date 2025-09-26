@@ -570,6 +570,72 @@
       return Math.round(Math.max(heightWithinViewport, minimumAllowedHeight));
     }
 
+    function syncHeaderColumnWidths(table) {
+      if (!table) {
+        return;
+      }
+      const container = table.table().container();
+      const scrollHead = container.querySelector('.dataTables_scrollHead');
+      const scrollBody = container.querySelector('.dataTables_scrollBody');
+      const headerTable = scrollHead ? scrollHead.querySelector('table') : null;
+      const bodyTable = scrollBody ? scrollBody.querySelector('table') : null;
+      if (!headerTable || !bodyTable) {
+        return;
+      }
+
+      const columnIndexes = table.columns().indexes().toArray();
+      columnIndexes.forEach((columnIndex) => {
+        const column = table.column(columnIndex);
+        const headerCell = column.header();
+        if (!headerCell) {
+          return;
+        }
+
+        const bodyCells = column.nodes().toArray();
+        let maxWidth = 0;
+        bodyCells.forEach((cell) => {
+          if (!(cell instanceof HTMLElement)) {
+            return;
+          }
+          const { width } = cell.getBoundingClientRect();
+          if (width > maxWidth) {
+            maxWidth = width;
+          }
+        });
+
+        if (maxWidth <= 0) {
+          const { width } = headerCell.getBoundingClientRect();
+          maxWidth = width;
+        }
+
+        if (maxWidth > 0) {
+          const widthPx = `${Math.ceil(maxWidth)}px`;
+          headerCell.style.width = widthPx;
+          headerCell.style.minWidth = widthPx;
+          headerCell.style.maxWidth = widthPx;
+          headerCell.style.boxSizing = 'border-box';
+          bodyCells.forEach((cell) => {
+            if (cell instanceof HTMLElement) {
+              cell.style.width = widthPx;
+              cell.style.minWidth = widthPx;
+              cell.style.maxWidth = widthPx;
+              cell.style.boxSizing = 'border-box';
+            }
+          });
+        }
+      });
+
+      const bodyWidth = bodyTable.getBoundingClientRect().width;
+      if (bodyWidth > 0) {
+        const widthPx = `${Math.ceil(bodyWidth)}px`;
+        headerTable.style.width = widthPx;
+        const scrollHeadInner = scrollHead.querySelector('.dataTables_scrollHeadInner');
+        if (scrollHeadInner) {
+          scrollHeadInner.style.width = widthPx;
+        }
+      }
+    }
+
     function applyTableHeight(table) {
       if (!table) {
         return;
@@ -589,6 +655,7 @@
         settings.oScroll.sY = `${height}px`;
       }
       table.columns.adjust();
+      requestAnimationFrame(() => syncHeaderColumnWidths(table));
     }
 
     function refreshRegularTableLayout() {
