@@ -1,0 +1,238 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>REGULAR SEP-25 Performance Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f4f6fb;
+      --card-bg: #fff;
+      --text: #1b1e28;
+      --muted: #5f677b;
+      --accent: #145afc;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+    }
+    header {
+      padding: 2.5rem 3rem 1rem;
+    }
+    h1 {
+      margin: 0 0 0.5rem;
+      font-size: 2rem;
+      font-weight: 700;
+    }
+    p.lead {
+      margin: 0;
+      color: var(--muted);
+    }
+    .grid {
+      display: grid;
+      gap: 1.5rem;
+      padding: 0 3rem 3rem;
+    }
+    .kpi-grid {
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+    .card {
+      background: var(--card-bg);
+      border-radius: 1rem;
+      padding: 1.5rem;
+      box-shadow: 0 10px 30px rgba(16, 24, 40, 0.08);
+    }
+    .kpi-title {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-bottom: 0.35rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .kpi-value {
+      font-size: 1.75rem;
+      font-weight: 600;
+    }
+    canvas {
+      width: 100% !important;
+      height: auto !important;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 0.5rem;
+    }
+    th, td {
+      text-align: left;
+      padding: 0.5rem 0.75rem;
+    }
+    th {
+      color: var(--muted);
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    tr:nth-child(even) td {
+      background: rgba(20, 90, 252, 0.05);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>REGULAR SEP-25 Performance Dashboard</h1>
+    <p class="lead">Automated analysis generated from the Gross Proceed workbook.</p>
+  </header>
+  <section class="grid kpi-grid">
+    
+    <article class="card">
+      <div class="kpi-title">Total Orders</div>
+      <div class="kpi-value">3,075</div>
+    </article>
+    
+    <article class="card">
+      <div class="kpi-title">Total Units</div>
+      <div class="kpi-value">3,856</div>
+    </article>
+    
+    <article class="card">
+      <div class="kpi-title">Total Revenue</div>
+      <div class="kpi-value">$294,677.05</div>
+    </article>
+    
+    <article class="card">
+      <div class="kpi-title">Gross Proceed</div>
+      <div class="kpi-value">$170,933.70</div>
+    </article>
+    
+    <article class="card">
+      <div class="kpi-title">Final Net</div>
+      <div class="kpi-value">$76,271.43</div>
+    </article>
+    
+    <article class="card">
+      <div class="kpi-title">Ad Spend</div>
+      <div class="kpi-value">$17,680.62</div>
+    </article>
+    
+    <article class="card">
+      <div class="kpi-title">Average Order Value</div>
+      <div class="kpi-value">$95.83</div>
+    </article>
+    
+    <article class="card">
+      <div class="kpi-title">Net Margin</div>
+      <div class="kpi-value">25.9%</div>
+    </article>
+    
+  </section>
+  <section class="grid">
+    <div class="card">
+      <h2 style="margin-top:0">Revenue &amp; Profit Trend</h2>
+      <canvas id="daily-chart"></canvas>
+    </div>
+    <div class="card">
+      <h2 style="margin-top:0">Top Categories by Final Net</h2>
+      <canvas id="category-chart"></canvas>
+    </div>
+    <div class="card">
+      <h2 style="margin-top:0">Store Mix</h2>
+      
+    <table>
+      <thead><tr><th>Store</th><th>Revenue</th><th>Final Net</th></tr></thead>
+      <tbody>
+        <tr><td>AMZ REG</td><td>$124,372.92</td><td>$33,852.24</td></tr><tr><td>AMZ FBA</td><td>$102,750.93</td><td>$25,503.26</td></tr><tr><td>Ebay/Walmart/Website</td><td>$45,620.58</td><td>$11,884.15</td></tr><tr><td>AMZ FBA CAN</td><td>$21,932.62</td><td>$5,031.77</td></tr>
+      </tbody>
+    </table>
+    
+    </div>
+    <div class="card">
+      <h2 style="margin-top:0">Top SKUs by Final Net</h2>
+      
+    <table>
+      <thead><tr><th>Sku</th><th>Units</th><th>Final Net</th></tr></thead>
+      <tbody>
+        <tr><td>B5</td><td>92.0</td><td>$4,375.72</td></tr><tr><td>FAB-554</td><td>29.0</td><td>$3,459.89</td></tr><tr><td>V4-1824</td><td>82.0</td><td>$1,743.15</td></tr><tr><td>JMT-59</td><td>53.0</td><td>$1,740.86</td></tr><tr><td>V2</td><td>57.0</td><td>$1,713.33</td></tr><tr><td>V4F</td><td>34.0</td><td>$1,652.76</td></tr><tr><td>V2-1824</td><td>76.0</td><td>$1,572.41</td></tr><tr><td>V6</td><td>28.0</td><td>$1,538.79</td></tr><tr><td>B12</td><td>19.0</td><td>$1,352.49</td></tr><tr><td>S9X</td><td>53.0</td><td>$1,339.43</td></tr>
+      </tbody>
+    </table>
+    
+    </div>
+  </section>
+  <script>
+    const dailySeries = [{"date":"2025-09-01","revenue":3991.5693,"final_net":967.6681849284316},{"date":"2025-09-02","revenue":27004.3933,"final_net":5892.861777578192},{"date":"2025-09-03","revenue":14134.1591,"final_net":3848.7080137782214},{"date":"2025-09-04","revenue":13442.0764,"final_net":3359.390823024803},{"date":"2025-09-05","revenue":11971.5861,"final_net":3618.287882891206},{"date":"2025-09-06","revenue":9740.0052,"final_net":2007.2764533166428},{"date":"2025-09-07","revenue":5705.8661,"final_net":1391.3388444349875},{"date":"2025-09-08","revenue":19917.309,"final_net":5278.163294205369},{"date":"2025-09-09","revenue":16891.3098,"final_net":4104.160668313585},{"date":"2025-09-10","revenue":10983.5059,"final_net":2793.2267988994954},{"date":"2025-09-11","revenue":11534.2453,"final_net":2952.569931535068},{"date":"2025-09-12","revenue":10964.039,"final_net":2845.538930056686},{"date":"2025-09-13","revenue":9547.360700000001,"final_net":2428.2749996529537},{"date":"2025-09-14","revenue":4074.278,"final_net":1013.0330780450196},{"date":"2025-09-15","revenue":19505.498,"final_net":4923.892216865558},{"date":"2025-09-16","revenue":13897.8109,"final_net":3922.1459336448174},{"date":"2025-09-17","revenue":12579.9332,"final_net":3216.836002467571},{"date":"2025-09-18","revenue":14542.710700000001,"final_net":4423.308448747652},{"date":"2025-09-19","revenue":17487.1466,"final_net":5014.889137143346},{"date":"2025-09-20","revenue":8814.6478,"final_net":2244.4181519997564},{"date":"2025-09-21","revenue":4477.4615,"final_net":1095.3186860311882},{"date":"2025-09-22","revenue":17893.8122,"final_net":4893.260047382762},{"date":"2025-09-23","revenue":15576.3226,"final_net":4036.8586775935028}];
+    const categorySeries = [{"category":"VB","final_net":15140.908496576283},{"category":"FAB","final_net":14584.070977783102},{"category":"CFB","final_net":13558.146840077734},{"category":"RCB","final_net":4736.489908168083},{"category":"JMT","final_net":4668.912872766931},{"category":"PF","final_net":3486.1491063341005},{"category":"GEN","final_net":3349.6331984126987},{"category":"HS","final_net":3252.2734973267548},{"category":"HB","final_net":2622.9348881312512},{"category":"CP","final_net":2139.163595413091}];
+
+    const fmtCurrency = (value) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
+    const fmtPercent = (value) => `${(value * 100).toFixed(1)}%`;
+
+    const dailyCtx = document.getElementById('daily-chart');
+    if (dailySeries.length > 0) {
+      new Chart(dailyCtx, {
+        type: 'line',
+        data: {
+          labels: dailySeries.map(item => item.date),
+          datasets: [
+            {
+              label: 'Revenue',
+              data: dailySeries.map(item => item.revenue),
+              borderColor: '#145afc',
+              backgroundColor: 'rgba(20, 90, 252, 0.15)',
+              tension: 0.25,
+              fill: true,
+            },
+            {
+              label: 'Final Net',
+              data: dailySeries.map(item => item.final_net),
+              borderColor: '#ff7d4f',
+              backgroundColor: 'rgba(255, 125, 79, 0.15)',
+              tension: 0.25,
+              fill: true,
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          interaction: { mode: 'index', intersect: false },
+          stacked: false,
+          scales: {
+            y: {
+              ticks: {
+                callback: (value) => fmtCurrency(value)
+              }
+            }
+          }
+        }
+      });
+    }
+
+    const categoryCtx = document.getElementById('category-chart');
+    if (categorySeries.length > 0) {
+      new Chart(categoryCtx, {
+        type: 'bar',
+        data: {
+          labels: categorySeries.map(item => item.category),
+          datasets: [{
+            label: 'Final Net',
+            data: categorySeries.map(item => item.final_net),
+            backgroundColor: '#145afc'
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              ticks: { callback: (value) => fmtCurrency(value) }
+            }
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>
