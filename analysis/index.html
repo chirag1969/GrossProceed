@@ -19,6 +19,7 @@
       --text: #1b1e28;
       --muted: #5f677b;
       --accent: #145afc;
+      --sticky-header-offset: 140px;
       font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     }
     body {
@@ -115,6 +116,208 @@
     }
     .table-container {
       overflow-x: auto;
+      position: relative;
+    }
+    #regular-table {
+      border-collapse: separate;
+      width: 100%;
+    }
+    #regular-table thead th {
+      font-size: 0.8rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    #regular-table thead th.is-filterable {
+      cursor: pointer;
+      position: relative;
+    }
+    #regular-table thead th.has-filter::after {
+      content: '';
+      position: absolute;
+      top: 0.6rem;
+      right: 0.5rem;
+      width: 0.35rem;
+      height: 0.35rem;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+    #regular-table td.cell-multiline {
+      white-space: normal !important;
+      word-break: break-word;
+      line-height: 1.35;
+    }
+    #regular-table_wrapper .dataTables_scrollHead {
+      position: sticky;
+      top: var(--sticky-header-offset);
+      z-index: 5;
+      background: var(--card-bg);
+      box-shadow: 0 6px 18px rgba(16, 24, 40, 0.08);
+    }
+    #regular-table_wrapper .dataTables_scrollBody {
+      border-bottom-left-radius: 1rem;
+      border-bottom-right-radius: 1rem;
+    }
+    #regular-table_wrapper .dataTables_paginate .paginate_button {
+      border-radius: 999px;
+    }
+    .header-menu {
+      position: absolute;
+      z-index: 20;
+      min-width: 240px;
+      max-width: 280px;
+      background: var(--card-bg);
+      border-radius: 0.75rem;
+      box-shadow: 0 20px 35px rgba(15, 23, 42, 0.15);
+      border: 1px solid rgba(27, 30, 40, 0.08);
+      padding: 1rem;
+      color: var(--text);
+    }
+    .header-menu.hidden {
+      display: none;
+    }
+    .header-menu__header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 0.75rem;
+    }
+    .header-menu__title {
+      font-size: 0.95rem;
+      margin: 0;
+    }
+    .header-menu__close {
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-size: 1.25rem;
+      cursor: pointer;
+      padding: 0;
+      line-height: 1;
+    }
+    .header-menu__section {
+      margin-bottom: 1rem;
+    }
+    .header-menu__buttons {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .header-menu__button {
+      flex: 1 1 auto;
+      border: 1px solid rgba(27, 30, 40, 0.12);
+      background: #f8f9fe;
+      color: var(--text);
+      border-radius: 999px;
+      padding: 0.4rem 0.8rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: border-color 0.2s ease, background 0.2s ease;
+    }
+    .header-menu__button:hover,
+    .header-menu__button:focus-visible {
+      border-color: var(--accent);
+      background: rgba(20, 90, 252, 0.12);
+      outline: none;
+    }
+    .header-menu__search {
+      width: 100%;
+      border-radius: 0.5rem;
+      border: 1px solid rgba(27, 30, 40, 0.12);
+      padding: 0.45rem 0.6rem;
+      font: inherit;
+    }
+    .header-menu__options {
+      max-height: 200px;
+      overflow-y: auto;
+      border: 1px solid rgba(27, 30, 40, 0.1);
+      border-radius: 0.65rem;
+      padding: 0.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+    .header-menu__options:empty {
+      display: none;
+      border: none;
+      padding: 0;
+    }
+    .header-menu__empty-message {
+      margin-top: 0.5rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    .header-menu__option {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      color: var(--text);
+    }
+    .header-menu__option input[type="checkbox"] {
+      width: 1rem;
+      height: 1rem;
+      accent-color: var(--accent);
+    }
+    .header-menu__footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+    .header-menu__apply,
+    .header-menu__clear {
+      flex: 1;
+      border-radius: 999px;
+      padding: 0.45rem 0.75rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+    }
+    .header-menu__apply {
+      background: var(--accent);
+      color: #fff;
+    }
+    .header-menu__apply:hover,
+    .header-menu__apply:focus-visible {
+      background: #0f46c2;
+      outline: none;
+    }
+    .header-menu__clear {
+      background: rgba(20, 90, 252, 0.12);
+      color: var(--accent);
+      border-color: rgba(20, 90, 252, 0.3);
+    }
+    .header-menu__clear:hover,
+    .header-menu__clear:focus-visible {
+      background: rgba(20, 90, 252, 0.2);
+      outline: none;
+    }
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+    @media (max-width: 900px) {
+      header {
+        padding: 2rem 1.5rem 1rem;
+      }
+      .tab-nav {
+        margin: 0 1.5rem 1.5rem;
+      }
+      .grid {
+        padding: 0 1.5rem 2rem;
+      }
+      #regular-table_wrapper .dataTables_scrollHead {
+        top: calc(var(--sticky-header-offset) - 24px);
+      }
     }
   </style>
 </head>
@@ -223,6 +426,13 @@
 
     const tabButtons = document.querySelectorAll('.tab-button');
     const tabPanels = document.querySelectorAll('.tab-panel');
+    let regularTable;
+    let regularTableInitialised = false;
+    let columnValueOptions = [];
+    let columnFilters = {};
+    let headerMenuElement;
+    let activeHeaderCell = null;
+    let activeColumnIndex = null;
 
     function setActiveTab(targetTab) {
       tabButtons.forEach((button) => {
@@ -237,6 +447,8 @@
       });
       if (targetTab === 'regular') {
         loadRegularTable();
+      } else {
+        closeHeaderMenu();
       }
     }
 
@@ -244,9 +456,240 @@
       button.addEventListener('click', () => setActiveTab(button.dataset.tab));
     });
 
-    setActiveTab('analysis');
+    function updateStickyOffset() {
+      const headerEl = document.querySelector('header');
+      const navEl = document.querySelector('.tab-nav');
+      const headerHeight = headerEl ? headerEl.offsetHeight : 0;
+      const navHeight = navEl ? navEl.offsetHeight : 0;
+      const offset = headerHeight + navHeight + 24;
+      document.documentElement.style.setProperty('--sticky-header-offset', `${offset}px`);
+    }
 
-    let regularTableInitialised = false;
+    setActiveTab('analysis');
+    updateStickyOffset();
+    window.addEventListener('resize', updateStickyOffset);
+
+    function ensureHeaderMenu() {
+      if (!headerMenuElement) {
+        headerMenuElement = document.createElement('div');
+        headerMenuElement.className = 'header-menu hidden';
+        headerMenuElement.setAttribute('role', 'dialog');
+        headerMenuElement.setAttribute('aria-modal', 'false');
+        document.body.appendChild(headerMenuElement);
+
+        document.addEventListener('click', (event) => {
+          if (!headerMenuElement.classList.contains('hidden')) {
+            const target = event.target;
+            if (headerMenuElement && !headerMenuElement.contains(target) && !(target.closest('#regular-table thead'))) {
+              closeHeaderMenu();
+            }
+          }
+        });
+
+        document.addEventListener('keydown', (event) => {
+          if (event.key === 'Escape') {
+            closeHeaderMenu();
+          }
+        });
+
+        window.addEventListener('resize', () => {
+          if (!headerMenuElement.classList.contains('hidden') && activeHeaderCell) {
+            positionHeaderMenu(activeHeaderCell);
+          }
+        });
+
+        window.addEventListener('scroll', () => {
+          if (!headerMenuElement.classList.contains('hidden') && activeHeaderCell) {
+            positionHeaderMenu(activeHeaderCell);
+          }
+        }, { passive: true });
+      }
+    }
+
+    function closeHeaderMenu() {
+      if (headerMenuElement) {
+        headerMenuElement.classList.add('hidden');
+        headerMenuElement.innerHTML = '';
+      }
+      activeHeaderCell = null;
+      activeColumnIndex = null;
+    }
+
+    function escapeRegex(value) {
+      return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    function optionLabel(value) {
+      const normalized = value === null || value === undefined ? '' : String(value);
+      return normalized === '' ? '(Blank)' : normalized;
+    }
+
+    function escapeHtml(value) {
+      return String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    function applyColumnFilter(table, columnIndex, values, headerCell) {
+      if (!table) return;
+      if (values.length === 0) {
+        table.column(columnIndex).search('', false, false).draw();
+        delete columnFilters[columnIndex];
+        if (headerCell) {
+          headerCell.classList.remove('has-filter');
+        }
+        return;
+      }
+      const regex = `^(${values.map((value) => escapeRegex(value)).join('|')})$`;
+      table.column(columnIndex).search(regex, true, false).draw();
+      columnFilters[columnIndex] = values;
+      if (headerCell) {
+        headerCell.classList.add('has-filter');
+      }
+    }
+
+    function positionHeaderMenu(headerCell) {
+      if (!headerMenuElement) return;
+      const rect = headerCell.getBoundingClientRect();
+      const top = rect.bottom + window.scrollY + 8;
+      const left = rect.left + window.scrollX;
+      headerMenuElement.style.top = `${top}px`;
+      headerMenuElement.style.left = `${left}px`;
+    }
+
+    function openHeaderMenu(headerCell, table) {
+      ensureHeaderMenu();
+      if (!headerMenuElement) return;
+
+      activeHeaderCell = headerCell;
+      activeColumnIndex = Number(headerCell.getAttribute('data-dt-column'));
+      if (Number.isNaN(activeColumnIndex)) {
+        activeColumnIndex = Number(headerCell.dataset.columnIndex || 0);
+      }
+      const columnTitle = headerCell.textContent.trim();
+      const options = columnValueOptions[activeColumnIndex] || [];
+      const selectedValues = columnFilters[activeColumnIndex] ? [...columnFilters[activeColumnIndex]] : [];
+
+      const optionsMarkup = options.map((value) => {
+        const checked = selectedValues.includes(value) ? 'checked' : '';
+        const rawLabel = optionLabel(value);
+        const safeLabel = escapeHtml(rawLabel);
+        const safeValueAttr = escapeHtml(value);
+        const dataLabel = escapeHtml(rawLabel.toLowerCase());
+        return `<label class="header-menu__option" data-label="${dataLabel}"><input type="checkbox" value="${safeValueAttr}" ${checked}>${safeLabel}</label>`;
+      }).join('');
+      const hasOptions = options.length > 0;
+
+      headerMenuElement.innerHTML = `
+        <div class="header-menu__header">
+          <h3 class="header-menu__title">${columnTitle}</h3>
+          <button type="button" class="header-menu__close" aria-label="Close menu">&times;</button>
+        </div>
+        <div class="header-menu__section">
+          <div class="header-menu__buttons">
+            <button type="button" class="header-menu__button" data-sort="asc">Sort ascending</button>
+            <button type="button" class="header-menu__button" data-sort="desc">Sort descending</button>
+          </div>
+        </div>
+        <div class="header-menu__section">
+          <label for="header-menu-search" class="sr-only">Search values</label>
+          <input id="header-menu-search" class="header-menu__search" type="search" placeholder="Search values" autocomplete="off">
+        </div>
+        <div class="header-menu__section">
+          <div class="header-menu__options" role="group" aria-label="Filter values">
+            ${hasOptions ? optionsMarkup : ''}
+          </div>
+          ${hasOptions ? '<div class="header-menu__empty-message" hidden>No matches found</div>' : '<p style="margin:0.5rem 0 0;color:var(--muted);font-size:0.85rem;">No values available</p>'}
+        </div>
+        <div class="header-menu__footer">
+          <button type="button" class="header-menu__clear">Clear</button>
+          <button type="button" class="header-menu__apply">Apply</button>
+        </div>
+      `;
+
+      headerMenuElement.classList.remove('hidden');
+      positionHeaderMenu(headerCell);
+
+      const closeButton = headerMenuElement.querySelector('.header-menu__close');
+      closeButton?.addEventListener('click', () => closeHeaderMenu());
+
+      const sortButtons = headerMenuElement.querySelectorAll('[data-sort]');
+      sortButtons.forEach((button) => {
+        button.addEventListener('click', (event) => {
+          const direction = event.currentTarget.getAttribute('data-sort');
+          table.order([activeColumnIndex, direction]).draw();
+          closeHeaderMenu();
+        });
+      });
+
+      const optionsContainer = headerMenuElement.querySelector('.header-menu__options');
+      const searchInput = headerMenuElement.querySelector('#header-menu-search');
+      const emptyMessage = headerMenuElement.querySelector('.header-menu__empty-message');
+      if (!hasOptions && searchInput) {
+        searchInput.disabled = true;
+        searchInput.placeholder = 'No values available';
+      }
+      searchInput?.addEventListener('input', (event) => {
+        const query = event.currentTarget.value.trim().toLowerCase();
+        const labels = optionsContainer ? optionsContainer.querySelectorAll('.header-menu__option') : [];
+        let visibleCount = 0;
+        labels.forEach((labelEl) => {
+          const labelValue = labelEl.getAttribute('data-label') || '';
+          const isVisible = labelValue.includes(query);
+          labelEl.style.display = isVisible ? 'flex' : 'none';
+          if (isVisible) {
+            visibleCount += 1;
+          }
+        });
+        if (emptyMessage) {
+          emptyMessage.hidden = visibleCount !== 0;
+        }
+      });
+
+      const applyButton = headerMenuElement.querySelector('.header-menu__apply');
+      applyButton?.addEventListener('click', () => {
+        const checkedInputs = optionsContainer ? Array.from(optionsContainer.querySelectorAll('input[type="checkbox"]')).filter((input) => input.checked) : [];
+        const values = checkedInputs.map((input) => input.value);
+        applyColumnFilter(table, activeColumnIndex, values, headerCell);
+        closeHeaderMenu();
+      });
+
+      const clearButton = headerMenuElement.querySelector('.header-menu__clear');
+      clearButton?.addEventListener('click', () => {
+        if (optionsContainer) {
+          optionsContainer.querySelectorAll('input[type="checkbox"]').forEach((input) => {
+            input.checked = false;
+          });
+        }
+        applyColumnFilter(table, activeColumnIndex, [], headerCell);
+        closeHeaderMenu();
+      });
+    }
+
+    function buildColumnOptions(dataset) {
+      const sets = dataset.columns.map(() => new Set());
+      dataset.rows.forEach((row) => {
+        row.forEach((value, index) => {
+          const processed = value === null ? '' : String(value);
+          sets[index].add(processed);
+        });
+      });
+      columnValueOptions = sets.map((set) => Array.from(set).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })));
+    }
+
+    function wireHeaderEvents(table) {
+      const container = table.table().container();
+      const headerCells = container.querySelectorAll('thead th');
+      headerCells.forEach((cell) => {
+        cell.classList.add('is-filterable');
+      });
+      $(headerCells).off('click.DT');
+      headerCells.forEach((cell) => {
+        cell.addEventListener('click', (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          openHeaderMenu(cell, table);
+        });
+      });
+    }
 
     function loadRegularTable() {
       if (regularTableInitialised) {
@@ -260,8 +703,12 @@
           return response.json();
         })
         .then((dataset) => {
+          updateStickyOffset();
+          buildColumnOptions(dataset);
+
           const columnDefs = dataset.columns.map((title) => ({ title }));
-          $('#regular-table').DataTable({
+          const productColumnIndex = dataset.columns.indexOf('Product');
+          regularTable = $('#regular-table').DataTable({
             data: dataset.rows,
             columns: columnDefs,
             pageLength: 25,
@@ -269,7 +716,16 @@
             scrollX: true,
             deferRender: true,
             autoWidth: false,
+            order: [],
+            dom: 't<"table-footer"ip>',
+            columnDefs: productColumnIndex >= 0 ? [{
+              targets: productColumnIndex,
+              createdCell: (td) => {
+                td.classList.add('cell-multiline');
+              }
+            }] : []
           });
+          wireHeaderEvents(regularTable);
           regularTableInitialised = true;
         })
         .catch((error) => {
