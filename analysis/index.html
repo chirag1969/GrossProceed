@@ -154,12 +154,9 @@
       font-size: 0.78rem;
       letter-spacing: 0.08em;
       text-transform: uppercase;
-      color: #2b3142;
+      color: #000;
       font-weight: 700;
       background: linear-gradient(180deg, #f6f8ff 0%, #e3e8f7 100%);
-      position: sticky;
-      top: var(--sticky-header-offset);
-      z-index: 6;
       border-bottom: 2px solid rgba(70, 97, 145, 0.35);
     }
     #regular-table tbody td {
@@ -221,12 +218,11 @@
       border-radius: 0.85rem;
       background: #fff;
       box-shadow: 0 12px 30px rgba(21, 32, 56, 0.12);
-      max-height: 560px;
       overflow: hidden;
     }
     #regular-table_wrapper .dataTables_scrollHead {
-      position: sticky;
-      top: var(--sticky-header-offset);
+      position: relative;
+      top: auto;
       z-index: 5;
       background: transparent;
       overflow: hidden;
@@ -238,7 +234,7 @@
     }
     #regular-table_wrapper .dataTables_scrollBody {
       border-top: none;
-      max-height: 480px !important;
+      overflow-y: auto !important;
     }
     #regular-table_wrapper .dataTables_scrollBody table {
       border-collapse: separate;
@@ -520,6 +516,43 @@
     let headerMenuElement;
     let activeHeaderCell = null;
     let activeColumnIndex = null;
+    const headerClickHandlers = new WeakMap();
+
+    function getStickyOffsetValue() {
+      const rawValue = getComputedStyle(document.documentElement).getPropertyValue('--sticky-header-offset');
+      const parsed = Number.parseFloat(rawValue);
+      return Number.isFinite(parsed) ? parsed : 0;
+    }
+
+    function calculateScrollBodyHeight(rowCount) {
+      const normalizedRowCount = rowCount > 0 ? rowCount : 1;
+      const rowHeight = 36;
+      const headerHeight = 44;
+      const minHeight = headerHeight + normalizedRowCount * rowHeight;
+      const availableViewport = window.innerHeight - getStickyOffsetValue() - 96;
+      const usableViewport = Number.isFinite(availableViewport) ? Math.max(availableViewport, minHeight) : minHeight;
+      const desiredHeight = headerHeight + rowCount * rowHeight;
+      return Math.round(Math.min(Math.max(desiredHeight, minHeight), usableViewport));
+    }
+
+    function applyTableHeight(table) {
+      if (!table) {
+        return;
+      }
+      const rowCount = table.rows({ filter: 'applied' }).count();
+      const height = calculateScrollBodyHeight(rowCount);
+      const container = table.table().container();
+      const scrollBody = container.querySelector('.dataTables_scrollBody');
+      if (scrollBody) {
+        scrollBody.style.height = `${height}px`;
+        scrollBody.style.maxHeight = `${height}px`;
+      }
+      const settings = table.settings()[0];
+      if (settings && settings.oScroll) {
+        settings.oScroll.sY = `${height}px`;
+      }
+      table.columns.adjust();
+    }
 
     function setActiveTab(targetTab) {
       tabButtons.forEach((button) => {
@@ -554,7 +587,12 @@
 
     setActiveTab('analysis');
     updateStickyOffset();
-    window.addEventListener('resize', updateStickyOffset);
+    window.addEventListener('resize', () => {
+      updateStickyOffset();
+      if (regularTableInitialised && regularTable) {
+        applyTableHeight(regularTable);
+      }
+    });
 
     function ensureHeaderMenu() {
       if (!headerMenuElement) {
@@ -775,13 +813,19 @@
           cell.dataset.columnIndex = String(index);
         }
       });
-      $(headerCells).off('click.DT');
+      $(headerCells).off('click.DT keypress.DT');
       headerCells.forEach((cell) => {
-        cell.addEventListener('click', (event) => {
+        const existingHandler = headerClickHandlers.get(cell);
+        if (existingHandler) {
+          cell.removeEventListener('click', existingHandler);
+        }
+        const handler = (event) => {
           event.preventDefault();
           event.stopPropagation();
           openHeaderMenu(cell, table);
-        });
+        };
+        headerClickHandlers.set(cell, handler);
+        cell.addEventListener('click', handler);
       });
     }
 
@@ -917,12 +961,13 @@
             className: Array.from(classSet).join(' '),
           }));
 
+          const initialScrollHeight = `${calculateScrollBodyHeight(dataset.rows.length)}px`;
           regularTable = $('#regular-table').DataTable({
             data: formattedRows,
             columns,
             columnDefs,
             scrollX: true,
-            scrollY: '520px',
+            scrollY: initialScrollHeight,
             scrollCollapse: true,
             deferRender: true,
             autoWidth: false,
@@ -931,6 +976,14 @@
             info: false,
             lengthChange: false,
             dom: 't'
+          });
+
+          buildColumnOptions(dataset);
+          wireHeaderEvents(regularTable);
+          applyTableHeight(regularTable);
+          regularTable.on('draw.dt', () => {
+            wireHeaderEvents(regularTable);
+            applyTableHeight(regularTable);
           });
 
           regularTableInitialised = true;
