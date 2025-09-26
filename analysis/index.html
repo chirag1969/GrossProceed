@@ -118,9 +118,8 @@
     }
     .table-container {
       position: relative;
-      overflow: visible;
-      padding-right: 0.75rem;
-      padding-bottom: 0.75rem;
+      overflow: hidden;
+      padding: 0;
     }
     #tab-regular .table-card {
       background: transparent;
@@ -138,9 +137,10 @@
     #regular-table thead th,
     #regular-table tbody td {
       text-align: left;
-      padding: 0.85rem 1rem;
+      padding: 0.3rem 0.65rem;
       border-right: 1px solid rgba(15, 23, 42, 0.08);
       white-space: nowrap;
+      line-height: 1.15;
     }
     #regular-table thead th:first-child,
     #regular-table tbody td:first-child {
@@ -151,28 +151,39 @@
       border-right: 1px solid rgba(15, 23, 42, 0.08);
     }
     #regular-table thead th {
-      font-size: 0.82rem;
-      letter-spacing: 0.02em;
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
       text-transform: uppercase;
-      color: var(--text);
+      color: #2b3142;
       font-weight: 700;
-      background: linear-gradient(180deg, rgba(244, 246, 251, 0.95), rgba(221, 229, 244, 0.85));
+      background: linear-gradient(180deg, #f6f8ff 0%, #e3e8f7 100%);
       position: sticky;
       top: var(--sticky-header-offset);
       z-index: 6;
-      border-bottom: 1px solid rgba(15, 23, 42, 0.12);
+      border-bottom: 2px solid rgba(70, 97, 145, 0.35);
     }
     #regular-table tbody td {
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       color: rgba(27, 30, 40, 0.9);
       font-weight: 500;
       background: #fff;
     }
+    #regular-table tbody tr {
+      border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+    }
     #regular-table tbody tr:nth-child(even) td {
-      background: rgba(20, 90, 252, 0.04);
+      background: rgba(226, 231, 244, 0.35);
     }
     #regular-table tbody tr:hover td {
-      background: rgba(20, 90, 252, 0.12);
+      background: rgba(41, 71, 137, 0.12);
+    }
+    #regular-table thead th.cell-numeric,
+    #regular-table tbody td.cell-numeric {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+    #regular-table tbody td.cell-qty {
+      font-weight: 600;
     }
     #regular-table thead th.is-filterable {
       cursor: pointer;
@@ -206,28 +217,28 @@
       padding-bottom: 0.5rem;
     }
     #regular-table_wrapper .dataTables_scroll {
-      padding-right: 1rem;
-      padding-bottom: 0.75rem;
+      border: 1px solid rgba(64, 80, 120, 0.18);
+      border-radius: 0.85rem;
+      background: #fff;
+      box-shadow: 0 12px 30px rgba(21, 32, 56, 0.12);
+      max-height: 560px;
+      overflow: hidden;
     }
     #regular-table_wrapper .dataTables_scrollHead {
       position: sticky;
       top: var(--sticky-header-offset);
       z-index: 5;
       background: transparent;
-      box-shadow: 0 6px 18px rgba(16, 24, 40, 0.08);
-      border-top-left-radius: 0.85rem;
-      border-top-right-radius: 0.85rem;
       overflow: hidden;
+      box-shadow: 0 8px 18px rgba(21, 32, 56, 0.12);
     }
     #regular-table_wrapper .dataTables_scrollHead table {
       border-collapse: separate;
       border-spacing: 0;
     }
     #regular-table_wrapper .dataTables_scrollBody {
-      border-bottom-left-radius: 0.85rem;
-      border-bottom-right-radius: 0.85rem;
-      border: 1px solid rgba(15, 23, 42, 0.08);
       border-top: none;
+      max-height: 480px !important;
     }
     #regular-table_wrapper .dataTables_scrollBody table {
       border-collapse: separate;
@@ -503,6 +514,7 @@
     const tabPanels = document.querySelectorAll('.tab-panel');
     let regularTable;
     let regularTableInitialised = false;
+    const NUMERIC_COLUMN_EXCLUSIONS = new Set(['ORDER NO', 'PLAIN ORDER NO', 'ORDER #', 'ORDER NO.', 'CHECKOUT']);
     let columnValueOptions = [];
     let columnFilters = {};
     let headerMenuElement;
@@ -773,21 +785,96 @@
       });
     }
 
-    function formatCellValue(value) {
-      if (typeof value === 'number') {
-        return value.toFixed(2);
+    function isPlaceholderValue(value) {
+      if (value === null || value === undefined) {
+        return true;
+      }
+      const normalized = typeof value === 'string' ? value.trim() : value;
+      return normalized === '' || normalized === '-' || normalized === '--';
+    }
+
+    function parseNumericValue(value) {
+      if (typeof value === 'number' && Number.isFinite(value)) {
+        return value;
       }
       if (typeof value === 'string') {
         const trimmed = value.trim();
-        if (trimmed === '' || trimmed === '-' || trimmed === '--') {
-          return value;
+        if (isPlaceholderValue(trimmed)) {
+          return null;
         }
-        const numericValue = Number(trimmed);
-        if (!Number.isNaN(numericValue)) {
-          return numericValue.toFixed(2);
+        const numeric = Number(trimmed.replace(/,/g, ''));
+        return Number.isNaN(numeric) ? null : numeric;
+      }
+      return null;
+    }
+
+    function formatExcelSerialDate(value) {
+      const numeric = parseNumericValue(value);
+      if (numeric === null) {
+        return null;
+      }
+      const serial = Math.floor(numeric);
+      if (serial <= 0) {
+        return null;
+      }
+      const fractional = numeric - serial;
+      const adjustedSerial = serial > 59 ? serial - 1 : serial;
+      const excelEpoch = Date.UTC(1899, 11, 30);
+      const dayMilliseconds = 24 * 60 * 60 * 1000;
+      const timestamp = excelEpoch + adjustedSerial * dayMilliseconds + Math.round(fractional * dayMilliseconds);
+      const date = new Date(timestamp);
+      if (Number.isNaN(date.getTime())) {
+        return null;
+      }
+      const day = String(date.getUTCDate()).padStart(2, '0');
+      const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+      const year = date.getUTCFullYear();
+      return `${day}-${month}-${year}`;
+    }
+
+    function detectNumericColumns(dataset) {
+      return dataset.columns.reduce((accumulator, column, columnIndex) => {
+        const normalizedColumn = column ? column.toUpperCase().trim() : '';
+        if (NUMERIC_COLUMN_EXCLUSIONS.has(normalizedColumn)) {
+          return accumulator;
+        }
+        let hasNumeric = false;
+        const isNumericColumn = dataset.rows.every((row) => {
+          const value = row[columnIndex];
+          if (isPlaceholderValue(value)) {
+            return true;
+          }
+          const numericValue = parseNumericValue(value);
+          if (numericValue === null) {
+            return false;
+          }
+          hasNumeric = true;
+          return true;
+        });
+        if (isNumericColumn && hasNumeric) {
+          accumulator.push(columnIndex);
+        }
+        return accumulator;
+      }, []);
+    }
+
+    function formatCellValue(value, columnName) {
+      if (isPlaceholderValue(value)) {
+        return typeof value === 'string' ? value.trim() : '';
+      }
+      const normalizedColumn = columnName ? columnName.trim().toLowerCase() : '';
+      if (normalizedColumn === 'checkout') {
+        const formattedDate = formatExcelSerialDate(value);
+        if (formattedDate) {
+          return formattedDate;
         }
       }
-      return value;
+      const numericValue = parseNumericValue(value);
+      if (numericValue !== null) {
+        const decimals = normalizedColumn === 'qty' ? 0 : 2;
+        return numericValue.toFixed(decimals);
+      }
+      return typeof value === 'string' ? value : String(value ?? '');
     }
 
     function loadRegularTable() {
@@ -803,33 +890,49 @@
         })
         .then((dataset) => {
           updateStickyOffset();
-          buildColumnOptions(dataset);
 
-          const columnDefs = dataset.columns.map((title) => ({ title }));
-          const formattedRows = dataset.rows.map((row) => row.map((value) => formatCellValue(value)));
+          const columns = dataset.columns.map((title) => ({ title }));
+          const formattedRows = dataset.rows.map((row) => row.map((value, index) => formatCellValue(value, dataset.columns[index])));
           const productColumnIndex = dataset.columns.indexOf('Product');
+          const quantityColumnIndex = dataset.columns.findIndex((column) => column && column.trim().toLowerCase() === 'qty');
+          const numericColumnIndices = detectNumericColumns(dataset);
+
+          const columnClassMap = new Map();
+          const addColumnClass = (columnIndex, className) => {
+            if (columnIndex < 0) {
+              return;
+            }
+            if (!columnClassMap.has(columnIndex)) {
+              columnClassMap.set(columnIndex, new Set());
+            }
+            columnClassMap.get(columnIndex).add(className);
+          };
+
+          addColumnClass(productColumnIndex, 'cell-product');
+          addColumnClass(quantityColumnIndex, 'cell-qty');
+          numericColumnIndices.forEach((columnIndex) => addColumnClass(columnIndex, 'cell-numeric'));
+
+          const columnDefs = Array.from(columnClassMap.entries()).map(([columnIndex, classSet]) => ({
+            targets: Number(columnIndex),
+            className: Array.from(classSet).join(' '),
+          }));
+
           regularTable = $('#regular-table').DataTable({
             data: formattedRows,
-            columns: columnDefs,
-            pageLength: 25,
-            lengthMenu: [10, 25, 50, 100],
+            columns,
+            columnDefs,
             scrollX: true,
+            scrollY: '520px',
+            scrollCollapse: true,
             deferRender: true,
             autoWidth: false,
             order: [],
-            dom: 't<"table-footer"ip>',
-            columnDefs: productColumnIndex >= 0 ? [{
-              targets: productColumnIndex,
-              className: 'cell-product'
-            }] : []
+            paging: false,
+            info: false,
+            lengthChange: false,
+            dom: 't'
           });
-          if (productColumnIndex >= 0) {
-            const headerCell = regularTable.column(productColumnIndex).header();
-            if (headerCell) {
-              headerCell.classList.add('cell-product');
-            }
-          }
-          wireHeaderEvents(regularTable);
+
           regularTableInitialised = true;
         })
         .catch((error) => {
