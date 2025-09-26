@@ -534,6 +534,7 @@
     const ROW_HEIGHT = 36;
     const MIN_VISIBLE_ROWS = 6;
     const MAX_VISIBLE_ROWS = 20;
+    const TABLE_BOTTOM_MARGIN = 24;
 
     function getStickyOffsetValue() {
       const rawValue = getComputedStyle(document.documentElement).getPropertyValue('--sticky-header-offset');
@@ -541,17 +542,22 @@
       return Number.isFinite(parsed) ? parsed : 0;
     }
 
-    function calculateScrollBodyHeight(rowCount) {
+    function calculateScrollBodyHeight(rowCount, viewportTopOffset) {
       const baselineMinHeight = HEADER_HEIGHT + MIN_VISIBLE_ROWS * ROW_HEIGHT;
       const viewportHeight = Number.isFinite(window.innerHeight) ? window.innerHeight : baselineMinHeight;
       const minimumAllowedHeight = Math.min(baselineMinHeight, viewportHeight);
       const effectiveRowCount = Math.min(Math.max(rowCount, MIN_VISIBLE_ROWS), MAX_VISIBLE_ROWS);
-      const stickyOffset = getStickyOffsetValue() + 96;
-      const availableViewport = Number.isFinite(stickyOffset)
-        ? viewportHeight - stickyOffset
-        : viewportHeight;
-      const usableViewport = Math.max(availableViewport, baselineMinHeight);
       const desiredHeight = HEADER_HEIGHT + effectiveRowCount * ROW_HEIGHT;
+
+      let availableViewport = viewportHeight;
+      if (Number.isFinite(viewportTopOffset)) {
+        availableViewport = viewportHeight - viewportTopOffset - TABLE_BOTTOM_MARGIN;
+      } else {
+        const stickyOffset = getStickyOffsetValue() + 96;
+        availableViewport = viewportHeight - stickyOffset;
+      }
+
+      const usableViewport = Math.max(availableViewport, baselineMinHeight);
       const heightWithinViewport = Math.min(desiredHeight, usableViewport, viewportHeight);
       return Math.round(Math.max(heightWithinViewport, minimumAllowedHeight));
     }
@@ -560,13 +566,12 @@
       if (!table) {
         return;
       }
-      const pageInfo = table.page ? table.page.info() : null;
-      const rowCount = pageInfo && Number.isFinite(pageInfo.length)
-        ? pageInfo.length
-        : table.rows({ page: 'current' }).count();
-      const height = calculateScrollBodyHeight(rowCount);
+      const rowCount = table.rows({ page: 'current' }).count();
       const container = table.table().container();
       const scrollBody = container.querySelector('.dataTables_scrollBody');
+      const scrollBodyRect = scrollBody ? scrollBody.getBoundingClientRect() : null;
+      const viewportTopOffset = scrollBodyRect && Number.isFinite(scrollBodyRect.top) ? scrollBodyRect.top : null;
+      const height = calculateScrollBodyHeight(rowCount, viewportTopOffset);
       if (scrollBody) {
         scrollBody.style.height = `${height}px`;
         scrollBody.style.maxHeight = `${height}px`;
@@ -829,8 +834,9 @@
       const sets = dataset.columns.map(() => new Set());
       dataset.rows.forEach((row) => {
         row.forEach((value, index) => {
-          const processed = value === null ? '' : String(value);
-          sets[index].add(processed);
+          const columnName = dataset.columns[index];
+          const formatted = formatCellValue(value, columnName);
+          sets[index].add(formatted);
         });
       });
       columnValueOptions = sets.map((set) => Array.from(set).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })));
