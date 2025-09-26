@@ -251,6 +251,18 @@
     table.dataTable thead .sorting_desc_disabled {
       background-image: none !important;
     }
+    table.dataTable thead > tr > th.sorting::before,
+    table.dataTable thead > tr > th.sorting::after,
+    table.dataTable thead > tr > th.sorting_asc::before,
+    table.dataTable thead > tr > th.sorting_asc::after,
+    table.dataTable thead > tr > th.sorting_desc::before,
+    table.dataTable thead > tr > th.sorting_desc::after,
+    table.dataTable thead > tr > th.sorting_asc_disabled::before,
+    table.dataTable thead > tr > th.sorting_asc_disabled::after,
+    table.dataTable thead > tr > th.sorting_desc_disabled::before,
+    table.dataTable thead > tr > th.sorting_desc_disabled::after {
+      display: none !important;
+    }
     .header-menu {
       position: absolute;
       z-index: 20;
@@ -511,6 +523,7 @@
     let regularTable;
     let regularTableInitialised = false;
     const NUMERIC_COLUMN_EXCLUSIONS = new Set(['ORDER NO', 'PLAIN ORDER NO', 'ORDER #', 'ORDER NO.', 'CHECKOUT']);
+    const ZERO_DECIMAL_COLUMNS = new Set(['qty', 'order no', 'plain order no', 'order no.', 'order #']);
     let columnValueOptions = [];
     let columnFilters = {};
     let headerMenuElement;
@@ -554,6 +567,13 @@
       table.columns.adjust();
     }
 
+    function refreshRegularTableLayout() {
+      if (!regularTableInitialised || !regularTable) {
+        return;
+      }
+      applyTableHeight(regularTable);
+    }
+
     function setActiveTab(targetTab) {
       tabButtons.forEach((button) => {
         const isActive = button.dataset.tab === targetTab;
@@ -567,6 +587,7 @@
       });
       if (targetTab === 'regular') {
         loadRegularTable();
+        refreshRegularTableLayout();
       } else {
         closeHeaderMenu();
       }
@@ -915,7 +936,7 @@
       }
       const numericValue = parseNumericValue(value);
       if (numericValue !== null) {
-        const decimals = normalizedColumn === 'qty' ? 0 : 2;
+        const decimals = ZERO_DECIMAL_COLUMNS.has(normalizedColumn) ? 0 : 2;
         return numericValue.toFixed(decimals);
       }
       return typeof value === 'string' ? value : String(value ?? '');
@@ -987,6 +1008,7 @@
           });
 
           regularTableInitialised = true;
+          requestAnimationFrame(() => refreshRegularTableLayout());
         })
         .catch((error) => {
           const tableElement = document.getElementById('regular-table');
