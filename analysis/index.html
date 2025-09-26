@@ -249,6 +249,22 @@
       background: #fff;
       width: 100% !important;
     }
+    .regular-table__footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.5rem;
+      padding: 0.75rem 0.5rem 0;
+      color: var(--muted);
+      font-size: 0.85rem;
+      flex-wrap: wrap;
+    }
+    .regular-table__footer .dataTables_info {
+      padding-top: 0 !important;
+    }
+    .regular-table__footer .dataTables_paginate {
+      margin: 0 !important;
+    }
     #regular-table_wrapper .dataTables_paginate .paginate_button {
       border-radius: 999px;
     }
@@ -543,6 +559,7 @@
     const MIN_VISIBLE_ROWS = 6;
     const MAX_VISIBLE_ROWS = 16;
     const TABLE_BOTTOM_MARGIN = 24;
+    const REGULAR_TABLE_PAGE_LENGTH = 200;
 
     function getStickyOffsetValue() {
       const rawValue = getComputedStyle(document.documentElement).getPropertyValue('--sticky-header-offset');
@@ -1074,7 +1091,8 @@
             className: Array.from(classSet).join(' '),
           }));
 
-          const initialScrollHeight = `${calculateScrollBodyHeight(dataset.rows.length)}px`;
+          const initialRowCount = Math.min(dataset.rows.length, REGULAR_TABLE_PAGE_LENGTH);
+          const initialScrollHeight = `${calculateScrollBodyHeight(initialRowCount)}px`;
           regularTable = $('#regular-table').DataTable({
             data: formattedRows,
             columns,
@@ -1085,10 +1103,11 @@
             deferRender: true,
             autoWidth: true,
             order: [],
-            paging: false,
-            info: false,
+            paging: true,
+            pageLength: REGULAR_TABLE_PAGE_LENGTH,
             lengthChange: false,
-            dom: 't'
+            info: true,
+            dom: 't<"regular-table__footer"ip>'
           });
 
           buildColumnOptions(dataset);
