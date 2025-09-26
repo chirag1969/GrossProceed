@@ -26,6 +26,7 @@
       margin: 0;
       background: var(--bg);
       color: var(--text);
+      overflow-x: hidden;
     }
     header {
       padding: 2.5rem 3rem 1rem;
@@ -72,6 +73,9 @@
       gap: 1.5rem;
       padding: 0 3rem 3rem;
     }
+    .grid > * {
+      min-width: 0;
+    }
     .kpi-grid {
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     }
@@ -115,8 +119,10 @@
       background: rgba(20, 90, 252, 0.05);
     }
     .table-container {
-      overflow-x: auto;
       position: relative;
+      overflow: hidden;
+      padding-right: 1.5rem;
+      padding-bottom: 1.5rem;
     }
     #regular-table {
       border-collapse: separate;
@@ -146,6 +152,18 @@
       white-space: normal !important;
       word-break: break-word;
       line-height: 1.35;
+    }
+    #regular-table th.cell-product,
+    #regular-table td.cell-product {
+      white-space: nowrap;
+    }
+    #regular-table_wrapper {
+      padding-right: 0.5rem;
+      padding-bottom: 0.5rem;
+    }
+    #regular-table_wrapper .dataTables_scroll {
+      padding-right: 1rem;
+      padding-bottom: 0.75rem;
     }
     #regular-table_wrapper .dataTables_scrollHead {
       position: sticky;
@@ -691,6 +709,23 @@
       });
     }
 
+    function formatCellValue(value) {
+      if (typeof value === 'number') {
+        return value.toFixed(2);
+      }
+      if (typeof value === 'string') {
+        const trimmed = value.trim();
+        if (trimmed === '' || trimmed === '-' || trimmed === '--') {
+          return value;
+        }
+        const numericValue = Number(trimmed);
+        if (!Number.isNaN(numericValue)) {
+          return numericValue.toFixed(2);
+        }
+      }
+      return value;
+    }
+
     function loadRegularTable() {
       if (regularTableInitialised) {
         return;
@@ -707,9 +742,10 @@
           buildColumnOptions(dataset);
 
           const columnDefs = dataset.columns.map((title) => ({ title }));
+          const formattedRows = dataset.rows.map((row) => row.map((value) => formatCellValue(value)));
           const productColumnIndex = dataset.columns.indexOf('Product');
           regularTable = $('#regular-table').DataTable({
-            data: dataset.rows,
+            data: formattedRows,
             columns: columnDefs,
             pageLength: 25,
             lengthMenu: [10, 25, 50, 100],
@@ -720,11 +756,15 @@
             dom: 't<"table-footer"ip>',
             columnDefs: productColumnIndex >= 0 ? [{
               targets: productColumnIndex,
-              createdCell: (td) => {
-                td.classList.add('cell-multiline');
-              }
+              className: 'cell-product'
             }] : []
           });
+          if (productColumnIndex >= 0) {
+            const headerCell = regularTable.column(productColumnIndex).header();
+            if (headerCell) {
+              headerCell.classList.add('cell-product');
+            }
+          }
           wireHeaderEvents(regularTable);
           regularTableInitialised = true;
         })
