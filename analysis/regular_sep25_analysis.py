@@ -7,8 +7,8 @@ in-memory SQLite database and computes a set of KPIs alongside the data
 series needed for charts.
 
 Outputs:
-* analysis/regular_sep25_metrics.json   -- KPI summary and aggregated series
-* analysis/regular_sep25_dashboard.html -- Standalone HTML dashboard with charts
+* analysis/regular_sep25_metrics.json -- KPI summary and aggregated series
+* analysis/index.html                 -- Standalone HTML dashboard with charts
 """
 from __future__ import annotations
 
@@ -642,7 +642,7 @@ def main() -> None:
     metrics_path = output_dir / "regular_sep25_metrics.json"
     metrics_path.write_text(json.dumps({"metrics": metrics, "series": series}, indent=2), encoding="utf-8")
 
-    dashboard_path = output_dir / "regular_sep25_dashboard.html"
+    dashboard_path = output_dir / "index.html"
     render_dashboard(metrics, series, dashboard_path)
 
     print(f"Saved metrics to {metrics_path}")
