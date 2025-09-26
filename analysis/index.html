@@ -530,6 +530,10 @@
     let activeHeaderCell = null;
     let activeColumnIndex = null;
     const headerClickHandlers = new WeakMap();
+    const HEADER_HEIGHT = 44;
+    const ROW_HEIGHT = 36;
+    const MIN_VISIBLE_ROWS = 6;
+    const MAX_VISIBLE_ROWS = 20;
 
     function getStickyOffsetValue() {
       const rawValue = getComputedStyle(document.documentElement).getPropertyValue('--sticky-header-offset');
@@ -538,21 +542,28 @@
     }
 
     function calculateScrollBodyHeight(rowCount) {
-      const normalizedRowCount = rowCount > 0 ? rowCount : 1;
-      const rowHeight = 36;
-      const headerHeight = 44;
-      const minHeight = headerHeight + normalizedRowCount * rowHeight;
-      const availableViewport = window.innerHeight - getStickyOffsetValue() - 96;
-      const usableViewport = Number.isFinite(availableViewport) ? Math.max(availableViewport, minHeight) : minHeight;
-      const desiredHeight = headerHeight + rowCount * rowHeight;
-      return Math.round(Math.min(Math.max(desiredHeight, minHeight), usableViewport));
+      const baselineMinHeight = HEADER_HEIGHT + MIN_VISIBLE_ROWS * ROW_HEIGHT;
+      const viewportHeight = Number.isFinite(window.innerHeight) ? window.innerHeight : baselineMinHeight;
+      const minimumAllowedHeight = Math.min(baselineMinHeight, viewportHeight);
+      const effectiveRowCount = Math.min(Math.max(rowCount, MIN_VISIBLE_ROWS), MAX_VISIBLE_ROWS);
+      const stickyOffset = getStickyOffsetValue() + 96;
+      const availableViewport = Number.isFinite(stickyOffset)
+        ? viewportHeight - stickyOffset
+        : viewportHeight;
+      const usableViewport = Math.max(availableViewport, baselineMinHeight);
+      const desiredHeight = HEADER_HEIGHT + effectiveRowCount * ROW_HEIGHT;
+      const heightWithinViewport = Math.min(desiredHeight, usableViewport, viewportHeight);
+      return Math.round(Math.max(heightWithinViewport, minimumAllowedHeight));
     }
 
     function applyTableHeight(table) {
       if (!table) {
         return;
       }
-      const rowCount = table.rows({ filter: 'applied' }).count();
+      const pageInfo = table.page ? table.page.info() : null;
+      const rowCount = pageInfo && Number.isFinite(pageInfo.length)
+        ? pageInfo.length
+        : table.rows({ page: 'current' }).count();
       const height = calculateScrollBodyHeight(rowCount);
       const container = table.table().container();
       const scrollBody = container.querySelector('.dataTables_scrollBody');
