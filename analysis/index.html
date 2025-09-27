@@ -71,6 +71,99 @@
     .kpi-grid {
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     }
+    #tab-analysis {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+    #tab-analysis .analysis-grid {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      grid-auto-flow: dense;
+      align-items: stretch;
+      gap: 1.25rem;
+      padding-bottom: 2rem;
+    }
+    .analysis-card {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .analysis-card .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+    .analysis-card .card-title {
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin: 0;
+      color: var(--text);
+    }
+    .analysis-card .card-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .analysis-card--wide {
+      grid-column: span 7;
+      min-height: 380px;
+    }
+    .analysis-card--narrow {
+      grid-column: span 5;
+      min-height: 380px;
+    }
+    .analysis-card--half {
+      grid-column: span 6;
+      min-height: 360px;
+    }
+    .analysis-chart {
+      width: 100% !important;
+      height: 320px !important;
+    }
+    .analysis-table {
+      width: 100%;
+      border-collapse: collapse;
+      border-radius: 0.5rem;
+      overflow: hidden;
+      box-shadow: inset 0 0 0 1px rgba(27, 30, 40, 0.08);
+    }
+    .analysis-table thead {
+      background: linear-gradient(180deg, #f7f9ff 0%, #eef1fb 100%);
+    }
+    .analysis-table th,
+    .analysis-table td {
+      padding: 0.65rem 0.75rem;
+      font-size: 0.9rem;
+      border-bottom: 1px solid rgba(27, 30, 40, 0.08);
+    }
+    .analysis-table th {
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .analysis-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+    .analysis-table tbody tr:nth-child(odd) td {
+      background: rgba(226, 231, 244, 0.25);
+    }
+    .analysis-table td.cell-numeric {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+    .analysis-table caption {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      border: 0;
+    }
     .card {
       background: var(--card-bg);
       border-radius: 0.75rem;
@@ -431,6 +524,16 @@
       white-space: nowrap;
       border: 0;
     }
+    @media (max-width: 1280px) {
+      #tab-analysis .analysis-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .analysis-card--wide,
+      .analysis-card--narrow,
+      .analysis-card--half {
+        grid-column: span 1;
+      }
+    }
     @media (max-width: 900px) {
       .tab-nav {
         margin: 1rem 1rem 0.75rem;
@@ -493,36 +596,54 @@
       </article>
 
     </section>
-    <section class="grid">
-      <div class="card">
-        <h2 style="margin-top:0">Revenue &amp; Profit Trend</h2>
-        <canvas id="daily-chart"></canvas>
+    <section class="grid analysis-grid">
+      <div class="card analysis-card analysis-card--wide">
+        <div class="card-header">
+          <h2 class="card-title">Revenue &amp; Profit Trend</h2>
+        </div>
+        <div class="card-body">
+          <canvas id="daily-chart" class="analysis-chart" height="320"></canvas>
+        </div>
       </div>
-      <div class="card">
-        <h2 style="margin-top:0">Top Categories by Final Net</h2>
-        <canvas id="category-chart"></canvas>
+      <div class="card analysis-card analysis-card--narrow">
+        <div class="card-header">
+          <h2 class="card-title">Top Categories by Final Net</h2>
+        </div>
+        <div class="card-body">
+          <canvas id="category-chart" class="analysis-chart" height="320"></canvas>
+        </div>
       </div>
-      <div class="card">
-        <h2 style="margin-top:0">Store Mix</h2>
-
-      <table>
-        <thead><tr><th>Store</th><th>Revenue</th><th>Final Net</th></tr></thead>
-        <tbody>
-          <tr><td>AMZ REG</td><td>$124,372.92</td><td>$33,852.24</td></tr><tr><td>AMZ FBA</td><td>$102,750.93</td><td>$25,503.26</td></tr><tr><td>Ebay/Walmart/Website</td><td>$45,620.58</td><td>$11,884.15</td></tr><tr><td>AMZ FBA CAN</td><td>$21,932.62</td><td>$5,031.77</td></tr>
-        </tbody>
-      </table>
-
+      <div class="card analysis-card analysis-card--half">
+        <div class="card-header">
+          <h2 class="card-title">Store Mix</h2>
+        </div>
+        <div class="card-body">
+          <table class="analysis-table">
+            <caption>Store mix contribution to revenue and final net</caption>
+            <thead>
+              <tr><th scope="col">Store</th><th scope="col">Revenue</th><th scope="col">Final Net</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>AMZ REG</td><td class="cell-numeric">$124,372.92</td><td class="cell-numeric">$33,852.24</td></tr><tr><td>AMZ FBA</td><td class="cell-numeric">$102,750.93</td><td class="cell-numeric">$25,503.26</td></tr><tr><td>Ebay/Walmart/Website</td><td class="cell-numeric">$45,620.58</td><td class="cell-numeric">$11,884.15</td></tr><tr><td>AMZ FBA CAN</td><td class="cell-numeric">$21,932.62</td><td class="cell-numeric">$5,031.77</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
-      <div class="card">
-        <h2 style="margin-top:0">Top SKUs by Final Net</h2>
-
-      <table>
-        <thead><tr><th>Sku</th><th>Units</th><th>Final Net</th></tr></thead>
-        <tbody>
-          <tr><td>B5</td><td>92.0</td><td>$4,375.72</td></tr><tr><td>FAB-554</td><td>29.0</td><td>$3,459.89</td></tr><tr><td>V4-1824</td><td>82.0</td><td>$1,743.15</td></tr><tr><td>JMT-59</td><td>53.0</td><td>$1,740.86</td></tr><tr><td>V2</td><td>57.0</td><td>$1,713.33</td></tr><tr><td>V4F</td><td>34.0</td><td>$1,652.76</td></tr><tr><td>V2-1824</td><td>76.0</td><td>$1,572.41</td></tr><tr><td>V6</td><td>28.0</td><td>$1,538.79</td></tr><tr><td>B12</td><td>19.0</td><td>$1,352.49</td></tr><tr><td>S9X</td><td>53.0</td><td>$1,339.43</td></tr>
-        </tbody>
-      </table>
-
+      <div class="card analysis-card analysis-card--half">
+        <div class="card-header">
+          <h2 class="card-title">Top SKUs by Final Net</h2>
+        </div>
+        <div class="card-body">
+          <table class="analysis-table">
+            <caption>Top SKUs ranked by final net contribution</caption>
+            <thead>
+              <tr><th scope="col">Sku</th><th scope="col">Units</th><th scope="col">Final Net</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>B5</td><td class="cell-numeric">92.0</td><td class="cell-numeric">$4,375.72</td></tr><tr><td>FAB-554</td><td class="cell-numeric">29.0</td><td class="cell-numeric">$3,459.89</td></tr><tr><td>V4-1824</td><td class="cell-numeric">82.0</td><td class="cell-numeric">$1,743.15</td></tr><tr><td>JMT-59</td><td class="cell-numeric">53.0</td><td class="cell-numeric">$1,740.86</td></tr><tr><td>V2</td><td class="cell-numeric">57.0</td><td class="cell-numeric">$1,713.33</td></tr><tr><td>V4F</td><td class="cell-numeric">34.0</td><td class="cell-numeric">$1,652.76</td></tr><tr><td>V2-1824</td><td class="cell-numeric">76.0</td><td class="cell-numeric">$1,572.41</td></tr><tr><td>V6</td><td class="cell-numeric">28.0</td><td class="cell-numeric">$1,538.79</td></tr><tr><td>B12</td><td class="cell-numeric">19.0</td><td class="cell-numeric">$1,352.49</td></tr><tr><td>S9X</td><td class="cell-numeric">53.0</td><td class="cell-numeric">$1,339.43</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </section>
   </div>
@@ -1156,12 +1277,41 @@
         },
         options: {
           responsive: true,
+          maintainAspectRatio: false,
+          layout: {
+            padding: { left: 12, right: 20, top: 8, bottom: 16 }
+          },
           interaction: { mode: 'index', intersect: false },
           stacked: false,
+          plugins: {
+            legend: {
+              position: 'top',
+              align: 'start',
+              labels: {
+                usePointStyle: true,
+                boxWidth: 10,
+                color: '#4a5168'
+              }
+            },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => `${ctx.dataset.label}: ${fmtCurrency(ctx.parsed.y)}`
+              }
+            }
+          },
           scales: {
-            y: {
+            x: {
+              grid: { display: false },
               ticks: {
-                callback: (value) => fmtCurrency(value)
+                maxRotation: 0,
+                color: '#4a5168'
+              }
+            },
+            y: {
+              grid: { color: 'rgba(20, 90, 252, 0.08)' },
+              ticks: {
+                callback: (value) => fmtCurrency(value),
+                color: '#4a5168'
               }
             }
           }
@@ -1183,9 +1333,31 @@
         },
         options: {
           responsive: true,
+          maintainAspectRatio: false,
+          layout: {
+            padding: { left: 12, right: 20, top: 12, bottom: 16 }
+          },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => fmtCurrency(ctx.parsed.y)
+              }
+            }
+          },
           scales: {
+            x: {
+              grid: { display: false },
+              ticks: {
+                color: '#4a5168'
+              }
+            },
             y: {
-              ticks: { callback: (value) => fmtCurrency(value) }
+              grid: { color: 'rgba(20, 90, 252, 0.08)' },
+              ticks: {
+                callback: (value) => fmtCurrency(value),
+                color: '#4a5168'
+              }
             }
           }
         }
