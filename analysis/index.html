@@ -25,7 +25,10 @@
       margin: 0;
       background: var(--bg);
       color: var(--text);
-      overflow-x: hidden;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
     }
     .tab-nav {
       display: flex;
@@ -55,14 +58,21 @@
     }
     .tab-panel {
       display: none;
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: hidden;
     }
     .tab-panel.active {
-      display: block;
+      display: flex;
+      flex-direction: column;
     }
     .grid {
       display: grid;
       gap: 1rem;
       padding: 0 2rem 1.5rem;
+      flex: 1 1 auto;
+      min-height: 0;
+      grid-auto-rows: minmax(0, 1fr);
     }
     .grid > * {
       min-width: 0;
@@ -75,6 +85,8 @@
       flex-direction: column;
       gap: 1rem;
       overflow: hidden;
+      flex: 1 1 auto;
+      min-height: 0;
     }
     .lo-card__header {
       display: flex;
@@ -122,22 +134,27 @@
     }
     .sub-tab-panel {
       display: none;
+      flex: 1 1 auto;
+      min-height: 0;
     }
     .sub-tab-panel.active {
-      display: block;
+      display: flex;
+      flex-direction: column;
     }
     .lo-table-container {
       position: relative;
       border-radius: 0.75rem;
       overflow-x: auto;
       overflow-y: auto;
-      max-height: min(440px, 60vh);
       border: 1px solid rgba(27, 30, 40, 0.08);
       box-shadow: inset 0 0 0 1px rgba(27, 30, 40, 0.03), 0 12px 30px rgba(15, 23, 42, 0.08);
       background: #fff;
       width: 100%;
       max-width: 100%;
       box-sizing: border-box;
+      flex: 1 1 auto;
+      min-height: 0;
+      padding-bottom: 1.25rem;
     }
     .lo-table {
       width: 100%;
@@ -172,17 +189,23 @@
     .lo-table tbody tr:nth-child(odd) td {
       background: rgba(226, 231, 244, 0.25);
     }
+    .lo-table tfoot {
+      position: sticky;
+      bottom: 0;
+      background: linear-gradient(180deg, #f6f8ff 0%, #e3e8f7 100%);
+      box-shadow: 0 -8px 16px rgba(15, 23, 42, 0.08);
+      z-index: 2;
+    }
     .lo-table tfoot th,
     .lo-table tfoot td {
       position: sticky;
       bottom: 0;
-      background: linear-gradient(180deg, #f6f8ff 0%, #e3e8f7 100%);
+      background: inherit;
       color: var(--text);
       font-weight: 600;
       padding: 0.55rem 0.75rem;
       border-top: 1px solid rgba(27, 30, 40, 0.14);
-      box-shadow: 0 -8px 16px rgba(15, 23, 42, 0.08);
-      z-index: 2;
+      z-index: 3;
     }
     .lo-table tfoot th {
       text-align: left;
@@ -194,11 +217,27 @@
       text-align: right;
       font-variant-numeric: tabular-nums;
     }
+    .lo-table tfoot::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: -16px;
+      height: 16px;
+      pointer-events: none;
+      background: linear-gradient(180deg, rgba(244, 246, 251, 0) 0%, rgba(244, 246, 251, 0.9) 100%);
+    }
     .card {
       background: var(--card-bg);
       border-radius: 0.75rem;
       padding: 1.25rem;
       box-shadow: 0 8px 24px rgba(16, 24, 40, 0.06);
+    }
+    .table-card {
+      display: flex;
+      flex-direction: column;
+      flex: 1 1 auto;
+      min-height: 0;
     }
     .kpi-title {
       color: var(--muted);
@@ -243,6 +282,8 @@
       position: relative;
       overflow: visible;
       padding: 0;
+      flex: 1 1 auto;
+      min-height: 0;
     }
     #tab-regular .table-card {
       background: transparent;
@@ -341,6 +382,9 @@
     #regular-table_wrapper {
       padding-right: 0.5rem;
       padding-bottom: 0.5rem;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
     }
     #regular-table_wrapper .dataTables_scroll {
       border: 1px solid rgba(64, 80, 120, 0.18);
@@ -370,6 +414,7 @@
       overflow-y: auto !important;
       overflow-x: auto !important;
       flex: 1 1 auto;
+      min-height: 0;
     }
     #regular-table_wrapper .dataTables_scrollBody table {
       border-collapse: separate;
@@ -677,7 +722,6 @@
     let regularTableInitialised = false;
     let regularTableFooterValues = [];
     let regularTableNumericColumnSet = new Set();
-    let regularTableTotalColumnIndex = -1;
     let datasetCache = null;
     let datasetPromise = null;
     let loTablesInitialised = false;
@@ -688,7 +732,6 @@
     const ZERO_DECIMAL_COLUMNS = new Set(['qty', 'order no', 'plain order no', 'order no.', 'order #']);
     const numberFormatter = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const displayDateFormatter = new Intl.DateTimeFormat('en-US', { day: '2-digit' });
-    const TOTAL_COLUMN_TITLE = 'Grand Total';
     const TOTAL_ROW_LABEL = 'Grand Total';
 
     let columnValueOptions = [];
@@ -702,7 +745,7 @@
     const MIN_VISIBLE_ROWS = 5;
     const TABLE_BOTTOM_MARGIN = 18;
     const REGULAR_TABLE_PAGE_LENGTH = 200;
-    const SHOW_REGULAR_TOTAL_ROW = false;
+    const SHOW_REGULAR_TOTAL_ROW = true;
 
     function fetchDataset() {
       if (datasetCache) {
@@ -763,10 +806,6 @@
     function calculateScrollBodyHeight(rowCount, viewportTopOffset) {
       const baselineMinHeight = HEADER_HEIGHT + MIN_VISIBLE_ROWS * ROW_HEIGHT;
       const viewportHeight = Number.isFinite(window.innerHeight) ? window.innerHeight : baselineMinHeight;
-      const minimumAllowedHeight = Math.min(baselineMinHeight, viewportHeight);
-      const effectiveRowCount = Math.max(rowCount, MIN_VISIBLE_ROWS);
-      const desiredHeight = HEADER_HEIGHT + effectiveRowCount * ROW_HEIGHT;
-
       let availableViewport = viewportHeight;
       if (Number.isFinite(viewportTopOffset)) {
         availableViewport = viewportHeight - viewportTopOffset - TABLE_BOTTOM_MARGIN;
@@ -776,8 +815,16 @@
       }
 
       const usableViewport = Math.max(availableViewport, baselineMinHeight);
+      const rowsToFillViewport = Math.max(
+        MIN_VISIBLE_ROWS,
+        Math.ceil(Math.max(0, usableViewport - HEADER_HEIGHT) / ROW_HEIGHT)
+      );
+      const effectiveRowCount = Math.max(rowCount, rowsToFillViewport);
+      const desiredHeight = HEADER_HEIGHT + effectiveRowCount * ROW_HEIGHT;
       const heightWithinViewport = Math.min(desiredHeight, usableViewport);
-      return Math.round(Math.max(heightWithinViewport, minimumAllowedHeight));
+      const minimumAllowedHeight = Math.min(baselineMinHeight, viewportHeight);
+      const finalHeight = Math.max(heightWithinViewport, minimumAllowedHeight, HEADER_HEIGHT + MIN_VISIBLE_ROWS * ROW_HEIGHT);
+      return Math.round(finalHeight);
     }
 
     function syncHeaderColumnWidths(table) {
@@ -967,7 +1014,6 @@
           cell.classList.toggle('cell-total-label', isLabelCell);
           cell.classList.toggle('cell-total', !isLabelCell);
           cell.classList.toggle('cell-numeric', isNumeric && !isLabelCell);
-          cell.classList.toggle('cell-total-column', index === regularTableTotalColumnIndex);
           if (isLabelCell) {
             cell.style.textAlign = 'left';
           } else if (isNumeric) {
@@ -1281,23 +1327,15 @@
     function wireHeaderEvents(table) {
       const container = table.table().container();
       const headerCells = Array.from(container.querySelectorAll('thead th'));
-      const totalColumnIndex = regularTableTotalColumnIndex;
 
       headerCells.forEach((cell, index) => {
         if (!cell.dataset.columnIndex) {
           cell.dataset.columnIndex = String(index);
         }
-        const isTotalColumn = totalColumnIndex >= 0 && index === totalColumnIndex;
-        if (isTotalColumn) {
-          cell.classList.remove('is-filterable');
-          cell.classList.add('is-static');
-          cell.style.cursor = 'default';
-          cell.setAttribute('aria-disabled', 'true');
-        } else {
-          cell.classList.add('is-filterable');
-          cell.style.cursor = '';
-          cell.removeAttribute('aria-disabled');
-        }
+        cell.classList.add('is-filterable');
+        cell.classList.remove('is-static');
+        cell.style.cursor = '';
+        cell.removeAttribute('aria-disabled');
       });
 
       $(headerCells).off('click.DT keypress.DT');
@@ -1436,23 +1474,20 @@
 
       const augmentedRows = dataset.rows.map((row) => {
         const newRow = row.slice();
-        let rowTotal = 0;
         numericColumnIndices.forEach((columnIndex) => {
           const numericValue = parseNumericValue(row[columnIndex]);
           if (numericValue === null) {
             return;
           }
-          rowTotal += numericValue;
           totalsByColumn.set(columnIndex, (totalsByColumn.get(columnIndex) ?? 0) + numericValue);
         });
-        newRow.push(rowTotal);
         return newRow;
       });
 
-      const totalColumnIndex = baseColumns.length;
-      const augmentedColumns = baseColumns.concat(TOTAL_COLUMN_TITLE);
-      const totalsRow = new Array(augmentedColumns.length).fill('');
-      totalsRow[0] = TOTAL_ROW_LABEL;
+      const totalsRow = new Array(baseColumns.length).fill('');
+      if (totalsRow.length > 0) {
+        totalsRow[0] = TOTAL_ROW_LABEL;
+      }
 
       numericColumnIndices.forEach((columnIndex) => {
         const total = totalsByColumn.get(columnIndex);
@@ -1463,20 +1498,12 @@
         }
       });
 
-      const grandTotal = augmentedRows.reduce((accumulator, row) => {
-        const value = parseNumericValue(row[totalColumnIndex]);
-        return accumulator + (value ?? 0);
-      }, 0);
-      totalsRow[totalColumnIndex] = grandTotal;
-
-      const augmentedNumericColumnIndices = numericColumnIndices.concat(totalColumnIndex);
-
       return {
-        columns: augmentedColumns,
+        columns: baseColumns,
         rows: augmentedRows,
         totalsRow,
-        numericColumnIndices: augmentedNumericColumnIndices,
-        totalColumnIndex,
+        numericColumnIndices,
+        totalColumnIndex: -1,
       };
     }
 
@@ -1774,7 +1801,6 @@
           const productColumnIndex = augmentedDataset.columns.indexOf('Product');
           const quantityColumnIndex = augmentedDataset.columns.findIndex((column) => column && column.trim().toLowerCase() === 'qty');
           const numericColumnIndices = augmentedDataset.numericColumnIndices;
-          const totalColumnIndex = augmentedDataset.totalColumnIndex;
 
           regularTableFooterValues = SHOW_REGULAR_TOTAL_ROW
             ? buildFormattedFooterValues(augmentedDataset)
@@ -1782,7 +1808,6 @@
           regularTableNumericColumnSet = SHOW_REGULAR_TOTAL_ROW
             ? new Set(numericColumnIndices)
             : new Set();
-          regularTableTotalColumnIndex = SHOW_REGULAR_TOTAL_ROW ? totalColumnIndex : -1;
 
           if (SHOW_REGULAR_TOTAL_ROW) {
             const tableElement = document.getElementById('regular-table');
@@ -1805,9 +1830,6 @@
           addColumnClass(productColumnIndex, 'cell-product');
           addColumnClass(quantityColumnIndex, 'cell-qty');
           numericColumnIndices.forEach((columnIndex) => addColumnClass(columnIndex, 'cell-numeric'));
-          if (totalColumnIndex >= 0) {
-            addColumnClass(totalColumnIndex, 'cell-total-column');
-          }
 
           const columnDefs = Array.from(columnClassMap.entries()).map(([columnIndex, classSet]) => ({
             targets: Number(columnIndex),
