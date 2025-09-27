@@ -141,6 +141,10 @@
       display: flex;
       flex-direction: column;
     }
+    .lo-card {
+      min-height: calc(100vh - var(--sticky-header-offset) - 2.75rem);
+    }
+
     .lo-table-container {
       position: relative;
       border-radius: 0.75rem;
@@ -154,7 +158,8 @@
       box-sizing: border-box;
       flex: 1 1 auto;
       min-height: 0;
-      padding-bottom: 1.25rem;
+      padding-bottom: 0;
+      scroll-padding-bottom: 96px;
     }
     .lo-table {
       width: 100%;
@@ -745,6 +750,8 @@
     const ROW_HEIGHT = 34;
     const MIN_VISIBLE_ROWS = 5;
     const TABLE_BOTTOM_MARGIN = 18;
+    const LO_TABLE_BOTTOM_MARGIN = 24;
+    const MIN_LO_TABLE_HEIGHT = 320;
     const REGULAR_TABLE_PAGE_LENGTH = 200;
     const SHOW_REGULAR_TOTAL_ROW = true;
 
@@ -826,6 +833,38 @@
       const minimumAllowedHeight = Math.min(baselineMinHeight, viewportHeight);
       const finalHeight = Math.max(heightWithinViewport, minimumAllowedHeight, HEADER_HEIGHT + MIN_VISIBLE_ROWS * ROW_HEIGHT);
       return Math.round(finalHeight);
+    }
+
+    function resizeLoTableContainers() {
+      const containers = document.querySelectorAll('.lo-table-container');
+      if (!containers.length) {
+        return;
+      }
+
+      const viewportHeight = Number.isFinite(window.innerHeight) ? window.innerHeight : null;
+      containers.forEach((container) => {
+        if (!(container instanceof HTMLElement)) {
+          return;
+        }
+        const rect = container.getBoundingClientRect();
+        if (!rect) {
+          return;
+        }
+
+        const topOffset = Number.isFinite(rect.top) ? rect.top : null;
+        let availableHeight = viewportHeight;
+        if (Number.isFinite(viewportHeight) && Number.isFinite(topOffset)) {
+          availableHeight = viewportHeight - topOffset - LO_TABLE_BOTTOM_MARGIN;
+        }
+
+        if (!Number.isFinite(availableHeight)) {
+          availableHeight = MIN_LO_TABLE_HEIGHT;
+        }
+
+        const finalHeight = Math.max(Math.floor(availableHeight), MIN_LO_TABLE_HEIGHT);
+        container.style.height = `${finalHeight}px`;
+        container.style.maxHeight = `${finalHeight}px`;
+      });
     }
 
     function syncHeaderColumnWidths(table) {
@@ -1077,6 +1116,7 @@
             .catch((error) => {
               renderLoMessage(error.message || 'Unable to load data');
             });
+          requestAnimationFrame(() => resizeLoTableContainers());
         }
       }
     }
@@ -1099,6 +1139,7 @@
         panel.classList.toggle('active', isActive);
         panel.setAttribute('aria-hidden', String(!isActive));
       });
+      requestAnimationFrame(() => resizeLoTableContainers());
     }
 
     subTabButtons.forEach((button) => {
@@ -1122,6 +1163,7 @@
     updateStickyOffset();
     window.addEventListener('resize', () => {
       updateStickyOffset();
+      resizeLoTableContainers();
       if (regularTableInitialised && regularTable) {
         applyTableHeight(regularTable);
       }
@@ -1771,6 +1813,7 @@
       if (spendTable) {
         spendTable.innerHTML = markup;
       }
+      requestAnimationFrame(() => resizeLoTableContainers());
     }
 
     function initializeLoTables(dataset) {
@@ -1781,6 +1824,7 @@
       const spendTable = document.getElementById('lo-spend-table');
       const salesPivot = buildLoPivot(dataset, 'total revenue');
       renderLoTable(salesTable, salesPivot);
+      requestAnimationFrame(() => resizeLoTableContainers());
       if (spendTable) {
         const loadingColumns = Math.max(1, (salesPivot?.loList?.length ?? 0) + 1);
         spendTable.innerHTML = `<tbody><tr><td class="cell-date" colspan="${loadingColumns}">Loading…</td></tr></tbody>`;
@@ -1789,6 +1833,7 @@
         .then((pivotData) => {
           const alignedPivot = alignPivotToReference(pivotData, salesPivot);
           renderLoTable(spendTable, alignedPivot);
+          requestAnimationFrame(() => resizeLoTableContainers());
         })
         .catch((error) => {
           if (!spendTable) {
@@ -1797,6 +1842,7 @@
           const baseColumnCount = Array.isArray(salesPivot?.loList) ? salesPivot.loList.length + 1 : 1;
           const message = escapeHtml(error.message || 'Unable to load spend pivot');
           spendTable.innerHTML = `<tbody><tr><td class="cell-date" colspan="${baseColumnCount}">${message}</td></tr></tbody>`;
+          requestAnimationFrame(() => resizeLoTableContainers());
         });
       loTablesInitialised = true;
     }
