@@ -71,6 +71,13 @@ def excel_serial_to_date(value) -> Optional[str]:
     return (EXCEL_EPOCH + timedelta(days=days)).date().isoformat()
 
 
+def column_letters_to_index(value: str) -> int:
+    result = 0
+    for char in value:
+        result = result * 26 + (ord(char) - 64)
+    return result - 1
+
+
 COLUMN_SPECS: Sequence[ColumnSpec] = [
     ColumnSpec("ORDER NO", "order_no", "TEXT", clean_text),
     ColumnSpec("Plain Order No", "plain_order_no", "TEXT", clean_text),
@@ -262,6 +269,92 @@ def parse_sheet(path: Path, sheet_rel_path: str = "xl/worksheets/sheet13.xml") -
         raise ValueError("Failed to locate header row with 'ORDER NO'.")
 
     return header_unique, rows
+
+
+def extract_lo_spend_pivot(path: Path, sheet_rel_path: str = "xl/worksheets/sheet9.xml") -> Dict[str, object]:
+    with zipfile.ZipFile(path) as archive:
+        shared_strings: List[str] = []
+        if "xl/sharedStrings.xml" in archive.namelist():
+            root = ET.fromstring(archive.read("xl/sharedStrings.xml"))
+            for si in root:
+                text = "".join(t.text or "" for t in si.iter() if t.tag.endswith("}t"))
+                shared_strings.append(text)
+        sheet_root = ET.fromstring(archive.read(sheet_rel_path))
+
+    ns = {"ns": "http://schemas.openxmlformats.org/spreadsheetml/2006/main"}
+    rows: List[Dict[str, object]] = []
+    for row in sheet_root.findall("ns:sheetData/ns:row", ns):
+        row_data: Dict[str, object] = {}
+        for cell in row.findall("ns:c", ns):
+            ref = cell.attrib.get("r")
+            if not ref:
+                continue
+            match = re.match(r"([A-Z]+)(\d+)", ref)
+            if not match:
+                continue
+            column_letters = match.group(1)
+            cell_type = cell.attrib.get("t")
+            value: Optional[object] = None
+            text_value = None
+            node = cell.find("ns:v", ns)
+            if node is not None:
+                text_value = node.text
+            if cell_type == "s" and text_value is not None:
+                try:
+                    value = shared_strings[int(text_value)]
+                except (ValueError, IndexError):
+                    value = None
+            elif text_value is not None:
+                try:
+                    value = float(text_value)
+                except (TypeError, ValueError):
+                    value = text_value
+            else:
+                inline = cell.find("ns:is/ns:t", ns)
+                value = inline.text if inline is not None else None
+            row_data[column_letters] = value
+        rows.append(row_data)
+
+    if len(rows) <= 4:
+        return {"loList": [], "rows": []}
+
+    header_row = rows[3]
+    owner_columns: List[Tuple[str, str]] = []
+    start_index = column_letters_to_index("AA")
+    for column_letters, raw_label in header_row.items():
+        index = column_letters_to_index(column_letters)
+        if index < start_index:
+            continue
+        if not isinstance(raw_label, str):
+            continue
+        label = raw_label.strip()
+        if not label or label.lower() in {"row labels", "grand total"} or label == "(blank)":
+            continue
+        owner_columns.append((column_letters, label))
+
+    owner_columns.sort(key=lambda item: column_letters_to_index(item[0]))
+    owner_labels = [label for _, label in owner_columns]
+
+    rows_data: List[Dict[str, object]] = []
+    for row in rows[4:]:
+        pivot_key = row.get("Y")
+        if isinstance(pivot_key, str) and pivot_key.strip().lower() == "grand total":
+            break
+        pivot_numeric = clean_numeric(pivot_key)
+        if pivot_numeric is None:
+            continue
+        iso_date = excel_serial_to_date(pivot_numeric)
+        if not iso_date:
+            continue
+        display_date = iso_date.split("-")[-1]
+        formatted_values: List[str] = []
+        for column_letters, _ in owner_columns:
+            raw_value = row.get(column_letters)
+            numeric_value = clean_numeric(raw_value) or 0.0
+            formatted_values.append(f"{numeric_value:,.2f}")
+        rows_data.append({"displayDate": display_date, "formattedValues": formatted_values})
+
+    return {"loList": owner_labels, "rows": rows_data}
 
 
 def build_sqlite(records: Iterable[Dict[str, object]]) -> sqlite3.Connection:
@@ -641,6 +734,15 @@ def main() -> None:
     output_dir = Path(__file__).resolve().parent
     metrics_path = output_dir / "regular_sep25_metrics.json"
     metrics_path.write_text(json.dumps({"metrics": metrics, "series": series}, indent=2), encoding="utf-8")
+
+    spend_pivot_path = output_dir / "lo_spend_pivot.json"
+    try:
+        spend_pivot = extract_lo_spend_pivot(workbook_path)
+    except Exception as exc:  # pylint: disable=broad-except
+        print(f"Failed to extract LO spend pivot: {exc}")
+    else:
+        spend_pivot_path.write_text(json.dumps(spend_pivot, indent=2), encoding="utf-8")
+        print(f"Saved LO spend pivot to {spend_pivot_path}")
 
     dashboard_path = output_dir / "index.html"
     render_dashboard(metrics, series, dashboard_path)
