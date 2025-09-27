@@ -127,7 +127,9 @@
     }
     .lo-table-container {
       border-radius: 0.75rem;
-      overflow: hidden;
+      overflow-x: auto;
+      overflow-y: auto;
+      max-height: 360px;
       border: 1px solid rgba(27, 30, 40, 0.08);
       box-shadow: inset 0 0 0 1px rgba(27, 30, 40, 0.03), 0 12px 30px rgba(15, 23, 42, 0.08);
       background: #fff;
@@ -150,7 +152,7 @@
       text-align: left;
     }
     .lo-table tbody td {
-      padding: 0.55rem 0.75rem;
+      padding: 0.35rem 0.75rem;
       border-top: 1px solid rgba(27, 30, 40, 0.08);
       text-align: right;
       font-variant-numeric: tabular-nums;
@@ -551,7 +553,6 @@
       <article class="card lo-card">
         <header class="lo-card__header">
           <h2 class="lo-card__title">Listing Owner performance</h2>
-          <p class="lo-card__subtitle">Daily breakdown of sales and ad spend by listing owner.</p>
         </header>
         <nav class="sub-tab-nav" aria-label="Listing owner metrics">
           <button class="sub-tab-button active" id="lo-sales-button" type="button" data-subtab="sales" aria-controls="lo-sales-panel" aria-selected="true">Sales</button>
@@ -594,7 +595,7 @@
     const NUMERIC_COLUMN_EXCLUSIONS = new Set(['ORDER NO', 'PLAIN ORDER NO', 'ORDER #', 'ORDER NO.', 'CHECKOUT']);
     const ZERO_DECIMAL_COLUMNS = new Set(['qty', 'order no', 'plain order no', 'order no.', 'order #']);
     const numberFormatter = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    const displayDateFormatter = new Intl.DateTimeFormat('en-US', { day: '2-digit', month: 'short', year: 'numeric' });
+    const displayDateFormatter = new Intl.DateTimeFormat('en-US', { day: '2-digit' });
 
     let columnValueOptions = [];
     let columnFilters = {};
@@ -1178,15 +1179,22 @@
       return numberFormatter.format(numeric);
     }
 
-    function buildLoPivot(dataset, targetColumnName) {
+    function buildLoPivot(dataset, targetColumnName, options = {}) {
+      const { normalizedOrder = null, displayNameOverrides = null } = options;
       const checkoutIndex = findColumnIndex(dataset, 'checkout');
       const ownerIndex = findColumnIndex(dataset, 'listing owner');
       const valueIndex = findColumnIndex(dataset, targetColumnName);
       if (checkoutIndex < 0 || ownerIndex < 0 || valueIndex < 0) {
-        return { loList: [], rows: [] };
+        return { loList: [], rows: [], order: [], displayNames: new Map() };
       }
 
-      const listingOwners = new Set();
+      const normalizedDisplayOverrides = displayNameOverrides instanceof Map
+        ? displayNameOverrides
+        : (displayNameOverrides && typeof displayNameOverrides === 'object'
+          ? new Map(Object.entries(displayNameOverrides))
+          : new Map());
+      const listingOwners = new Map();
+      const ownerTotals = new Map();
       const dateMap = new Map();
 
       dataset.rows.forEach((row) => {
@@ -1205,29 +1213,63 @@
           owner = String(ownerRaw).trim();
         }
         const ownerName = owner || 'Unassigned';
+        const normalizedOwner = ownerName.toLocaleLowerCase();
+        const displayName = normalizedDisplayOverrides.get(normalizedOwner) ?? ownerName;
 
         const rawValue = row[valueIndex];
         const numericValue = parseNumericValue(rawValue);
         const value = numericValue === null ? 0 : numericValue;
 
-        listingOwners.add(ownerName);
+        if (!listingOwners.has(normalizedOwner)) {
+          listingOwners.set(normalizedOwner, displayName);
+        }
+        ownerTotals.set(normalizedOwner, (ownerTotals.get(normalizedOwner) ?? 0) + value);
         if (!dateMap.has(isoKey)) {
           dateMap.set(isoKey, { date, values: new Map() });
         }
         const entry = dateMap.get(isoKey);
-        entry.values.set(ownerName, (entry.values.get(ownerName) ?? 0) + value);
+        entry.values.set(normalizedOwner, (entry.values.get(normalizedOwner) ?? 0) + value);
       });
 
-      const loList = Array.from(listingOwners).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+      let ownerOrder;
+      if (Array.isArray(normalizedOrder) && normalizedOrder.length) {
+        const orderSet = new Set();
+        ownerOrder = normalizedOrder.filter((key) => {
+          if (!listingOwners.has(key) || orderSet.has(key)) {
+            return false;
+          }
+          orderSet.add(key);
+          return true;
+        });
+        const remainingOwners = Array.from(listingOwners.keys()).filter((key) => !orderSet.has(key));
+        remainingOwners.sort((a, b) => {
+          const totalDiff = (ownerTotals.get(b) ?? 0) - (ownerTotals.get(a) ?? 0);
+          if (Math.abs(totalDiff) > Number.EPSILON) {
+            return totalDiff;
+          }
+          return listingOwners.get(a).localeCompare(listingOwners.get(b), undefined, { sensitivity: 'base' });
+        });
+        ownerOrder = ownerOrder.concat(remainingOwners);
+      } else {
+        ownerOrder = Array.from(listingOwners.keys()).sort((a, b) => {
+          const totalDiff = (ownerTotals.get(b) ?? 0) - (ownerTotals.get(a) ?? 0);
+          if (Math.abs(totalDiff) > Number.EPSILON) {
+            return totalDiff;
+          }
+          return listingOwners.get(a).localeCompare(listingOwners.get(b), undefined, { sensitivity: 'base' });
+        });
+      }
+
+      const loList = ownerOrder.map((key) => listingOwners.get(key));
       const rows = Array.from(dateMap.values())
         .sort((a, b) => a.date - b.date)
         .map(({ date, values }) => {
           const displayDate = displayDateFormatter.format(date);
-          const formattedValues = loList.map((owner) => formatTwoDecimal(values.get(owner) ?? 0));
+          const formattedValues = ownerOrder.map((ownerKey) => formatTwoDecimal(values.get(ownerKey) ?? 0));
           return { displayDate, formattedValues };
         });
 
-      return { loList, rows };
+      return { loList, rows, order: ownerOrder, displayNames: new Map(listingOwners) };
     }
 
     function renderLoTable(tableElement, pivotData) {
@@ -1280,7 +1322,7 @@
       const salesTable = document.getElementById('lo-sales-table');
       const spendTable = document.getElementById('lo-spend-table');
       const salesPivot = buildLoPivot(dataset, 'total revenue');
-      const spendPivot = buildLoPivot(dataset, 'ad spend');
+      const spendPivot = buildLoPivot(dataset, 'ad spend', { normalizedOrder: salesPivot.order, displayNameOverrides: salesPivot.displayNames });
       renderLoTable(salesTable, salesPivot);
       renderLoTable(spendTable, spendPivot);
       loTablesInitialised = true;
