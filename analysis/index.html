@@ -149,8 +149,6 @@
     .lo-table-container {
       position: relative;
       border-radius: 0.75rem;
-      overflow-x: auto;
-      overflow-y: auto;
       border: 1px solid rgba(27, 30, 40, 0.08);
       box-shadow: inset 0 0 0 1px rgba(27, 30, 40, 0.03), 0 12px 30px rgba(15, 23, 42, 0.08);
       background: #fff;
@@ -160,8 +158,19 @@
       flex: 1 1 auto;
       min-height: 0;
       padding-bottom: 0;
+      display: flex;
+      overflow: hidden;
+    }
+
+    .lo-table-scroll {
+      flex: 1 1 auto;
+      min-height: 0;
+      width: 100%;
+      height: 100%;
+      overflow-x: auto;
+      overflow-y: auto;
+      border-radius: inherit;
       scroll-padding-bottom: 96px;
-      display: block;
       -webkit-overflow-scrolling: touch;
       overscroll-behavior: contain;
     }
@@ -795,12 +804,16 @@
         </nav>
         <div class="sub-tab-panel active" id="lo-sales-panel" data-subtab="sales" role="region" aria-labelledby="lo-sales-button">
           <div class="table-container lo-table-container">
-            <table id="lo-sales-table" class="lo-table"></table>
+            <div class="lo-table-scroll">
+              <table id="lo-sales-table" class="lo-table"></table>
+            </div>
           </div>
         </div>
         <div class="sub-tab-panel" id="lo-spend-panel" data-subtab="spend" role="region" aria-labelledby="lo-spend-button" aria-hidden="true">
           <div class="table-container lo-table-container">
-            <table id="lo-spend-table" class="lo-table"></table>
+            <div class="lo-table-scroll">
+              <table id="lo-spend-table" class="lo-table"></table>
+            </div>
           </div>
         </div>
       </article>
@@ -838,7 +851,7 @@
     const NUMERIC_COLUMN_EXCLUSIONS = new Set(['ORDER NO', 'PLAIN ORDER NO', 'ORDER #', 'ORDER NO.', 'CHECKOUT']);
     const ZERO_DECIMAL_COLUMNS = new Set(['qty', 'order no', 'plain order no', 'order no.', 'order #']);
     const numberFormatter = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    const displayDateFormatter = new Intl.DateTimeFormat('en-US', { month: 'short', day: '2-digit' });
+    const displayDateFormatter = new Intl.DateTimeFormat('en-US', { month: '2-digit', day: '2-digit' });
     const TOTAL_ROW_LABEL = 'Grand Total';
 
     let columnValueOptions = [];
@@ -1883,15 +1896,21 @@
       });
 
       const loList = orderedKeys.map((key) => labelMap.get(key) ?? '');
+      const totalsAccumulator = new Array(orderedKeys.length).fill(0);
+
       const rows = pivotData.rows.map((row) => {
         const displayDate = typeof row.displayDate === 'string' ? row.displayDate : '';
         const formattedValuesSource = Array.isArray(row.formattedValues) ? row.formattedValues : [];
-        const formattedValues = orderedKeys.map((key) => {
+        const formattedValues = orderedKeys.map((key, targetIndex) => {
           const columnIndex = columnIndexMap.get(key);
           if (typeof columnIndex !== 'number') {
             return '0.00';
           }
           const value = formattedValuesSource[columnIndex];
+          const numericValue = parseNumericValue(value);
+          if (numericValue !== null) {
+            totalsAccumulator[targetIndex] += numericValue;
+          }
           if (typeof value === 'string') {
             return value;
           }
@@ -1904,19 +1923,25 @@
       });
 
       const totalsSource = Array.isArray(pivotData.totals) ? pivotData.totals : [];
-      const totals = orderedKeys.map((key) => {
+      const totals = orderedKeys.map((key, targetIndex) => {
         const columnIndex = columnIndexMap.get(key);
         if (typeof columnIndex !== 'number') {
-          return '0.00';
+          const computedFallback = totalsAccumulator[targetIndex] ?? 0;
+          return formatTwoDecimal(computedFallback);
         }
         const value = totalsSource[columnIndex];
+        const numericValue = parseNumericValue(value);
+        if (numericValue !== null) {
+          return formatTwoDecimal(numericValue);
+        }
         if (typeof value === 'string') {
-          return value;
+          const trimmed = value.trim();
+          if (trimmed.length) {
+            return trimmed;
+          }
         }
-        if (typeof value === 'number' && Number.isFinite(value)) {
-          return value.toFixed(2);
-        }
-        return '0.00';
+        const computedFallback = totalsAccumulator[targetIndex] ?? 0;
+        return formatTwoDecimal(computedFallback);
       });
 
       return { loList, rows, totals };
