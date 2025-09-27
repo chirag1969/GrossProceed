@@ -970,7 +970,35 @@
       });
     }
 
-    function ensureTableFooter(tableElement, columnCount) {
+    function applyFooterValuesToCells(cells, values, numericColumnSet) {
+      if (!cells || !values || values.length === 0) {
+        return;
+      }
+      values.forEach((value, index) => {
+        const cell = cells[index];
+        if (!cell) {
+          return;
+        }
+        const displayValue = value ?? '';
+        const isLabelCell = index === 0;
+        const isNumeric = numericColumnSet.has(index);
+        const isTotalColumn = totalColumnIndex >= 0 && index === totalColumnIndex;
+        cell.textContent = displayValue;
+        cell.classList.toggle('cell-total-label', isLabelCell);
+        cell.classList.toggle('cell-total', !isLabelCell);
+        cell.classList.toggle('cell-numeric', isNumeric && !isLabelCell);
+        cell.classList.toggle('cell-total-column', isTotalColumn);
+        if (isLabelCell) {
+          cell.style.textAlign = 'left';
+        } else if (isNumeric) {
+          cell.style.textAlign = 'right';
+        } else {
+          cell.style.textAlign = 'left';
+        }
+      });
+    }
+
+    function ensureTableFooter(tableElement, columnCount, values = [], numericColumnSet = new Set()) {
       if (!tableElement) {
         return;
       }
@@ -985,6 +1013,10 @@
       }
       tfoot.appendChild(row);
       tableElement.appendChild(tfoot);
+      if (values.length === columnCount) {
+        const cells = tfoot.querySelectorAll('th');
+        applyFooterValuesToCells(cells, values, numericColumnSet);
+      }
     }
 
     function renderFooterRow(table) {
@@ -1003,26 +1035,7 @@
       }
       footerTables.forEach((footerTable) => {
         const cells = footerTable.querySelectorAll('th');
-        regularTableFooterValues.forEach((value, index) => {
-          const cell = cells[index];
-          if (!cell) {
-            return;
-          }
-          const displayValue = value ?? '';
-          const isLabelCell = index === 0;
-          const isNumeric = regularTableNumericColumnSet.has(index);
-          cell.textContent = displayValue;
-          cell.classList.toggle('cell-total-label', isLabelCell);
-          cell.classList.toggle('cell-total', !isLabelCell);
-          cell.classList.toggle('cell-numeric', isNumeric && !isLabelCell);
-          if (isLabelCell) {
-            cell.style.textAlign = 'left';
-          } else if (isNumeric) {
-            cell.style.textAlign = 'right';
-          } else {
-            cell.style.textAlign = 'left';
-          }
-        });
+        applyFooterValuesToCells(cells, regularTableFooterValues, regularTableNumericColumnSet);
       });
       adjustScrollBodyPadding(table);
     }
@@ -1814,7 +1827,12 @@
           if (SHOW_REGULAR_TOTAL_ROW) {
             const tableElement = document.getElementById('regular-table');
             if (tableElement) {
-              ensureTableFooter(tableElement, augmentedDataset.columns.length);
+              ensureTableFooter(
+                tableElement,
+                augmentedDataset.columns.length,
+                regularTableFooterValues,
+                regularTableNumericColumnSet
+              );
             }
           }
 
