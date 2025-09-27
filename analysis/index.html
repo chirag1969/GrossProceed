@@ -736,6 +736,7 @@
 
     let columnValueOptions = [];
     let columnFilters = {};
+    let totalColumnIndex = -1;
     let headerMenuElement;
     let activeHeaderCell = null;
     let activeColumnIndex = null;
@@ -1796,6 +1797,7 @@
           updateStickyOffset();
 
           const augmentedDataset = augmentDatasetWithTotals(dataset);
+          totalColumnIndex = augmentedDataset.totalColumnIndex;
           const columns = augmentedDataset.columns.map((title) => ({ title }));
           const formattedRows = augmentedDataset.rows.map((row) => row.map((value, index) => formatCellValue(value, augmentedDataset.columns[index])));
           const productColumnIndex = augmentedDataset.columns.indexOf('Product');
