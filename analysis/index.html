@@ -149,8 +149,6 @@
     .lo-table-container {
       position: relative;
       border-radius: 0.75rem;
-      overflow-x: auto;
-      overflow-y: auto;
       border: 1px solid rgba(27, 30, 40, 0.08);
       box-shadow: inset 0 0 0 1px rgba(27, 30, 40, 0.03), 0 12px 30px rgba(15, 23, 42, 0.08);
       background: #fff;
@@ -160,8 +158,19 @@
       flex: 1 1 auto;
       min-height: 0;
       padding-bottom: 0;
+      display: flex;
+      overflow: hidden;
+    }
+
+    .lo-table-scroll {
+      flex: 1 1 auto;
+      min-height: 0;
+      width: 100%;
+      height: 100%;
+      overflow-x: auto;
+      overflow-y: auto;
+      border-radius: inherit;
       scroll-padding-bottom: 96px;
-      display: block;
       -webkit-overflow-scrolling: touch;
       overscroll-behavior: contain;
     }
@@ -795,12 +804,16 @@
         </nav>
         <div class="sub-tab-panel active" id="lo-sales-panel" data-subtab="sales" role="region" aria-labelledby="lo-sales-button">
           <div class="table-container lo-table-container">
-            <table id="lo-sales-table" class="lo-table"></table>
+            <div class="lo-table-scroll">
+              <table id="lo-sales-table" class="lo-table"></table>
+            </div>
           </div>
         </div>
         <div class="sub-tab-panel" id="lo-spend-panel" data-subtab="spend" role="region" aria-labelledby="lo-spend-button" aria-hidden="true">
           <div class="table-container lo-table-container">
-            <table id="lo-spend-table" class="lo-table"></table>
+            <div class="lo-table-scroll">
+              <table id="lo-spend-table" class="lo-table"></table>
+            </div>
           </div>
         </div>
       </article>
