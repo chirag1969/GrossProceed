@@ -651,8 +651,8 @@
       font-size: 0.85rem;
       flex-wrap: wrap;
     }
-    .regular-table__footer .dataTables_info {
-      padding-top: 0 !important;
+    .regular-table__footer:empty {
+      display: none;
     }
     .regular-table__footer .dataTables_paginate {
       margin: 0 !important;
@@ -2175,8 +2175,8 @@
             paging: true,
             pageLength: REGULAR_TABLE_PAGE_LENGTH,
             lengthChange: false,
-            info: true,
-            dom: 't<"regular-table__footer"ip>'
+            info: false,
+            dom: 't<"regular-table__footer"p>'
           });
 
           moveRegularTablePagination();
