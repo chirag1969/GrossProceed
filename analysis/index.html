@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,265 +7,1157 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" />
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
   <style>
     :root {
       color-scheme: light;
       --bg: #f4f6fb;
-      --card-bg: #ffffff;
+      --card-bg: #fff;
       --text: #1b1e28;
       --muted: #5f677b;
       --accent: #145afc;
+      --sticky-header-offset: 72px;
       font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      font-size: 12px;
     }
-
-    * {
-      box-sizing: border-box;
-    }
-
     body {
       margin: 0;
-      min-height: 100vh;
       background: var(--bg);
       color: var(--text);
-      line-height: 1.45;
-      display: flex;
-      justify-content: center;
+      overflow-x: hidden;
     }
-
-    main.dashboard {
-      width: min(1200px, 100%);
-      padding: 1.5rem 1.25rem 2rem;
+    .tab-nav {
       display: flex;
-      flex-direction: column;
       gap: 1rem;
+      margin: 1rem 2rem 0.75rem;
+      border-bottom: 1px solid rgba(27, 30, 40, 0.1);
     }
-
-    .kpi-grid {
+    .tab-button {
+      position: relative;
+      padding: 0.65rem 1.5rem;
+      border: none;
+      background: none;
+      font: inherit;
+      color: var(--muted);
+      font-weight: 600;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: color 0.2s ease, border-color 0.2s ease;
+    }
+    .tab-button:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 4px;
+    }
+    .tab-button.active {
+      color: var(--text);
+      border-color: var(--accent);
+    }
+    .tab-panel {
+      display: none;
+    }
+    .tab-panel.active {
+      display: block;
+    }
+    .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-      gap: 0.75rem;
+      gap: 1rem;
+      padding: 0 2rem 1.5rem;
     }
-
+    .grid > * {
+      min-width: 0;
+    }
+    .kpi-grid {
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
     .card {
       background: var(--card-bg);
-      border-radius: 0.85rem;
-      padding: 0.95rem 1rem;
-      box-shadow: 0 18px 40px rgba(16, 24, 40, 0.08);
+      border-radius: 0.75rem;
+      padding: 1.25rem;
+      box-shadow: 0 8px 24px rgba(16, 24, 40, 0.06);
     }
-
-    .kpi-card {
-      display: flex;
-      flex-direction: column;
-      gap: 0.35rem;
-    }
-
     .kpi-title {
       color: var(--muted);
-      font-size: 0.75rem;
+      font-size: 0.9rem;
+      margin-bottom: 0.35rem;
       text-transform: uppercase;
       letter-spacing: 0.08em;
-      font-weight: 600;
     }
-
     .kpi-value {
-      font-size: 1.65rem;
+      font-size: 1.75rem;
       font-weight: 600;
     }
-
-    .chart-grid {
-      display: grid;
-      gap: 0.75rem;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      grid-auto-rows: 1fr;
+    canvas {
+      width: 100% !important;
+      height: auto !important;
     }
-
-    .chart-card {
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 0.5rem;
+    }
+    th, td {
+      text-align: left;
+      padding: 0.5rem 0.75rem;
+      border-right: 1px solid rgba(27, 30, 40, 0.12);
+    }
+    th:first-child,
+    td:first-child {
+      border-left: 1px solid rgba(27, 30, 40, 0.12);
+    }
+    th:last-child,
+    td:last-child {
+      border-right: 1px solid rgba(27, 30, 40, 0.12);
+    }
+    th {
+      color: var(--muted);
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .table-container {
+      position: relative;
+      overflow: hidden;
+      padding: 0;
+    }
+    #tab-regular .table-card {
+      background: transparent;
+      box-shadow: none;
+      padding: 0;
+    }
+    #tab-regular .table-container {
+      padding-right: 0;
+      padding-bottom: 0;
+    }
+    #regular-table {
+      border-collapse: separate;
+      width: 100%;
+    }
+    #regular-table thead th,
+    #regular-table tbody td {
+      text-align: left;
+      padding: 0.3rem 0.65rem;
+      border-right: 1px solid rgba(15, 23, 42, 0.08);
+      line-height: 1.15;
+      box-sizing: border-box;
+    }
+    #regular-table thead th {
+      white-space: normal;
+    }
+    #regular-table tbody td {
+      white-space: nowrap;
+    }
+    #regular-table thead th:first-child,
+    #regular-table tbody td:first-child {
+      border-left: 1px solid rgba(15, 23, 42, 0.08);
+    }
+    #regular-table thead th:last-child,
+    #regular-table tbody td:last-child {
+      border-right: 1px solid rgba(15, 23, 42, 0.08);
+    }
+    #regular-table thead th {
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #000;
+      font-weight: 700;
+      background: linear-gradient(180deg, #f6f8ff 0%, #e3e8f7 100%);
+      border-bottom: 2px solid rgba(70, 97, 145, 0.35);
+    }
+    #regular-table tbody td {
+      font-size: 0.82rem;
+      color: rgba(27, 30, 40, 0.9);
+      font-weight: 500;
+      background: #fff;
+    }
+    #regular-table tbody tr {
+      border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+    }
+    #regular-table tbody tr:nth-child(even) td {
+      background: rgba(226, 231, 244, 0.35);
+    }
+    #regular-table tbody tr:hover td {
+      background: rgba(41, 71, 137, 0.12);
+    }
+    #regular-table thead th.cell-numeric,
+    #regular-table tbody td.cell-numeric {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+    #regular-table tbody td.cell-qty {
+      font-weight: 600;
+    }
+    #regular-table thead th.is-filterable {
+      cursor: pointer;
+      position: relative;
+    }
+    #regular-table thead th.has-filter::after {
+      content: '';
+      position: absolute;
+      top: 0.6rem;
+      right: 0.5rem;
+      width: 0.35rem;
+      height: 0.35rem;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+    #regular-table td.cell-multiline {
+      white-space: normal !important;
+      word-break: break-word;
+      line-height: 1.35;
+    }
+    #regular-table th.cell-product,
+    #regular-table td.cell-product {
+      min-width: 24ch;
+      max-width: 32ch;
+      white-space: nowrap !important;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    #regular-table_wrapper {
+      padding-right: 0.5rem;
+      padding-bottom: 0.5rem;
+    }
+    #regular-table_wrapper .dataTables_scroll {
+      border: 1px solid rgba(64, 80, 120, 0.18);
+      border-radius: 0.85rem;
+      background: #fff;
+      box-shadow: 0 12px 30px rgba(21, 32, 56, 0.12);
+      overflow: hidden;
+    }
+    #regular-table_wrapper .dataTables_scrollHead {
+      position: relative;
+      top: auto;
+      z-index: 5;
+      background: transparent;
+      overflow: hidden;
+      box-shadow: 0 8px 18px rgba(21, 32, 56, 0.12);
+    }
+    #regular-table_wrapper .dataTables_scrollHead table {
+      border-collapse: separate;
+      border-spacing: 0;
+      width: 100% !important;
+    }
+    #regular-table_wrapper .dataTables_scrollBody {
+      border-top: none;
+      overflow-y: auto !important;
+    }
+    #regular-table_wrapper .dataTables_scrollBody table {
+      border-collapse: separate;
+      border-spacing: 0;
+      background: #fff;
+      width: 100% !important;
+    }
+    .regular-table__footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.5rem;
+      padding: 0.75rem 0.5rem 0;
+      color: var(--muted);
+      font-size: 0.85rem;
+      flex-wrap: wrap;
+    }
+    .regular-table__footer .dataTables_info {
+      padding-top: 0 !important;
+    }
+    .regular-table__footer .dataTables_paginate {
+      margin: 0 !important;
+    }
+    #regular-table_wrapper .dataTables_paginate .paginate_button {
+      border-radius: 999px;
+    }
+    table.dataTable thead .sorting,
+    table.dataTable thead .sorting_asc,
+    table.dataTable thead .sorting_desc,
+    table.dataTable thead .sorting_asc_disabled,
+    table.dataTable thead .sorting_desc_disabled {
+      background-image: none !important;
+    }
+    table.dataTable thead > tr > th.sorting::before,
+    table.dataTable thead > tr > th.sorting::after,
+    table.dataTable thead > tr > th.sorting_asc::before,
+    table.dataTable thead > tr > th.sorting_asc::after,
+    table.dataTable thead > tr > th.sorting_desc::before,
+    table.dataTable thead > tr > th.sorting_desc::after,
+    table.dataTable thead > tr > th.sorting_asc_disabled::before,
+    table.dataTable thead > tr > th.sorting_asc_disabled::after,
+    table.dataTable thead > tr > th.sorting_desc_disabled::before,
+    table.dataTable thead > tr > th.sorting_desc_disabled::after {
+      display: none !important;
+    }
+    .header-menu {
+      position: absolute;
+      z-index: 20;
+      min-width: 240px;
+      max-width: 280px;
+      background: var(--card-bg);
+      border-radius: 0.75rem;
+      box-shadow: 0 20px 35px rgba(15, 23, 42, 0.15);
+      border: 1px solid rgba(27, 30, 40, 0.08);
+      padding: 1rem;
+      color: var(--text);
+    }
+    .header-menu.hidden {
+      display: none;
+    }
+    .header-menu__header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 0.75rem;
+    }
+    .header-menu__title {
+      font-size: 0.95rem;
+      margin: 0;
+    }
+    .header-menu__close {
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-size: 1.25rem;
+      cursor: pointer;
+      padding: 0;
+      line-height: 1;
+    }
+    .header-menu__section {
+      margin-bottom: 1rem;
+    }
+    .header-menu__buttons {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .header-menu__button {
+      flex: 1 1 auto;
+      border: 1px solid rgba(27, 30, 40, 0.12);
+      background: #f8f9fe;
+      color: var(--text);
+      border-radius: 999px;
+      padding: 0.4rem 0.8rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: border-color 0.2s ease, background 0.2s ease;
+    }
+    .header-menu__button:hover,
+    .header-menu__button:focus-visible {
+      border-color: var(--accent);
+      background: rgba(20, 90, 252, 0.12);
+      outline: none;
+    }
+    .header-menu__search {
+      width: 100%;
+      border-radius: 0.5rem;
+      border: 1px solid rgba(27, 30, 40, 0.12);
+      padding: 0.45rem 0.6rem;
+      font: inherit;
+    }
+    .header-menu__options {
+      max-height: 200px;
+      overflow-y: auto;
+      border: 1px solid rgba(27, 30, 40, 0.1);
+      border-radius: 0.65rem;
+      padding: 0.5rem;
       display: flex;
       flex-direction: column;
-      gap: 0.75rem;
-      height: 100%;
+      gap: 0.4rem;
     }
-
-    .chart-card h2 {
-      margin: 0;
-      font-size: 1.2rem;
+    .header-menu__options:empty {
+      display: none;
+      border: none;
+      padding: 0;
     }
-
-    .chart-frame {
-      position: relative;
+    .header-menu__empty-message {
+      margin-top: 0.5rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    .header-menu__option {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      color: var(--text);
+    }
+    .header-menu__option input[type="checkbox"] {
+      width: 1rem;
+      height: 1rem;
+      accent-color: var(--accent);
+    }
+    .header-menu__footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+    .header-menu__apply,
+    .header-menu__clear {
       flex: 1;
-      aspect-ratio: 4 / 3;
+      border-radius: 999px;
+      padding: 0.45rem 0.75rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
     }
-
-    .chart-frame canvas {
+    .header-menu__apply {
+      background: var(--accent);
+      color: #fff;
+    }
+    .header-menu__apply:hover,
+    .header-menu__apply:focus-visible {
+      background: #0f46c2;
+      outline: none;
+    }
+    .header-menu__clear {
+      background: rgba(20, 90, 252, 0.12);
+      color: var(--accent);
+      border-color: rgba(20, 90, 252, 0.3);
+    }
+    .header-menu__clear:hover,
+    .header-menu__clear:focus-visible {
+      background: rgba(20, 90, 252, 0.2);
+      outline: none;
+    }
+    .sr-only {
       position: absolute;
-      inset: 0;
-      width: 100% !important;
-      height: 100% !important;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
     }
-
-    @media (max-width: 640px) {
-      main.dashboard {
-        padding: 1.25rem 1rem 1.75rem;
+    @media (max-width: 900px) {
+      .tab-nav {
+        margin: 1rem 1rem 0.75rem;
       }
-
-      .kpi-grid {
-        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      .grid {
+        padding: 0 1rem 1.5rem;
       }
-
-      .chart-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .chart-frame {
-        aspect-ratio: 3 / 2;
+      #regular-table_wrapper .dataTables_scrollHead {
+        top: calc(var(--sticky-header-offset) - 24px);
       }
     }
   </style>
 </head>
 <body>
-  <main class="dashboard">
-    <section class="kpi-grid" aria-label="Key performance indicators">
-      <article class="card kpi-card">
+  <nav class="tab-nav" aria-label="Dashboard views">
+    <button class="tab-button active" id="tab-analysis-button" type="button" data-tab="analysis" aria-controls="tab-analysis" aria-selected="true">Analysis</button>
+    <button class="tab-button" id="tab-regular-button" type="button" data-tab="regular" aria-controls="tab-regular" aria-selected="false">Regular</button>
+  </nav>
+  <div class="tab-panel active" id="tab-analysis" data-tab="analysis" role="tabpanel" aria-labelledby="tab-analysis-button" aria-hidden="false">
+    <section class="grid kpi-grid">
+
+      <article class="card">
+        <div class="kpi-title">Total Orders</div>
+        <div class="kpi-value">3,075</div>
+      </article>
+
+      <article class="card">
         <div class="kpi-title">Total Units</div>
         <div class="kpi-value">3,856</div>
       </article>
-      <article class="card kpi-card">
+
+      <article class="card">
         <div class="kpi-title">Total Revenue</div>
         <div class="kpi-value">$294,677.05</div>
       </article>
-      <article class="card kpi-card">
+
+      <article class="card">
         <div class="kpi-title">Gross Proceed</div>
         <div class="kpi-value">$170,933.70</div>
       </article>
-      <article class="card kpi-card">
+
+      <article class="card">
         <div class="kpi-title">Final Net</div>
         <div class="kpi-value">$76,271.43</div>
       </article>
-      <article class="card kpi-card">
+
+      <article class="card">
         <div class="kpi-title">Ad Spend</div>
         <div class="kpi-value">$17,680.62</div>
       </article>
-      <article class="card kpi-card">
+
+      <article class="card">
         <div class="kpi-title">Average Order Value</div>
         <div class="kpi-value">$95.83</div>
       </article>
-      <article class="card kpi-card">
+
+      <article class="card">
         <div class="kpi-title">Net Margin</div>
         <div class="kpi-value">25.9%</div>
       </article>
-    </section>
 
-    <section class="chart-grid" aria-label="Performance visualisations">
-      <article class="card chart-card">
-        <h2>Revenue &amp; Profit Trend</h2>
-        <div class="chart-frame">
-          <canvas id="daily-chart" aria-label="Daily revenue and final net line chart" role="img"></canvas>
-        </div>
-      </article>
-      <article class="card chart-card">
-        <h2>Top Categories by Final Net</h2>
-        <div class="chart-frame">
-          <canvas id="category-chart" aria-label="Category final net bar chart" role="img"></canvas>
-        </div>
-      </article>
-      <article class="card chart-card">
-        <h2>Store Mix</h2>
-        <div class="chart-frame">
-          <canvas id="store-chart" aria-label="Store revenue and final net comparison" role="img"></canvas>
-        </div>
-      </article>
-      <article class="card chart-card">
-        <h2>Top SKUs by Final Net</h2>
-        <div class="chart-frame">
-          <canvas id="sku-chart" aria-label="Top SKUs ranked by final net" role="img"></canvas>
-        </div>
-      </article>
     </section>
-  </main>
+    <section class="grid">
+      <div class="card">
+        <h2 style="margin-top:0">Revenue &amp; Profit Trend</h2>
+        <canvas id="daily-chart"></canvas>
+      </div>
+      <div class="card">
+        <h2 style="margin-top:0">Top Categories by Final Net</h2>
+        <canvas id="category-chart"></canvas>
+      </div>
+      <div class="card">
+        <h2 style="margin-top:0">Store Mix</h2>
 
+      <table>
+        <thead><tr><th>Store</th><th>Revenue</th><th>Final Net</th></tr></thead>
+        <tbody>
+          <tr><td>AMZ REG</td><td>$124,372.92</td><td>$33,852.24</td></tr><tr><td>AMZ FBA</td><td>$102,750.93</td><td>$25,503.26</td></tr><tr><td>Ebay/Walmart/Website</td><td>$45,620.58</td><td>$11,884.15</td></tr><tr><td>AMZ FBA CAN</td><td>$21,932.62</td><td>$5,031.77</td></tr>
+        </tbody>
+      </table>
+
+      </div>
+      <div class="card">
+        <h2 style="margin-top:0">Top SKUs by Final Net</h2>
+
+      <table>
+        <thead><tr><th>Sku</th><th>Units</th><th>Final Net</th></tr></thead>
+        <tbody>
+          <tr><td>B5</td><td>92.0</td><td>$4,375.72</td></tr><tr><td>FAB-554</td><td>29.0</td><td>$3,459.89</td></tr><tr><td>V4-1824</td><td>82.0</td><td>$1,743.15</td></tr><tr><td>JMT-59</td><td>53.0</td><td>$1,740.86</td></tr><tr><td>V2</td><td>57.0</td><td>$1,713.33</td></tr><tr><td>V4F</td><td>34.0</td><td>$1,652.76</td></tr><tr><td>V2-1824</td><td>76.0</td><td>$1,572.41</td></tr><tr><td>V6</td><td>28.0</td><td>$1,538.79</td></tr><tr><td>B12</td><td>19.0</td><td>$1,352.49</td></tr><tr><td>S9X</td><td>53.0</td><td>$1,339.43</td></tr>
+        </tbody>
+      </table>
+
+      </div>
+    </section>
+  </div>
+  <div class="tab-panel" id="tab-regular" data-tab="regular" role="tabpanel" aria-labelledby="tab-regular-button" aria-hidden="true">
+    <section class="grid">
+      <div class="card table-card">
+        <div class="table-container">
+          <table id="regular-table" class="display" style="width:100%"></table>
+        </div>
+      </div>
+    </section>
+  </div>
   <script>
     const dailySeries = [{"date":"2025-09-01","revenue":3991.5693,"final_net":967.6681849284316},{"date":"2025-09-02","revenue":27004.3933,"final_net":5892.861777578192},{"date":"2025-09-03","revenue":14134.1591,"final_net":3848.7080137782214},{"date":"2025-09-04","revenue":13442.0764,"final_net":3359.390823024803},{"date":"2025-09-05","revenue":11971.5861,"final_net":3618.287882891206},{"date":"2025-09-06","revenue":9740.0052,"final_net":2007.2764533166428},{"date":"2025-09-07","revenue":5705.8661,"final_net":1391.3388444349875},{"date":"2025-09-08","revenue":19917.309,"final_net":5278.163294205369},{"date":"2025-09-09","revenue":16891.3098,"final_net":4104.160668313585},{"date":"2025-09-10","revenue":10983.5059,"final_net":2793.2267988994954},{"date":"2025-09-11","revenue":11534.2453,"final_net":2952.569931535068},{"date":"2025-09-12","revenue":10964.039,"final_net":2845.538930056686},{"date":"2025-09-13","revenue":9547.360700000001,"final_net":2428.2749996529537},{"date":"2025-09-14","revenue":4074.278,"final_net":1013.0330780450196},{"date":"2025-09-15","revenue":19505.498,"final_net":4923.892216865558},{"date":"2025-09-16","revenue":13897.8109,"final_net":3922.1459336448174},{"date":"2025-09-17","revenue":12579.9332,"final_net":3216.836002467571},{"date":"2025-09-18","revenue":14542.710700000001,"final_net":4423.308448747652},{"date":"2025-09-19","revenue":17487.1466,"final_net":5014.889137143346},{"date":"2025-09-20","revenue":8814.6478,"final_net":2244.4181519997564},{"date":"2025-09-21","revenue":4477.4615,"final_net":1095.3186860311882},{"date":"2025-09-22","revenue":17893.8122,"final_net":4893.260047382762},{"date":"2025-09-23","revenue":15576.3226,"final_net":4036.8586775935028}];
-
     const categorySeries = [{"category":"VB","final_net":15140.908496576283},{"category":"FAB","final_net":14584.070977783102},{"category":"CFB","final_net":13558.146840077734},{"category":"RCB","final_net":4736.489908168083},{"category":"JMT","final_net":4668.912872766931},{"category":"PF","final_net":3486.1491063341005},{"category":"GEN","final_net":3349.6331984126987},{"category":"HS","final_net":3252.2734973267548},{"category":"HB","final_net":2622.9348881312512},{"category":"CP","final_net":2139.163595413091}];
 
-    const storeMixSeries = [
-      { store: 'AMZ REG', revenue: 124372.92, final_net: 33852.24 },
-      { store: 'AMZ FBA', revenue: 102750.93, final_net: 25503.26 },
-      { store: 'Ebay/Walmart/Website', revenue: 45620.58, final_net: 11884.15 },
-      { store: 'AMZ FBA CAN', revenue: 21932.62, final_net: 5031.77 }
-    ];
-
-    const topSkuSeries = [
-      { sku: 'B5', final_net: 4375.72 },
-      { sku: 'FAB-554', final_net: 3459.89 },
-      { sku: 'V4-1824', final_net: 1743.15 },
-      { sku: 'JMT-59', final_net: 1740.86 },
-      { sku: 'V2', final_net: 1713.33 },
-      { sku: 'V4F', final_net: 1652.76 },
-      { sku: 'V2-1824', final_net: 1572.41 },
-      { sku: 'V6', final_net: 1538.79 },
-      { sku: 'B12', final_net: 1352.49 },
-      { sku: 'S9X', final_net: 1339.43 }
-    ];
-
     const fmtCurrency = (value) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
+    const fmtPercent = (value) => `${(value * 100).toFixed(1)}%`;
 
-    const formatDateLabel = (isoDate) => {
-      const [year, month, day] = isoDate.split('-');
-      if (!day || !month || !year) {
-        return isoDate;
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabPanels = document.querySelectorAll('.tab-panel');
+    let regularTable;
+    let regularTableInitialised = false;
+    const NUMERIC_COLUMN_EXCLUSIONS = new Set(['ORDER NO', 'PLAIN ORDER NO', 'ORDER #', 'ORDER NO.', 'CHECKOUT']);
+    const ZERO_DECIMAL_COLUMNS = new Set(['qty', 'order no', 'plain order no', 'order no.', 'order #']);
+    let columnValueOptions = [];
+    let columnFilters = {};
+    let headerMenuElement;
+    let activeHeaderCell = null;
+    let activeColumnIndex = null;
+    const headerClickHandlers = new WeakMap();
+    const HEADER_HEIGHT = 44;
+    const ROW_HEIGHT = 34;
+    const MIN_VISIBLE_ROWS = 6;
+    const MAX_VISIBLE_ROWS = 16;
+    const TABLE_BOTTOM_MARGIN = 24;
+    const REGULAR_TABLE_PAGE_LENGTH = 200;
+
+    function getStickyOffsetValue() {
+      const rawValue = getComputedStyle(document.documentElement).getPropertyValue('--sticky-header-offset');
+      const parsed = Number.parseFloat(rawValue);
+      return Number.isFinite(parsed) ? parsed : 0;
+    }
+
+    function calculateScrollBodyHeight(rowCount, viewportTopOffset) {
+      const baselineMinHeight = HEADER_HEIGHT + MIN_VISIBLE_ROWS * ROW_HEIGHT;
+      const viewportHeight = Number.isFinite(window.innerHeight) ? window.innerHeight : baselineMinHeight;
+      const minimumAllowedHeight = Math.min(baselineMinHeight, viewportHeight);
+      const effectiveRowCount = Math.min(Math.max(rowCount, MIN_VISIBLE_ROWS), MAX_VISIBLE_ROWS);
+      const desiredHeight = HEADER_HEIGHT + effectiveRowCount * ROW_HEIGHT;
+
+      let availableViewport = viewportHeight;
+      if (Number.isFinite(viewportTopOffset)) {
+        availableViewport = viewportHeight - viewportTopOffset - TABLE_BOTTOM_MARGIN;
+      } else {
+        const stickyOffset = getStickyOffsetValue() + 96;
+        availableViewport = viewportHeight - stickyOffset;
       }
+
+      const usableViewport = Math.max(availableViewport, baselineMinHeight);
+      const heightWithinViewport = Math.min(desiredHeight, usableViewport, viewportHeight);
+      return Math.round(Math.max(heightWithinViewport, minimumAllowedHeight));
+    }
+
+    function syncHeaderColumnWidths(table) {
+      if (!table) {
+        return;
+      }
+      const container = table.table().container();
+      const scrollHead = container.querySelector('.dataTables_scrollHead');
+      const scrollBody = container.querySelector('.dataTables_scrollBody');
+      const headerTable = scrollHead ? scrollHead.querySelector('table') : null;
+      const bodyTable = scrollBody ? scrollBody.querySelector('table') : null;
+      if (!headerTable || !bodyTable) {
+        return;
+      }
+
+      const columnIndexes = table.columns().indexes().toArray();
+      columnIndexes.forEach((columnIndex) => {
+        const column = table.column(columnIndex);
+        const headerCell = column.header();
+        if (!headerCell) {
+          return;
+        }
+
+        const bodyCells = column.nodes().toArray();
+        let maxWidth = 0;
+        bodyCells.forEach((cell) => {
+          if (!(cell instanceof HTMLElement)) {
+            return;
+          }
+          const { width } = cell.getBoundingClientRect();
+          if (width > maxWidth) {
+            maxWidth = width;
+          }
+        });
+
+        if (maxWidth <= 0) {
+          const { width } = headerCell.getBoundingClientRect();
+          maxWidth = width;
+        }
+
+        if (maxWidth > 0) {
+          const widthPx = `${Math.ceil(maxWidth)}px`;
+          headerCell.style.width = widthPx;
+          headerCell.style.minWidth = widthPx;
+          headerCell.style.maxWidth = widthPx;
+          headerCell.style.boxSizing = 'border-box';
+          bodyCells.forEach((cell) => {
+            if (cell instanceof HTMLElement) {
+              cell.style.width = widthPx;
+              cell.style.minWidth = widthPx;
+              cell.style.maxWidth = widthPx;
+              cell.style.boxSizing = 'border-box';
+            }
+          });
+        }
+      });
+
+      const bodyWidth = bodyTable.getBoundingClientRect().width;
+      if (bodyWidth > 0) {
+        const widthPx = `${Math.ceil(bodyWidth)}px`;
+        headerTable.style.width = widthPx;
+        const scrollHeadInner = scrollHead.querySelector('.dataTables_scrollHeadInner');
+        if (scrollHeadInner) {
+          scrollHeadInner.style.width = widthPx;
+        }
+      }
+    }
+
+    function applyTableHeight(table) {
+      if (!table) {
+        return;
+      }
+      const rowCount = table.rows({ page: 'current' }).count();
+      const container = table.table().container();
+      const scrollBody = container.querySelector('.dataTables_scrollBody');
+      const scrollBodyRect = scrollBody ? scrollBody.getBoundingClientRect() : null;
+      const viewportTopOffset = scrollBodyRect && Number.isFinite(scrollBodyRect.top) ? scrollBodyRect.top : null;
+      const height = calculateScrollBodyHeight(rowCount, viewportTopOffset);
+      if (scrollBody) {
+        scrollBody.style.height = `${height}px`;
+        scrollBody.style.maxHeight = `${height}px`;
+      }
+      const settings = table.settings()[0];
+      if (settings && settings.oScroll) {
+        settings.oScroll.sY = `${height}px`;
+      }
+      table.columns.adjust();
+      requestAnimationFrame(() => syncHeaderColumnWidths(table));
+    }
+
+    function refreshRegularTableLayout() {
+      if (!regularTableInitialised || !regularTable) {
+        return;
+      }
+      applyTableHeight(regularTable);
+    }
+
+    function setActiveTab(targetTab) {
+      tabButtons.forEach((button) => {
+        const isActive = button.dataset.tab === targetTab;
+        button.classList.toggle('active', isActive);
+        button.setAttribute('aria-selected', String(isActive));
+      });
+      tabPanels.forEach((panel) => {
+        const isActive = panel.dataset.tab === targetTab;
+        panel.classList.toggle('active', isActive);
+        panel.setAttribute('aria-hidden', String(!isActive));
+      });
+      if (targetTab === 'regular') {
+        loadRegularTable();
+        refreshRegularTableLayout();
+      } else {
+        closeHeaderMenu();
+      }
+    }
+
+    tabButtons.forEach((button) => {
+      button.addEventListener('click', () => setActiveTab(button.dataset.tab));
+    });
+
+    function updateStickyOffset() {
+      const headerEl = document.querySelector('header');
+      const navEl = document.querySelector('.tab-nav');
+      const headerHeight = headerEl ? headerEl.offsetHeight : 0;
+      const navHeight = navEl ? navEl.offsetHeight : 0;
+      const offset = headerHeight + navHeight + 24;
+      document.documentElement.style.setProperty('--sticky-header-offset', `${offset}px`);
+    }
+
+    setActiveTab('analysis');
+    updateStickyOffset();
+    window.addEventListener('resize', () => {
+      updateStickyOffset();
+      if (regularTableInitialised && regularTable) {
+        applyTableHeight(regularTable);
+      }
+    });
+
+    function ensureHeaderMenu() {
+      if (!headerMenuElement) {
+        headerMenuElement = document.createElement('div');
+        headerMenuElement.className = 'header-menu hidden';
+        headerMenuElement.setAttribute('role', 'dialog');
+        headerMenuElement.setAttribute('aria-modal', 'false');
+        document.body.appendChild(headerMenuElement);
+
+        document.addEventListener('click', (event) => {
+          if (!headerMenuElement.classList.contains('hidden')) {
+            const target = event.target;
+            if (headerMenuElement && !headerMenuElement.contains(target) && !(target.closest('#regular-table thead'))) {
+              closeHeaderMenu();
+            }
+          }
+        });
+
+        document.addEventListener('keydown', (event) => {
+          if (event.key === 'Escape') {
+            closeHeaderMenu();
+          }
+        });
+
+        window.addEventListener('resize', () => {
+          if (!headerMenuElement.classList.contains('hidden') && activeHeaderCell) {
+            positionHeaderMenu(activeHeaderCell);
+          }
+        });
+
+        window.addEventListener('scroll', () => {
+          if (!headerMenuElement.classList.contains('hidden') && activeHeaderCell) {
+            positionHeaderMenu(activeHeaderCell);
+          }
+        }, { passive: true });
+      }
+    }
+
+    function closeHeaderMenu() {
+      if (headerMenuElement) {
+        headerMenuElement.classList.add('hidden');
+        headerMenuElement.innerHTML = '';
+      }
+      activeHeaderCell = null;
+      activeColumnIndex = null;
+    }
+
+    function escapeRegex(value) {
+      return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    function optionLabel(value) {
+      const normalized = value === null || value === undefined ? '' : String(value);
+      return normalized === '' ? '(Blank)' : normalized;
+    }
+
+    function escapeHtml(value) {
+      return String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    function applyColumnFilter(table, columnIndex, values, headerCell) {
+      if (!table) return;
+      if (values.length === 0) {
+        table.column(columnIndex).search('', false, false).draw();
+        delete columnFilters[columnIndex];
+        if (headerCell) {
+          headerCell.classList.remove('has-filter');
+        }
+        return;
+      }
+      const regex = `^(${values.map((value) => escapeRegex(value)).join('|')})$`;
+      table.column(columnIndex).search(regex, true, false).draw();
+      columnFilters[columnIndex] = values;
+      if (headerCell) {
+        headerCell.classList.add('has-filter');
+      }
+    }
+
+    function positionHeaderMenu(headerCell) {
+      if (!headerMenuElement) return;
+      const rect = headerCell.getBoundingClientRect();
+      const top = rect.bottom + window.scrollY + 8;
+      const left = rect.left + window.scrollX;
+      headerMenuElement.style.top = `${top}px`;
+      headerMenuElement.style.left = `${left}px`;
+    }
+
+    function openHeaderMenu(headerCell, table) {
+      ensureHeaderMenu();
+      if (!headerMenuElement) return;
+
+      activeHeaderCell = headerCell;
+      const dataTableIndexAttr = headerCell.getAttribute('data-dt-column');
+      if (dataTableIndexAttr !== null && dataTableIndexAttr !== '') {
+        activeColumnIndex = Number(dataTableIndexAttr);
+      } else if (headerCell.dataset.columnIndex) {
+        activeColumnIndex = Number(headerCell.dataset.columnIndex);
+      } else {
+        activeColumnIndex = headerCell.cellIndex ?? 0;
+      }
+      const columnTitle = headerCell.textContent.trim();
+      const options = columnValueOptions[activeColumnIndex] || [];
+      const selectedValues = columnFilters[activeColumnIndex] ? [...columnFilters[activeColumnIndex]] : [];
+
+      const optionsMarkup = options.map((value) => {
+        const checked = selectedValues.includes(value) ? 'checked' : '';
+        const rawLabel = optionLabel(value);
+        const safeLabel = escapeHtml(rawLabel);
+        const safeValueAttr = escapeHtml(value);
+        const dataLabel = escapeHtml(rawLabel.toLowerCase());
+        return `<label class="header-menu__option" data-label="${dataLabel}"><input type="checkbox" value="${safeValueAttr}" ${checked}>${safeLabel}</label>`;
+      }).join('');
+      const hasOptions = options.length > 0;
+
+      headerMenuElement.innerHTML = `
+        <div class="header-menu__header">
+          <h3 class="header-menu__title">${columnTitle}</h3>
+          <button type="button" class="header-menu__close" aria-label="Close menu">&times;</button>
+        </div>
+        <div class="header-menu__section">
+          <div class="header-menu__buttons">
+            <button type="button" class="header-menu__button" data-sort="asc">Sort ascending</button>
+            <button type="button" class="header-menu__button" data-sort="desc">Sort descending</button>
+          </div>
+        </div>
+        <div class="header-menu__section">
+          <label for="header-menu-search" class="sr-only">Search values</label>
+          <input id="header-menu-search" class="header-menu__search" type="search" placeholder="Search values" autocomplete="off">
+        </div>
+        <div class="header-menu__section">
+          <div class="header-menu__options" role="group" aria-label="Filter values">
+            ${hasOptions ? optionsMarkup : ''}
+          </div>
+          ${hasOptions ? '<div class="header-menu__empty-message" hidden>No matches found</div>' : '<p style="margin:0.5rem 0 0;color:var(--muted);font-size:0.85rem;">No values available</p>'}
+        </div>
+        <div class="header-menu__footer">
+          <button type="button" class="header-menu__clear">Clear</button>
+          <button type="button" class="header-menu__apply">Apply</button>
+        </div>
+      `;
+
+      headerMenuElement.classList.remove('hidden');
+      positionHeaderMenu(headerCell);
+
+      const closeButton = headerMenuElement.querySelector('.header-menu__close');
+      closeButton?.addEventListener('click', () => closeHeaderMenu());
+
+      const sortButtons = headerMenuElement.querySelectorAll('[data-sort]');
+      sortButtons.forEach((button) => {
+        button.addEventListener('click', (event) => {
+          const direction = event.currentTarget.getAttribute('data-sort');
+          table.order([activeColumnIndex, direction]).draw();
+          closeHeaderMenu();
+        });
+      });
+
+      const optionsContainer = headerMenuElement.querySelector('.header-menu__options');
+      const searchInput = headerMenuElement.querySelector('#header-menu-search');
+      const emptyMessage = headerMenuElement.querySelector('.header-menu__empty-message');
+      if (!hasOptions && searchInput) {
+        searchInput.disabled = true;
+        searchInput.placeholder = 'No values available';
+      }
+      searchInput?.addEventListener('input', (event) => {
+        const query = event.currentTarget.value.trim().toLowerCase();
+        const labels = optionsContainer ? optionsContainer.querySelectorAll('.header-menu__option') : [];
+        let visibleCount = 0;
+        labels.forEach((labelEl) => {
+          const labelValue = labelEl.getAttribute('data-label') || '';
+          const isVisible = labelValue.includes(query);
+          labelEl.style.display = isVisible ? 'flex' : 'none';
+          if (isVisible) {
+            visibleCount += 1;
+          }
+        });
+        if (emptyMessage) {
+          emptyMessage.hidden = visibleCount !== 0;
+        }
+      });
+
+      const applyButton = headerMenuElement.querySelector('.header-menu__apply');
+      applyButton?.addEventListener('click', () => {
+        const checkedInputs = optionsContainer ? Array.from(optionsContainer.querySelectorAll('input[type="checkbox"]')).filter((input) => input.checked) : [];
+        const values = checkedInputs.map((input) => input.value);
+        applyColumnFilter(table, activeColumnIndex, values, headerCell);
+        closeHeaderMenu();
+      });
+
+      const clearButton = headerMenuElement.querySelector('.header-menu__clear');
+      clearButton?.addEventListener('click', () => {
+        if (optionsContainer) {
+          optionsContainer.querySelectorAll('input[type="checkbox"]').forEach((input) => {
+            input.checked = false;
+          });
+        }
+        applyColumnFilter(table, activeColumnIndex, [], headerCell);
+        closeHeaderMenu();
+      });
+    }
+
+    function buildColumnOptions(dataset) {
+      const sets = dataset.columns.map(() => new Set());
+      dataset.rows.forEach((row) => {
+        row.forEach((value, index) => {
+          const columnName = dataset.columns[index];
+          const formatted = formatCellValue(value, columnName);
+          sets[index].add(formatted);
+        });
+      });
+      columnValueOptions = sets.map((set) => Array.from(set).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })));
+    }
+
+    function wireHeaderEvents(table) {
+      const container = table.table().container();
+      const headerCells = container.querySelectorAll('thead th');
+      headerCells.forEach((cell, index) => {
+        cell.classList.add('is-filterable');
+        if (!cell.dataset.columnIndex) {
+          cell.dataset.columnIndex = String(index);
+        }
+      });
+      $(headerCells).off('click.DT keypress.DT');
+      headerCells.forEach((cell) => {
+        const existingHandler = headerClickHandlers.get(cell);
+        if (existingHandler) {
+          cell.removeEventListener('click', existingHandler);
+        }
+        const handler = (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          openHeaderMenu(cell, table);
+        };
+        headerClickHandlers.set(cell, handler);
+        cell.addEventListener('click', handler);
+      });
+    }
+
+    function isPlaceholderValue(value) {
+      if (value === null || value === undefined) {
+        return true;
+      }
+      const normalized = typeof value === 'string' ? value.trim() : value;
+      return normalized === '' || normalized === '-' || normalized === '--';
+    }
+
+    function parseNumericValue(value) {
+      if (typeof value === 'number' && Number.isFinite(value)) {
+        return value;
+      }
+      if (typeof value === 'string') {
+        const trimmed = value.trim();
+        if (isPlaceholderValue(trimmed)) {
+          return null;
+        }
+        const numeric = Number(trimmed.replace(/,/g, ''));
+        return Number.isNaN(numeric) ? null : numeric;
+      }
+      return null;
+    }
+
+    function formatExcelSerialDate(value) {
+      const numeric = parseNumericValue(value);
+      if (numeric === null) {
+        return null;
+      }
+      const serial = Math.floor(numeric);
+      if (serial <= 0) {
+        return null;
+      }
+      const fractional = numeric - serial;
+      const adjustedSerial = serial > 59 ? serial - 1 : serial;
+      const excelEpoch = Date.UTC(1899, 11, 30);
+      const dayMilliseconds = 24 * 60 * 60 * 1000;
+      const timestamp = excelEpoch + adjustedSerial * dayMilliseconds + Math.round(fractional * dayMilliseconds);
+      const date = new Date(timestamp);
+      if (Number.isNaN(date.getTime())) {
+        return null;
+      }
+      const day = String(date.getUTCDate()).padStart(2, '0');
+      const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+      const year = date.getUTCFullYear();
       return `${day}-${month}-${year}`;
-    };
+    }
 
-    const currencyTooltip = (context) => {
-      const value = context.parsed.y ?? context.parsed.x ?? context.raw;
-      return `${context.dataset.label}: ${fmtCurrency(value)}`;
-    };
+    function detectNumericColumns(dataset) {
+      return dataset.columns.reduce((accumulator, column, columnIndex) => {
+        const normalizedColumn = column ? column.toUpperCase().trim() : '';
+        if (NUMERIC_COLUMN_EXCLUSIONS.has(normalizedColumn)) {
+          return accumulator;
+        }
+        let hasNumeric = false;
+        const isNumericColumn = dataset.rows.every((row) => {
+          const value = row[columnIndex];
+          if (isPlaceholderValue(value)) {
+            return true;
+          }
+          const numericValue = parseNumericValue(value);
+          if (numericValue === null) {
+            return false;
+          }
+          hasNumeric = true;
+          return true;
+        });
+        if (isNumericColumn && hasNumeric) {
+          accumulator.push(columnIndex);
+        }
+        return accumulator;
+      }, []);
+    }
 
-    const dailyChartElement = document.getElementById('daily-chart');
-    if (dailyChartElement && dailySeries.length > 0) {
-      const dailyLabels = dailySeries.map((item) => formatDateLabel(item.date));
-      new Chart(dailyChartElement, {
+    function formatCellValue(value, columnName) {
+      if (isPlaceholderValue(value)) {
+        return typeof value === 'string' ? value.trim() : '';
+      }
+      const normalizedColumn = columnName ? columnName.trim().toLowerCase() : '';
+      if (normalizedColumn === 'checkout') {
+        const formattedDate = formatExcelSerialDate(value);
+        if (formattedDate) {
+          return formattedDate;
+        }
+      }
+      const numericValue = parseNumericValue(value);
+      if (numericValue !== null) {
+        const decimals = ZERO_DECIMAL_COLUMNS.has(normalizedColumn) ? 0 : 2;
+        return numericValue.toFixed(decimals);
+      }
+      return typeof value === 'string' ? value : String(value ?? '');
+    }
+
+    function loadRegularTable() {
+      if (regularTableInitialised) {
+        return;
+      }
+      fetch('regular_sep25_data.json')
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error('Failed to load dataset');
+          }
+          return response.json();
+        })
+        .then((dataset) => {
+          updateStickyOffset();
+
+          const columns = dataset.columns.map((title) => ({ title }));
+          const formattedRows = dataset.rows.map((row) => row.map((value, index) => formatCellValue(value, dataset.columns[index])));
+          const productColumnIndex = dataset.columns.indexOf('Product');
+          const quantityColumnIndex = dataset.columns.findIndex((column) => column && column.trim().toLowerCase() === 'qty');
+          const numericColumnIndices = detectNumericColumns(dataset);
+
+          const columnClassMap = new Map();
+          const addColumnClass = (columnIndex, className) => {
+            if (columnIndex < 0) {
+              return;
+            }
+            if (!columnClassMap.has(columnIndex)) {
+              columnClassMap.set(columnIndex, new Set());
+            }
+            columnClassMap.get(columnIndex).add(className);
+          };
+
+          addColumnClass(productColumnIndex, 'cell-product');
+          addColumnClass(quantityColumnIndex, 'cell-qty');
+          numericColumnIndices.forEach((columnIndex) => addColumnClass(columnIndex, 'cell-numeric'));
+
+          const columnDefs = Array.from(columnClassMap.entries()).map(([columnIndex, classSet]) => ({
+            targets: Number(columnIndex),
+            className: Array.from(classSet).join(' '),
+          }));
+
+          const initialRowCount = Math.min(dataset.rows.length, REGULAR_TABLE_PAGE_LENGTH);
+          const initialScrollHeight = `${calculateScrollBodyHeight(initialRowCount)}px`;
+          regularTable = $('#regular-table').DataTable({
+            data: formattedRows,
+            columns,
+            columnDefs,
+            scrollX: true,
+            scrollY: initialScrollHeight,
+            scrollCollapse: true,
+            deferRender: true,
+            autoWidth: true,
+            order: [],
+            paging: true,
+            pageLength: REGULAR_TABLE_PAGE_LENGTH,
+            lengthChange: false,
+            info: true,
+            dom: 't<"regular-table__footer"ip>'
+          });
+
+          buildColumnOptions(dataset);
+          wireHeaderEvents(regularTable);
+          applyTableHeight(regularTable);
+          regularTable.on('draw.dt', () => {
+            wireHeaderEvents(regularTable);
+            applyTableHeight(regularTable);
+          });
+
+          regularTableInitialised = true;
+          requestAnimationFrame(() => refreshRegularTableLayout());
+        })
+        .catch((error) => {
+          const tableElement = document.getElementById('regular-table');
+          if (tableElement) {
+            tableElement.outerHTML = `<p style="color: var(--muted);">${error.message}</p>`;
+          }
+        });
+    }
+
+    const dailyCtx = document.getElementById('daily-chart');
+    if (dailySeries.length > 0) {
+      new Chart(dailyCtx, {
         type: 'line',
         data: {
-          labels: dailyLabels,
+          labels: dailySeries.map(item => item.date),
           datasets: [
             {
               label: 'Revenue',
-              data: dailySeries.map((item) => item.revenue),
+              data: dailySeries.map(item => item.revenue),
               borderColor: '#145afc',
               backgroundColor: 'rgba(20, 90, 252, 0.15)',
               tension: 0.25,
               fill: true,
-              pointRadius: 2.5
             },
             {
               label: 'Final Net',
-              data: dailySeries.map((item) => item.final_net),
+              data: dailySeries.map(item => item.final_net),
               borderColor: '#ff7d4f',
               backgroundColor: 'rgba(255, 125, 79, 0.15)',
               tension: 0.25,
               fill: true,
-              pointRadius: 2.5
             }
           ]
         },
         options: {
           responsive: true,
-          maintainAspectRatio: false,
           interaction: { mode: 'index', intersect: false },
-          plugins: {
-            legend: { display: true },
-            tooltip: {
-              callbacks: {
-                label: currencyTooltip
-              }
-            }
-          },
+          stacked: false,
           scales: {
             y: {
               ticks: {
@@ -276,115 +1169,23 @@
       });
     }
 
-    const categoryChartElement = document.getElementById('category-chart');
-    if (categoryChartElement && categorySeries.length > 0) {
-      new Chart(categoryChartElement, {
+    const categoryCtx = document.getElementById('category-chart');
+    if (categorySeries.length > 0) {
+      new Chart(categoryCtx, {
         type: 'bar',
         data: {
-          labels: categorySeries.map((item) => item.category),
-          datasets: [
-            {
-              label: 'Final Net',
-              data: categorySeries.map((item) => item.final_net),
-              backgroundColor: '#4f46e5'
-            }
-          ]
+          labels: categorySeries.map(item => item.category),
+          datasets: [{
+            label: 'Final Net',
+            data: categorySeries.map(item => item.final_net),
+            backgroundColor: '#145afc'
+          }]
         },
         options: {
           responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              callbacks: {
-                label: currencyTooltip
-              }
-            }
-          },
           scales: {
             y: {
-              ticks: {
-                callback: (value) => fmtCurrency(value)
-              }
-            }
-          }
-        }
-      });
-    }
-
-    const storeChartElement = document.getElementById('store-chart');
-    if (storeChartElement && storeMixSeries.length > 0) {
-      new Chart(storeChartElement, {
-        type: 'bar',
-        data: {
-          labels: storeMixSeries.map((item) => item.store),
-          datasets: [
-            {
-              label: 'Revenue',
-              data: storeMixSeries.map((item) => item.revenue),
-              backgroundColor: 'rgba(20, 90, 252, 0.7)'
-            },
-            {
-              label: 'Final Net',
-              data: storeMixSeries.map((item) => item.final_net),
-              backgroundColor: 'rgba(255, 125, 79, 0.7)'
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          interaction: { mode: 'index', intersect: false },
-          plugins: {
-            tooltip: {
-              callbacks: {
-                label: currencyTooltip
-              }
-            }
-          },
-          scales: {
-            y: {
-              stacked: false,
-              ticks: {
-                callback: (value) => fmtCurrency(value)
-              }
-            }
-          }
-        }
-      });
-    }
-
-    const skuChartElement = document.getElementById('sku-chart');
-    if (skuChartElement && topSkuSeries.length > 0) {
-      new Chart(skuChartElement, {
-        type: 'bar',
-        data: {
-          labels: topSkuSeries.map((item) => item.sku),
-          datasets: [
-            {
-              label: 'Final Net',
-              data: topSkuSeries.map((item) => item.final_net),
-              backgroundColor: '#0ea5e9'
-            }
-          ]
-        },
-        options: {
-          indexAxis: 'y',
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              callbacks: {
-                label: currencyTooltip
-              }
-            }
-          },
-          scales: {
-            x: {
-              ticks: {
-                callback: (value) => fmtCurrency(value)
-              }
+              ticks: { callback: (value) => fmtCurrency(value) }
             }
           }
         }
