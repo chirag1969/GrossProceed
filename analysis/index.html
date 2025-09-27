@@ -131,7 +131,7 @@
       border-radius: 0.75rem;
       overflow-x: auto;
       overflow-y: auto;
-      max-height: min(480px, 65vh);
+      max-height: min(440px, 60vh);
       border: 1px solid rgba(27, 30, 40, 0.08);
       box-shadow: inset 0 0 0 1px rgba(27, 30, 40, 0.03), 0 12px 30px rgba(15, 23, 42, 0.08);
       background: #fff;
@@ -171,6 +171,28 @@
     }
     .lo-table tbody tr:nth-child(odd) td {
       background: rgba(226, 231, 244, 0.25);
+    }
+    .lo-table tfoot th,
+    .lo-table tfoot td {
+      position: sticky;
+      bottom: 0;
+      background: linear-gradient(180deg, #f6f8ff 0%, #e3e8f7 100%);
+      color: var(--text);
+      font-weight: 600;
+      padding: 0.55rem 0.75rem;
+      border-top: 1px solid rgba(27, 30, 40, 0.14);
+      box-shadow: 0 -8px 16px rgba(15, 23, 42, 0.08);
+      z-index: 2;
+    }
+    .lo-table tfoot th {
+      text-align: left;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      font-size: 0.78rem;
+    }
+    .lo-table tfoot td {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
     }
     .card {
       background: var(--card-bg);
@@ -680,6 +702,7 @@
     const MIN_VISIBLE_ROWS = 5;
     const TABLE_BOTTOM_MARGIN = 18;
     const REGULAR_TABLE_PAGE_LENGTH = 200;
+    const SHOW_REGULAR_TOTAL_ROW = false;
 
     function fetchDataset() {
       if (datasetCache) {
@@ -962,7 +985,9 @@
         return;
       }
       applyTableHeight(regularTable);
-      renderFooterRow(regularTable);
+      if (regularTableFooterValues.length) {
+        renderFooterRow(regularTable);
+      }
     }
 
     function setActiveTab(targetTab) {
@@ -1578,14 +1603,22 @@
           return { displayDate, formattedValues };
         });
 
-      return { loList, rows, order: ownerOrder, displayNames: new Map(listingOwners) };
+      const totals = ownerOrder.map((ownerKey) => formatTwoDecimal(ownerTotals.get(ownerKey) ?? 0));
+
+      return {
+        loList,
+        rows,
+        totals,
+        order: ownerOrder,
+        displayNames: new Map(listingOwners),
+      };
     }
 
     function renderLoTable(tableElement, pivotData) {
       if (!tableElement) {
         return;
       }
-      const { loList, rows } = pivotData;
+      const { loList, rows, totals } = pivotData;
       if (!loList.length || !rows.length) {
         const columnCount = Math.max(1, loList.length + 1);
         tableElement.innerHTML = `<tbody><tr><td class="cell-date" colspan="${columnCount}">No data available</td></tr></tbody>`;
@@ -1608,7 +1641,17 @@
       });
       bodyHtml += '</tbody>';
 
-      tableElement.innerHTML = `${headerHtml}${bodyHtml}`;
+      let footerHtml = '';
+      if (Array.isArray(totals) && totals.length === loList.length) {
+        footerHtml = '<tfoot><tr>';
+        footerHtml += '<th scope="row">Total</th>';
+        totals.forEach((value) => {
+          footerHtml += `<td>${value}</td>`;
+        });
+        footerHtml += '</tr></tfoot>';
+      }
+
+      tableElement.innerHTML = `${headerHtml}${bodyHtml}${footerHtml}`;
     }
 
     function normalizeOwnerKey(label) {
@@ -1733,13 +1776,19 @@
           const numericColumnIndices = augmentedDataset.numericColumnIndices;
           const totalColumnIndex = augmentedDataset.totalColumnIndex;
 
-          regularTableFooterValues = buildFormattedFooterValues(augmentedDataset);
-          regularTableNumericColumnSet = new Set(numericColumnIndices);
-          regularTableTotalColumnIndex = totalColumnIndex;
+          regularTableFooterValues = SHOW_REGULAR_TOTAL_ROW
+            ? buildFormattedFooterValues(augmentedDataset)
+            : [];
+          regularTableNumericColumnSet = SHOW_REGULAR_TOTAL_ROW
+            ? new Set(numericColumnIndices)
+            : new Set();
+          regularTableTotalColumnIndex = SHOW_REGULAR_TOTAL_ROW ? totalColumnIndex : -1;
 
-          const tableElement = document.getElementById('regular-table');
-          if (tableElement) {
-            ensureTableFooter(tableElement, augmentedDataset.columns.length);
+          if (SHOW_REGULAR_TOTAL_ROW) {
+            const tableElement = document.getElementById('regular-table');
+            if (tableElement) {
+              ensureTableFooter(tableElement, augmentedDataset.columns.length);
+            }
           }
 
           const columnClassMap = new Map();
@@ -1787,11 +1836,15 @@
           buildColumnOptions(augmentedDataset);
           wireHeaderEvents(regularTable);
           applyTableHeight(regularTable);
-          renderFooterRow(regularTable);
+          if (SHOW_REGULAR_TOTAL_ROW) {
+            renderFooterRow(regularTable);
+          }
           regularTable.on('draw.dt', () => {
             wireHeaderEvents(regularTable);
             applyTableHeight(regularTable);
-            renderFooterRow(regularTable);
+            if (SHOW_REGULAR_TOTAL_ROW) {
+              renderFooterRow(regularTable);
+            }
           });
 
           regularTableInitialised = true;
