@@ -867,6 +867,9 @@
     const TABLE_BOTTOM_MARGIN = 18;
     const LO_TABLE_BOTTOM_MARGIN = 24;
     const MIN_LO_TABLE_HEIGHT = 320;
+    const REGULAR_TABLE_FOOTER_MIN_SPACE = 128;
+    const REGULAR_TABLE_FOOTER_EXTRA_GAP = 24;
+    const DEFAULT_REGULAR_TABLE_RESERVED_SPACE = TABLE_BOTTOM_MARGIN + REGULAR_TABLE_FOOTER_MIN_SPACE;
     const REGULAR_TABLE_PAGE_LENGTH = 200;
     const SHOW_REGULAR_TOTAL_ROW = true;
 
@@ -926,15 +929,18 @@
       return Number.isFinite(parsed) ? parsed : 0;
     }
 
-    function calculateScrollBodyHeight(rowCount, viewportTopOffset) {
+    function calculateScrollBodyHeight(rowCount, viewportTopOffset, reservedSpace) {
       const baselineMinHeight = HEADER_HEIGHT + MIN_VISIBLE_ROWS * ROW_HEIGHT;
       const viewportHeight = Number.isFinite(window.innerHeight) ? window.innerHeight : baselineMinHeight;
       let availableViewport = viewportHeight;
+      const bottomSpacing = Number.isFinite(reservedSpace)
+        ? reservedSpace
+        : TABLE_BOTTOM_MARGIN;
       if (Number.isFinite(viewportTopOffset)) {
-        availableViewport = viewportHeight - viewportTopOffset - TABLE_BOTTOM_MARGIN;
+        availableViewport = viewportHeight - viewportTopOffset - bottomSpacing;
       } else {
         const stickyOffset = getStickyOffsetValue() + 64;
-        availableViewport = viewportHeight - stickyOffset;
+        availableViewport = viewportHeight - stickyOffset - bottomSpacing;
       }
 
       const usableViewport = Math.max(availableViewport, baselineMinHeight);
@@ -945,7 +951,7 @@
       const effectiveRowCount = Math.max(rowCount, rowsToFillViewport);
       const desiredHeight = HEADER_HEIGHT + effectiveRowCount * ROW_HEIGHT;
       const heightWithinViewport = Math.min(desiredHeight, usableViewport);
-      const minimumAllowedHeight = Math.min(baselineMinHeight, viewportHeight);
+      const minimumAllowedHeight = Math.min(baselineMinHeight, viewportHeight - bottomSpacing);
       const finalHeight = Math.max(heightWithinViewport, minimumAllowedHeight, HEADER_HEIGHT + MIN_VISIBLE_ROWS * ROW_HEIGHT);
       return Math.round(finalHeight);
     }
@@ -1101,6 +1107,24 @@
       scrollBody.style.paddingBottom = `${appliedPadding}px`;
     }
 
+    function calculateRegularTableReservedSpace(container) {
+      let reservedSpace = DEFAULT_REGULAR_TABLE_RESERVED_SPACE;
+      if (!container) {
+        return reservedSpace;
+      }
+      const footer = container.querySelector('.regular-table__footer');
+      if (!footer) {
+        return reservedSpace;
+      }
+      const footerRect = footer.getBoundingClientRect();
+      if (!footerRect || !Number.isFinite(footerRect.height)) {
+        return reservedSpace;
+      }
+      const measuredFooterSpace = Math.ceil(footerRect.height) + REGULAR_TABLE_FOOTER_EXTRA_GAP;
+      reservedSpace = Math.max(reservedSpace, TABLE_BOTTOM_MARGIN + measuredFooterSpace);
+      return reservedSpace;
+    }
+
     function applyTableHeight(table) {
       if (!table) {
         return;
@@ -1110,7 +1134,8 @@
       const scrollBody = container.querySelector('.dataTables_scrollBody');
       const scrollBodyRect = scrollBody ? scrollBody.getBoundingClientRect() : null;
       const viewportTopOffset = scrollBodyRect && Number.isFinite(scrollBodyRect.top) ? scrollBodyRect.top : null;
-      const height = calculateScrollBodyHeight(rowCount, viewportTopOffset);
+      const reservedSpace = calculateRegularTableReservedSpace(container);
+      const height = calculateScrollBodyHeight(rowCount, viewportTopOffset, reservedSpace);
       if (scrollBody) {
         scrollBody.style.height = `${height}px`;
         scrollBody.style.maxHeight = `${height}px`;
@@ -2048,7 +2073,8 @@
           }));
 
           const initialRowCount = Math.min(augmentedDataset.rows.length, REGULAR_TABLE_PAGE_LENGTH);
-          const initialScrollHeight = `${calculateScrollBodyHeight(initialRowCount)}px`;
+          const initialReservedSpace = calculateRegularTableReservedSpace();
+          const initialScrollHeight = `${calculateScrollBodyHeight(initialRowCount, undefined, initialReservedSpace)}px`;
           regularTable = $('#regular-table').DataTable({
             data: formattedRows,
             columns,
