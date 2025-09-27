@@ -177,9 +177,13 @@
       font-weight: 600;
       padding: 0.65rem 0.75rem;
       text-align: right;
+      position: sticky;
+      top: 0;
+      z-index: 5;
     }
     .lo-table thead th:first-child {
       text-align: left;
+      z-index: 7;
     }
     .lo-table tbody td {
       padding: 0.35rem 0.75rem;
@@ -301,13 +305,30 @@
       background: #fff;
       flex: 1 1 auto;
       min-height: 0;
-      overflow: hidden;
+      overflow: visible;
+      display: flex;
+      flex-direction: column;
     }
     .regular-table-container .dataTables_wrapper {
       flex: 1 1 auto;
       min-height: 0;
       display: flex;
       flex-direction: column;
+    }
+    .regular-table-container .dataTables_scroll {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .regular-table-container .dataTables_scrollHead {
+      flex: 0 0 auto;
+    }
+    .regular-table-container .dataTables_scrollBody {
+      flex: 1 1 auto !important;
+    }
+    .regular-table-container .dataTables_scrollFoot {
+      flex: 0 0 auto;
     }
     .regular-table-container table {
       margin-top: 0;
@@ -353,7 +374,7 @@
     }
     .table-container {
       position: relative;
-      overflow: hidden;
+      overflow: visible;
       padding: 0;
       flex: 1 1 auto;
       min-height: 0;
@@ -813,7 +834,7 @@
     const NUMERIC_COLUMN_EXCLUSIONS = new Set(['ORDER NO', 'PLAIN ORDER NO', 'ORDER #', 'ORDER NO.', 'CHECKOUT']);
     const ZERO_DECIMAL_COLUMNS = new Set(['qty', 'order no', 'plain order no', 'order no.', 'order #']);
     const numberFormatter = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    const displayDateFormatter = new Intl.DateTimeFormat('en-US', { day: '2-digit' });
+    const displayDateFormatter = new Intl.DateTimeFormat('en-US', { month: 'short', day: '2-digit' });
     const TOTAL_ROW_LABEL = 'Grand Total';
 
     let columnValueOptions = [];
