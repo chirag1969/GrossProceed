@@ -74,6 +74,7 @@
       display: flex;
       flex-direction: column;
       gap: 1rem;
+      overflow: hidden;
     }
     .lo-card__header {
       display: flex;
@@ -126,16 +127,22 @@
       display: block;
     }
     .lo-table-container {
+      position: relative;
       border-radius: 0.75rem;
       overflow-x: auto;
       overflow-y: auto;
-      max-height: 360px;
+      max-height: min(480px, 65vh);
       border: 1px solid rgba(27, 30, 40, 0.08);
       box-shadow: inset 0 0 0 1px rgba(27, 30, 40, 0.03), 0 12px 30px rgba(15, 23, 42, 0.08);
       background: #fff;
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
     }
     .lo-table {
       width: 100%;
+      min-width: 720px;
+      min-width: max(720px, 100%);
       border-collapse: collapse;
       font-size: 0.9rem;
     }
@@ -212,7 +219,7 @@
     }
     .table-container {
       position: relative;
-      overflow: hidden;
+      overflow: visible;
       padding: 0;
     }
     #tab-regular .table-card {
@@ -319,6 +326,8 @@
       background: #fff;
       box-shadow: 0 12px 30px rgba(21, 32, 56, 0.12);
       overflow: hidden;
+      display: flex;
+      flex-direction: column;
     }
     #regular-table_wrapper .dataTables_scrollHead {
       position: relative;
@@ -327,6 +336,7 @@
       background: transparent;
       overflow: hidden;
       box-shadow: 0 8px 18px rgba(21, 32, 56, 0.12);
+      flex: 0 0 auto;
     }
     #regular-table_wrapper .dataTables_scrollHead table {
       border-collapse: separate;
@@ -337,6 +347,7 @@
       border-top: none;
       overflow-y: auto !important;
       overflow-x: auto !important;
+      flex: 1 1 auto;
     }
     #regular-table_wrapper .dataTables_scrollBody table {
       border-collapse: separate;
@@ -345,8 +356,12 @@
       width: 100% !important;
     }
     #regular-table_wrapper .dataTables_scrollFoot {
+      position: sticky;
+      bottom: 0;
+      z-index: 6;
       background: linear-gradient(180deg, #f5f7ff 0%, #ebeffd 100%);
       box-shadow: 0 -10px 24px rgba(21, 32, 56, 0.1);
+      flex: 0 0 auto;
     }
     #regular-table_wrapper .dataTables_scrollFoot th {
       position: sticky;
@@ -602,9 +617,6 @@
   <div class="tab-panel active" id="tab-lo" data-tab="lo" role="tabpanel" aria-labelledby="tab-lo-button" aria-hidden="false">
     <section class="grid lo-grid">
       <article class="card lo-card">
-        <header class="lo-card__header">
-          <h2 class="lo-card__title">Listing Owner performance</h2>
-        </header>
         <nav class="sub-tab-nav" aria-label="Listing owner metrics">
           <button class="sub-tab-button active" id="lo-sales-button" type="button" data-subtab="sales" aria-controls="lo-sales-panel" aria-selected="true">Sales</button>
           <button class="sub-tab-button" id="lo-spend-button" type="button" data-subtab="spend" aria-controls="lo-spend-panel" aria-selected="false">Spend</button>
@@ -645,6 +657,8 @@
     let datasetCache = null;
     let datasetPromise = null;
     let loTablesInitialised = false;
+    let spendPivotCache = null;
+    let spendPivotPromise = null;
 
     const NUMERIC_COLUMN_EXCLUSIONS = new Set(['ORDER NO', 'PLAIN ORDER NO', 'ORDER #', 'ORDER NO.', 'CHECKOUT']);
     const ZERO_DECIMAL_COLUMNS = new Set(['qty', 'order no', 'plain order no', 'order no.', 'order #']);
@@ -652,8 +666,6 @@
     const displayDateFormatter = new Intl.DateTimeFormat('en-US', { day: '2-digit' });
     const TOTAL_COLUMN_TITLE = 'Grand Total';
     const TOTAL_ROW_LABEL = 'Grand Total';
-    const VIEWPORT_HEIGHT_PADDING_RATIO = 0.08;
-    const VIEWPORT_MIN_PADDING = 72;
 
     let columnValueOptions = [];
     let columnFilters = {};
@@ -664,8 +676,7 @@
     const HEADER_HEIGHT = 44;
     const ROW_HEIGHT = 34;
     const MIN_VISIBLE_ROWS = 6;
-    const MAX_VISIBLE_ROWS = 22;
-    const TABLE_BOTTOM_MARGIN = 24;
+    const TABLE_BOTTOM_MARGIN = 12;
     const REGULAR_TABLE_PAGE_LENGTH = 200;
 
     function fetchDataset() {
@@ -693,6 +704,31 @@
       return datasetPromise;
     }
 
+    function fetchSpendPivot() {
+      if (spendPivotCache) {
+        return Promise.resolve(spendPivotCache);
+      }
+      if (spendPivotPromise) {
+        return spendPivotPromise;
+      }
+      spendPivotPromise = fetch('lo_spend_pivot.json')
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error('Unable to load spend pivot');
+          }
+          return response.json();
+        })
+        .then((data) => {
+          spendPivotCache = data;
+          return data;
+        })
+        .catch((error) => {
+          spendPivotPromise = null;
+          throw error;
+        });
+      return spendPivotPromise;
+    }
+
     function getStickyOffsetValue() {
       const rawValue = getComputedStyle(document.documentElement).getPropertyValue('--sticky-header-offset');
       const parsed = Number.parseFloat(rawValue);
@@ -702,22 +738,20 @@
     function calculateScrollBodyHeight(rowCount, viewportTopOffset) {
       const baselineMinHeight = HEADER_HEIGHT + MIN_VISIBLE_ROWS * ROW_HEIGHT;
       const viewportHeight = Number.isFinite(window.innerHeight) ? window.innerHeight : baselineMinHeight;
-      const viewportPadding = Math.max(VIEWPORT_MIN_PADDING, Math.round(viewportHeight * VIEWPORT_HEIGHT_PADDING_RATIO));
-      const targetViewportHeight = Math.max(viewportHeight - viewportPadding, baselineMinHeight);
       const minimumAllowedHeight = Math.min(baselineMinHeight, viewportHeight);
-      const effectiveRowCount = Math.min(Math.max(rowCount, MIN_VISIBLE_ROWS), MAX_VISIBLE_ROWS);
+      const effectiveRowCount = Math.max(rowCount, MIN_VISIBLE_ROWS);
       const desiredHeight = HEADER_HEIGHT + effectiveRowCount * ROW_HEIGHT;
 
       let availableViewport = viewportHeight;
       if (Number.isFinite(viewportTopOffset)) {
         availableViewport = viewportHeight - viewportTopOffset - TABLE_BOTTOM_MARGIN;
       } else {
-        const stickyOffset = getStickyOffsetValue() + 96;
+        const stickyOffset = getStickyOffsetValue() + 64;
         availableViewport = viewportHeight - stickyOffset;
       }
 
-      const constrainedViewport = Math.min(Math.max(availableViewport, baselineMinHeight), targetViewportHeight);
-      const heightWithinViewport = Math.min(desiredHeight, constrainedViewport);
+      const usableViewport = Math.max(availableViewport, baselineMinHeight);
+      const heightWithinViewport = Math.min(desiredHeight, usableViewport);
       return Math.round(Math.max(heightWithinViewport, minimumAllowedHeight));
     }
 
@@ -728,8 +762,20 @@
       const container = table.table().container();
       const scrollHead = container.querySelector('.dataTables_scrollHead');
       const scrollBody = container.querySelector('.dataTables_scrollBody');
+      const scrollFoot = container.querySelector('.dataTables_scrollFoot');
       const headerTable = scrollHead ? scrollHead.querySelector('table') : null;
       const bodyTable = scrollBody ? scrollBody.querySelector('table') : null;
+      const footTables = [];
+      if (scrollFoot) {
+        const scrollFootTable = scrollFoot.querySelector('table');
+        if (scrollFootTable) {
+          footTables.push(scrollFootTable);
+        }
+      }
+      const baseFoot = table.table().footer();
+      if (baseFoot) {
+        footTables.push(baseFoot);
+      }
       if (!headerTable || !bodyTable) {
         return;
       }
@@ -773,6 +819,16 @@
               cell.style.boxSizing = 'border-box';
             }
           });
+          footTables.forEach((footTable) => {
+            const footCells = footTable.querySelectorAll('th');
+            const footCell = footCells[columnIndex];
+            if (footCell instanceof HTMLElement) {
+              footCell.style.width = widthPx;
+              footCell.style.minWidth = widthPx;
+              footCell.style.maxWidth = widthPx;
+              footCell.style.boxSizing = 'border-box';
+            }
+          });
         }
       });
 
@@ -784,7 +840,36 @@
         if (scrollHeadInner) {
           scrollHeadInner.style.width = widthPx;
         }
+        if (scrollFoot) {
+          const scrollFootInner = scrollFoot.querySelector('.dataTables_scrollFootInner');
+          if (scrollFootInner) {
+            scrollFootInner.style.width = widthPx;
+          }
+        }
+        footTables.forEach((footTable) => {
+          footTable.style.width = widthPx;
+        });
       }
+    }
+
+    function adjustScrollBodyPadding(table) {
+      if (!table) {
+        return;
+      }
+      const container = table.table().container();
+      const scrollBody = container.querySelector('.dataTables_scrollBody');
+      if (!scrollBody) {
+        return;
+      }
+      const scrollFoot = container.querySelector('.dataTables_scrollFoot');
+      let paddingBottom = 0;
+      if (scrollFoot) {
+        const footRect = scrollFoot.getBoundingClientRect();
+        if (footRect && Number.isFinite(footRect.height)) {
+          paddingBottom = footRect.height;
+        }
+      }
+      scrollBody.style.paddingBottom = paddingBottom > 0 ? `${Math.ceil(paddingBottom)}px` : '0px';
     }
 
     function applyTableHeight(table) {
@@ -806,7 +891,10 @@
         settings.oScroll.sY = `${height}px`;
       }
       table.columns.adjust();
-      requestAnimationFrame(() => syncHeaderColumnWidths(table));
+      requestAnimationFrame(() => {
+        syncHeaderColumnWidths(table);
+        adjustScrollBodyPadding(table);
+      });
     }
 
     function ensureTableFooter(tableElement, columnCount) {
@@ -864,6 +952,7 @@
           }
         });
       });
+      adjustScrollBodyPadding(table);
     }
 
     function refreshRegularTableLayout() {
@@ -1520,6 +1609,71 @@
       tableElement.innerHTML = `${headerHtml}${bodyHtml}`;
     }
 
+    function normalizeOwnerKey(label) {
+      if (typeof label !== 'string') {
+        return '';
+      }
+      return label.trim().toLocaleLowerCase();
+    }
+
+    function alignPivotToReference(pivotData, referencePivot) {
+      if (!pivotData || !Array.isArray(pivotData.loList) || !Array.isArray(pivotData.rows)) {
+        return { loList: [], rows: [] };
+      }
+      const referenceLabels = Array.isArray(referencePivot?.loList) ? referencePivot.loList : [];
+      const referenceKeys = referenceLabels.map((label) => normalizeOwnerKey(label));
+      const pivotKeys = pivotData.loList.map((label) => normalizeOwnerKey(label));
+
+      const labelMap = new Map();
+      pivotKeys.forEach((key, index) => {
+        if (!labelMap.has(key)) {
+          labelMap.set(key, pivotData.loList[index] ?? '');
+        }
+      });
+
+      const columnIndexMap = new Map();
+      pivotKeys.forEach((key, index) => {
+        if (!columnIndexMap.has(key)) {
+          columnIndexMap.set(key, index);
+        }
+      });
+
+      const orderedKeys = [];
+      referenceKeys.forEach((key) => {
+        if (columnIndexMap.has(key) && !orderedKeys.includes(key)) {
+          orderedKeys.push(key);
+        }
+      });
+      pivotKeys.forEach((key) => {
+        if (!orderedKeys.includes(key)) {
+          orderedKeys.push(key);
+        }
+      });
+
+      const loList = orderedKeys.map((key) => labelMap.get(key) ?? '');
+      const rows = pivotData.rows.map((row) => {
+        const displayDate = typeof row.displayDate === 'string' ? row.displayDate : '';
+        const formattedValuesSource = Array.isArray(row.formattedValues) ? row.formattedValues : [];
+        const formattedValues = orderedKeys.map((key) => {
+          const columnIndex = columnIndexMap.get(key);
+          if (typeof columnIndex !== 'number') {
+            return '0.00';
+          }
+          const value = formattedValuesSource[columnIndex];
+          if (typeof value === 'string') {
+            return value;
+          }
+          if (typeof value === 'number' && Number.isFinite(value)) {
+            return value.toFixed(2);
+          }
+          return '0.00';
+        });
+        return { displayDate, formattedValues };
+      });
+
+      return { loList, rows };
+    }
+
     function renderLoMessage(message) {
       const escaped = escapeHtml(message);
       const markup = `<tbody><tr><td class="cell-date" colspan="1">${escaped}</td></tr></tbody>`;
@@ -1540,9 +1694,24 @@
       const salesTable = document.getElementById('lo-sales-table');
       const spendTable = document.getElementById('lo-spend-table');
       const salesPivot = buildLoPivot(dataset, 'total revenue');
-      const spendPivot = buildLoPivot(dataset, 'ad spend', { normalizedOrder: salesPivot.order, displayNameOverrides: salesPivot.displayNames });
       renderLoTable(salesTable, salesPivot);
-      renderLoTable(spendTable, spendPivot);
+      if (spendTable) {
+        const loadingColumns = Math.max(1, (salesPivot?.loList?.length ?? 0) + 1);
+        spendTable.innerHTML = `<tbody><tr><td class="cell-date" colspan="${loadingColumns}">Loading…</td></tr></tbody>`;
+      }
+      fetchSpendPivot()
+        .then((pivotData) => {
+          const alignedPivot = alignPivotToReference(pivotData, salesPivot);
+          renderLoTable(spendTable, alignedPivot);
+        })
+        .catch((error) => {
+          if (!spendTable) {
+            return;
+          }
+          const baseColumnCount = Array.isArray(salesPivot?.loList) ? salesPivot.loList.length + 1 : 1;
+          const message = escapeHtml(error.message || 'Unable to load spend pivot');
+          spendTable.innerHTML = `<tbody><tr><td class="cell-date" colspan="${baseColumnCount}">${message}</td></tr></tbody>`;
+        });
       loTablesInitialised = true;
     }
 
