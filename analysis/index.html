@@ -28,7 +28,8 @@
       min-height: 100vh;
       display: flex;
       flex-direction: column;
-      overflow: hidden;
+      overflow-x: hidden;
+      overflow-y: auto;
     }
     .tab-nav {
       display: flex;
@@ -161,6 +162,8 @@
       padding-bottom: 0;
       scroll-padding-bottom: 96px;
       display: block;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
     }
     .lo-table {
       width: 100%;
@@ -308,6 +311,7 @@
       overflow: visible;
       display: flex;
       flex-direction: column;
+      padding-bottom: 1rem;
     }
     .regular-table-container .dataTables_wrapper {
       flex: 1 1 auto;
@@ -1079,7 +1083,9 @@
           paddingBottom = Math.max(0, Math.ceil(footRect.height) - 6);
         }
       }
-      scrollBody.style.paddingBottom = paddingBottom > 0 ? `${paddingBottom}px` : '0px';
+      const MINIMUM_PADDING = 16;
+      const appliedPadding = Math.max(paddingBottom, MINIMUM_PADDING);
+      scrollBody.style.paddingBottom = `${appliedPadding}px`;
     }
 
     function applyTableHeight(table) {
