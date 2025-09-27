@@ -160,6 +160,7 @@
       min-height: 0;
       padding-bottom: 0;
       scroll-padding-bottom: 96px;
+      display: block;
     }
     .lo-table {
       width: 100%;
@@ -190,6 +191,31 @@
       text-align: left;
       font-weight: 600;
       color: var(--text);
+    }
+    .lo-table thead th:first-child,
+    .lo-table tbody td.cell-date,
+    .lo-table tfoot th:first-child {
+      position: sticky;
+      left: 0;
+      z-index: 4;
+    }
+    .lo-table thead th:first-child {
+      z-index: 6;
+      box-shadow: 8px 0 12px rgba(15, 23, 42, 0.08);
+    }
+    .lo-table tbody td.cell-date {
+      background: inherit;
+      box-shadow: 8px 0 12px rgba(15, 23, 42, 0.06);
+    }
+    .lo-table tbody tr:nth-child(odd) td.cell-date {
+      background: rgba(226, 231, 244, 0.25);
+    }
+    .lo-table tbody tr:hover td.cell-date {
+      background: rgba(41, 71, 137, 0.12);
+    }
+    .lo-table tfoot th:first-child {
+      z-index: 5;
+      box-shadow: 8px 0 12px rgba(15, 23, 42, 0.08);
     }
     .lo-table tbody tr:nth-child(odd) td {
       background: rgba(226, 231, 244, 0.25);
@@ -244,6 +270,48 @@
       flex: 1 1 auto;
       min-height: 0;
     }
+    .regular-card {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      flex: 1 1 auto;
+      min-height: calc(100vh - var(--sticky-header-offset) - 2.75rem);
+    }
+    .regular-card__header {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      padding: 0;
+    }
+    .regular-card__title {
+      margin: 0;
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .regular-card__subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+    .regular-table-container {
+      border-radius: 0.85rem;
+      border: 1px solid rgba(64, 80, 120, 0.18);
+      box-shadow: 0 12px 30px rgba(21, 32, 56, 0.12);
+      background: #fff;
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .regular-table-container .dataTables_wrapper {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .regular-table-container table {
+      margin-top: 0;
+    }
     .kpi-title {
       color: var(--muted);
       font-size: 0.9rem;
@@ -285,12 +353,13 @@
     }
     .table-container {
       position: relative;
-      overflow-x: auto;
-      overflow-y: auto;
+      overflow: hidden;
       padding: 0;
       flex: 1 1 auto;
       min-height: 0;
       max-width: 100%;
+      display: flex;
+      flex-direction: column;
     }
     #tab-regular .table-card {
       background: transparent;
@@ -387,20 +456,22 @@
       text-overflow: ellipsis;
     }
     #regular-table_wrapper {
-      padding-right: 0.5rem;
-      padding-bottom: 0.5rem;
+      padding: 0;
       display: flex;
       flex-direction: column;
       height: 100%;
+      min-height: 0;
     }
     #regular-table_wrapper .dataTables_scroll {
-      border: 1px solid rgba(64, 80, 120, 0.18);
-      border-radius: 0.85rem;
-      background: #fff;
-      box-shadow: 0 12px 30px rgba(21, 32, 56, 0.12);
+      border: none;
+      border-radius: inherit;
+      background: transparent;
+      box-shadow: none;
       overflow: hidden;
       display: flex;
       flex-direction: column;
+      flex: 1 1 auto;
+      min-height: 0;
     }
     #regular-table_wrapper .dataTables_scrollHead {
       position: relative;
@@ -712,11 +783,15 @@
   </div>
   <div class="tab-panel" id="tab-regular" data-tab="regular" role="tabpanel" aria-labelledby="tab-regular-button" aria-hidden="true">
     <section class="grid">
-      <div class="card table-card">
-        <div class="table-container">
+      <article class="card regular-card">
+        <header class="regular-card__header">
+          <h2 class="regular-card__title">Regular Performance</h2>
+          <p class="regular-card__subtitle">Detailed order and spend metrics across all listings</p>
+        </header>
+        <div class="table-container regular-table-container">
           <table id="regular-table" class="display" style="width:100%"></table>
         </div>
-      </div>
+      </article>
     </section>
   </div>
   <script>
@@ -1710,7 +1785,7 @@
         return;
       }
 
-      let headerHtml = '<thead><tr><th scope="col">Date</th>';
+      let headerHtml = '<thead><tr><th scope="col" class="cell-date">Date</th>';
       loList.forEach((owner) => {
         headerHtml += `<th scope="col">${escapeHtml(owner)}</th>`;
       });
@@ -1729,7 +1804,7 @@
       let footerHtml = '';
       if (Array.isArray(totals) && totals.length === loList.length) {
         footerHtml = '<tfoot><tr>';
-        footerHtml += '<th scope="row">Total</th>';
+        footerHtml += '<th scope="row" class="cell-date">Total</th>';
         totals.forEach((value) => {
           footerHtml += `<td>${value}</td>`;
         });
@@ -1748,7 +1823,7 @@
 
     function alignPivotToReference(pivotData, referencePivot) {
       if (!pivotData || !Array.isArray(pivotData.loList) || !Array.isArray(pivotData.rows)) {
-        return { loList: [], rows: [] };
+        return { loList: [], rows: [], totals: [] };
       }
       const referenceLabels = Array.isArray(referencePivot?.loList) ? referencePivot.loList : [];
       const referenceKeys = referenceLabels.map((label) => normalizeOwnerKey(label));
@@ -1801,7 +1876,23 @@
         return { displayDate, formattedValues };
       });
 
-      return { loList, rows };
+      const totalsSource = Array.isArray(pivotData.totals) ? pivotData.totals : [];
+      const totals = orderedKeys.map((key) => {
+        const columnIndex = columnIndexMap.get(key);
+        if (typeof columnIndex !== 'number') {
+          return '0.00';
+        }
+        const value = totalsSource[columnIndex];
+        if (typeof value === 'string') {
+          return value;
+        }
+        if (typeof value === 'number' && Number.isFinite(value)) {
+          return value.toFixed(2);
+        }
+        return '0.00';
+      });
+
+      return { loList, rows, totals };
     }
 
     function renderLoMessage(message) {
