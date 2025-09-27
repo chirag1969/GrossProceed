@@ -336,12 +336,63 @@
     #regular-table_wrapper .dataTables_scrollBody {
       border-top: none;
       overflow-y: auto !important;
+      overflow-x: auto !important;
     }
     #regular-table_wrapper .dataTables_scrollBody table {
       border-collapse: separate;
       border-spacing: 0;
       background: #fff;
       width: 100% !important;
+    }
+    #regular-table_wrapper .dataTables_scrollFoot {
+      background: linear-gradient(180deg, #f5f7ff 0%, #ebeffd 100%);
+      box-shadow: 0 -10px 24px rgba(21, 32, 56, 0.1);
+    }
+    #regular-table_wrapper .dataTables_scrollFoot th {
+      position: sticky;
+      bottom: 0;
+      padding: 0.6rem 0.7rem;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #1b1e28;
+      text-transform: uppercase;
+      background: transparent;
+      border-top: 2px solid rgba(15, 23, 42, 0.08);
+    }
+    #regular-table_wrapper .dataTables_scrollFoot th.cell-total-label {
+      text-align: left;
+      color: #2d3748;
+    }
+    #regular-table_wrapper .dataTables_scrollFoot th.cell-total {
+      text-align: right;
+    }
+    #regular-table_wrapper .dataTables_scrollFoot th.cell-total-column {
+      background: linear-gradient(180deg, #fff4d7 0%, #ffd897 100%);
+      border-left: 2px solid rgba(15, 23, 42, 0.08);
+    }
+    #regular-table_wrapper .dataTables_scrollHead th.cell-total-column,
+    #regular-table_wrapper .dataTables_scrollBody td.cell-total-column,
+    #regular-table_wrapper .dataTables_scrollFoot th.cell-total-column {
+      position: sticky;
+      right: 0;
+      z-index: 4;
+    }
+    #regular-table_wrapper .dataTables_scrollHead th.cell-total-column {
+      z-index: 7;
+      background: linear-gradient(180deg, #fef5e6 0%, #fbdca3 100%);
+      color: #5c3c00;
+      border-left: 2px solid rgba(15, 23, 42, 0.08);
+    }
+    #regular-table_wrapper .dataTables_scrollBody td.cell-total-column {
+      background: linear-gradient(180deg, #fffdf7 0%, #fff0d3 100%);
+      font-weight: 600;
+      border-left: 2px solid rgba(15, 23, 42, 0.08);
+    }
+    #regular-table_wrapper .dataTables_scrollBody tr:nth-child(even) td.cell-total-column {
+      background: linear-gradient(180deg, #fff9ec 0%, #ffe7bf 100%);
+    }
+    #regular-table_wrapper .dataTables_scrollBody tr:hover td.cell-total-column {
+      background: rgba(41, 71, 137, 0.18);
     }
     .regular-table__footer {
       display: flex;
@@ -588,6 +639,9 @@
 
     let regularTable;
     let regularTableInitialised = false;
+    let regularTableFooterValues = [];
+    let regularTableNumericColumnSet = new Set();
+    let regularTableTotalColumnIndex = -1;
     let datasetCache = null;
     let datasetPromise = null;
     let loTablesInitialised = false;
@@ -596,6 +650,10 @@
     const ZERO_DECIMAL_COLUMNS = new Set(['qty', 'order no', 'plain order no', 'order no.', 'order #']);
     const numberFormatter = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const displayDateFormatter = new Intl.DateTimeFormat('en-US', { day: '2-digit' });
+    const TOTAL_COLUMN_TITLE = 'Grand Total';
+    const TOTAL_ROW_LABEL = 'Grand Total';
+    const VIEWPORT_HEIGHT_PADDING_RATIO = 0.08;
+    const VIEWPORT_MIN_PADDING = 72;
 
     let columnValueOptions = [];
     let columnFilters = {};
@@ -606,7 +664,7 @@
     const HEADER_HEIGHT = 44;
     const ROW_HEIGHT = 34;
     const MIN_VISIBLE_ROWS = 6;
-    const MAX_VISIBLE_ROWS = 16;
+    const MAX_VISIBLE_ROWS = 22;
     const TABLE_BOTTOM_MARGIN = 24;
     const REGULAR_TABLE_PAGE_LENGTH = 200;
 
@@ -644,6 +702,8 @@
     function calculateScrollBodyHeight(rowCount, viewportTopOffset) {
       const baselineMinHeight = HEADER_HEIGHT + MIN_VISIBLE_ROWS * ROW_HEIGHT;
       const viewportHeight = Number.isFinite(window.innerHeight) ? window.innerHeight : baselineMinHeight;
+      const viewportPadding = Math.max(VIEWPORT_MIN_PADDING, Math.round(viewportHeight * VIEWPORT_HEIGHT_PADDING_RATIO));
+      const targetViewportHeight = Math.max(viewportHeight - viewportPadding, baselineMinHeight);
       const minimumAllowedHeight = Math.min(baselineMinHeight, viewportHeight);
       const effectiveRowCount = Math.min(Math.max(rowCount, MIN_VISIBLE_ROWS), MAX_VISIBLE_ROWS);
       const desiredHeight = HEADER_HEIGHT + effectiveRowCount * ROW_HEIGHT;
@@ -656,8 +716,8 @@
         availableViewport = viewportHeight - stickyOffset;
       }
 
-      const usableViewport = Math.max(availableViewport, baselineMinHeight);
-      const heightWithinViewport = Math.min(desiredHeight, usableViewport, viewportHeight);
+      const constrainedViewport = Math.min(Math.max(availableViewport, baselineMinHeight), targetViewportHeight);
+      const heightWithinViewport = Math.min(desiredHeight, constrainedViewport);
       return Math.round(Math.max(heightWithinViewport, minimumAllowedHeight));
     }
 
@@ -749,11 +809,69 @@
       requestAnimationFrame(() => syncHeaderColumnWidths(table));
     }
 
+    function ensureTableFooter(tableElement, columnCount) {
+      if (!tableElement) {
+        return;
+      }
+      const existingFoot = tableElement.querySelector('tfoot');
+      if (existingFoot) {
+        tableElement.removeChild(existingFoot);
+      }
+      const tfoot = document.createElement('tfoot');
+      const row = document.createElement('tr');
+      for (let index = 0; index < columnCount; index += 1) {
+        row.appendChild(document.createElement('th'));
+      }
+      tfoot.appendChild(row);
+      tableElement.appendChild(tfoot);
+    }
+
+    function renderFooterRow(table) {
+      if (!table || !regularTableFooterValues.length) {
+        return;
+      }
+      const container = table.table().container();
+      const baseFooter = table.table().footer();
+      const footerTables = [];
+      if (baseFooter) {
+        footerTables.push(baseFooter);
+      }
+      const scrollFoot = container.querySelector('.dataTables_scrollFoot table');
+      if (scrollFoot) {
+        footerTables.push(scrollFoot);
+      }
+      footerTables.forEach((footerTable) => {
+        const cells = footerTable.querySelectorAll('th');
+        regularTableFooterValues.forEach((value, index) => {
+          const cell = cells[index];
+          if (!cell) {
+            return;
+          }
+          const displayValue = value ?? '';
+          const isLabelCell = index === 0;
+          const isNumeric = regularTableNumericColumnSet.has(index);
+          cell.textContent = displayValue;
+          cell.classList.toggle('cell-total-label', isLabelCell);
+          cell.classList.toggle('cell-total', !isLabelCell);
+          cell.classList.toggle('cell-numeric', isNumeric && !isLabelCell);
+          cell.classList.toggle('cell-total-column', index === regularTableTotalColumnIndex);
+          if (isLabelCell) {
+            cell.style.textAlign = 'left';
+          } else if (isNumeric) {
+            cell.style.textAlign = 'right';
+          } else {
+            cell.style.textAlign = 'left';
+          }
+        });
+      });
+    }
+
     function refreshRegularTableLayout() {
       if (!regularTableInitialised || !regularTable) {
         return;
       }
       applyTableHeight(regularTable);
+      renderFooterRow(regularTable);
     }
 
     function setActiveTab(targetTab) {
@@ -1046,18 +1164,36 @@
 
     function wireHeaderEvents(table) {
       const container = table.table().container();
-      const headerCells = container.querySelectorAll('thead th');
+      const headerCells = Array.from(container.querySelectorAll('thead th'));
+      const totalColumnIndex = regularTableTotalColumnIndex;
+
       headerCells.forEach((cell, index) => {
-        cell.classList.add('is-filterable');
         if (!cell.dataset.columnIndex) {
           cell.dataset.columnIndex = String(index);
         }
+        const isTotalColumn = totalColumnIndex >= 0 && index === totalColumnIndex;
+        if (isTotalColumn) {
+          cell.classList.remove('is-filterable');
+          cell.classList.add('is-static');
+          cell.style.cursor = 'default';
+          cell.setAttribute('aria-disabled', 'true');
+        } else {
+          cell.classList.add('is-filterable');
+          cell.style.cursor = '';
+          cell.removeAttribute('aria-disabled');
+        }
       });
+
       $(headerCells).off('click.DT keypress.DT');
-      headerCells.forEach((cell) => {
+      headerCells.forEach((cell, index) => {
         const existingHandler = headerClickHandlers.get(cell);
         if (existingHandler) {
           cell.removeEventListener('click', existingHandler);
+          headerClickHandlers.delete(cell);
+        }
+        const isTotalColumn = totalColumnIndex >= 0 && index === totalColumnIndex;
+        if (isTotalColumn) {
+          return;
         }
         const handler = (event) => {
           event.preventDefault();
@@ -1164,6 +1300,88 @@
         return numericValue.toFixed(decimals);
       }
       return typeof value === 'string' ? value : String(value ?? '');
+    }
+
+    function augmentDatasetWithTotals(dataset) {
+      if (!dataset || !Array.isArray(dataset.columns) || !Array.isArray(dataset.rows)) {
+        return {
+          columns: [],
+          rows: [],
+          totalsRow: [],
+          numericColumnIndices: [],
+          totalColumnIndex: -1,
+        };
+      }
+
+      const baseColumns = dataset.columns.slice();
+      const numericColumnIndices = detectNumericColumns(dataset);
+      const totalsByColumn = new Map();
+      numericColumnIndices.forEach((index) => totalsByColumn.set(index, 0));
+
+      const augmentedRows = dataset.rows.map((row) => {
+        const newRow = row.slice();
+        let rowTotal = 0;
+        numericColumnIndices.forEach((columnIndex) => {
+          const numericValue = parseNumericValue(row[columnIndex]);
+          if (numericValue === null) {
+            return;
+          }
+          rowTotal += numericValue;
+          totalsByColumn.set(columnIndex, (totalsByColumn.get(columnIndex) ?? 0) + numericValue);
+        });
+        newRow.push(rowTotal);
+        return newRow;
+      });
+
+      const totalColumnIndex = baseColumns.length;
+      const augmentedColumns = baseColumns.concat(TOTAL_COLUMN_TITLE);
+      const totalsRow = new Array(augmentedColumns.length).fill('');
+      totalsRow[0] = TOTAL_ROW_LABEL;
+
+      numericColumnIndices.forEach((columnIndex) => {
+        const total = totalsByColumn.get(columnIndex);
+        if (typeof total === 'number' && Number.isFinite(total)) {
+          totalsRow[columnIndex] = total;
+        } else {
+          totalsRow[columnIndex] = 0;
+        }
+      });
+
+      const grandTotal = augmentedRows.reduce((accumulator, row) => {
+        const value = parseNumericValue(row[totalColumnIndex]);
+        return accumulator + (value ?? 0);
+      }, 0);
+      totalsRow[totalColumnIndex] = grandTotal;
+
+      const augmentedNumericColumnIndices = numericColumnIndices.concat(totalColumnIndex);
+
+      return {
+        columns: augmentedColumns,
+        rows: augmentedRows,
+        totalsRow,
+        numericColumnIndices: augmentedNumericColumnIndices,
+        totalColumnIndex,
+      };
+    }
+
+    function buildFormattedFooterValues(augmentedDataset) {
+      if (!augmentedDataset || !Array.isArray(augmentedDataset.columns) || !Array.isArray(augmentedDataset.totalsRow)) {
+        return [];
+      }
+      const numericColumns = new Set(augmentedDataset.numericColumnIndices || []);
+      return augmentedDataset.totalsRow.map((value, index) => {
+        if (index === 0) {
+          const label = typeof value === 'string' && value.trim().length ? value : TOTAL_ROW_LABEL;
+          return label;
+        }
+        if (numericColumns.has(index)) {
+          return formatCellValue(value, augmentedDataset.columns[index]);
+        }
+        if (value === null || value === undefined) {
+          return '';
+        }
+        return typeof value === 'string' ? value : String(value);
+      });
     }
 
     function findColumnIndex(dataset, targetName) {
@@ -1336,11 +1554,22 @@
         .then((dataset) => {
           updateStickyOffset();
 
-          const columns = dataset.columns.map((title) => ({ title }));
-          const formattedRows = dataset.rows.map((row) => row.map((value, index) => formatCellValue(value, dataset.columns[index])));
-          const productColumnIndex = dataset.columns.indexOf('Product');
-          const quantityColumnIndex = dataset.columns.findIndex((column) => column && column.trim().toLowerCase() === 'qty');
-          const numericColumnIndices = detectNumericColumns(dataset);
+          const augmentedDataset = augmentDatasetWithTotals(dataset);
+          const columns = augmentedDataset.columns.map((title) => ({ title }));
+          const formattedRows = augmentedDataset.rows.map((row) => row.map((value, index) => formatCellValue(value, augmentedDataset.columns[index])));
+          const productColumnIndex = augmentedDataset.columns.indexOf('Product');
+          const quantityColumnIndex = augmentedDataset.columns.findIndex((column) => column && column.trim().toLowerCase() === 'qty');
+          const numericColumnIndices = augmentedDataset.numericColumnIndices;
+          const totalColumnIndex = augmentedDataset.totalColumnIndex;
+
+          regularTableFooterValues = buildFormattedFooterValues(augmentedDataset);
+          regularTableNumericColumnSet = new Set(numericColumnIndices);
+          regularTableTotalColumnIndex = totalColumnIndex;
+
+          const tableElement = document.getElementById('regular-table');
+          if (tableElement) {
+            ensureTableFooter(tableElement, augmentedDataset.columns.length);
+          }
 
           const columnClassMap = new Map();
           const addColumnClass = (columnIndex, className) => {
@@ -1356,13 +1585,16 @@
           addColumnClass(productColumnIndex, 'cell-product');
           addColumnClass(quantityColumnIndex, 'cell-qty');
           numericColumnIndices.forEach((columnIndex) => addColumnClass(columnIndex, 'cell-numeric'));
+          if (totalColumnIndex >= 0) {
+            addColumnClass(totalColumnIndex, 'cell-total-column');
+          }
 
           const columnDefs = Array.from(columnClassMap.entries()).map(([columnIndex, classSet]) => ({
             targets: Number(columnIndex),
             className: Array.from(classSet).join(' '),
           }));
 
-          const initialRowCount = Math.min(dataset.rows.length, REGULAR_TABLE_PAGE_LENGTH);
+          const initialRowCount = Math.min(augmentedDataset.rows.length, REGULAR_TABLE_PAGE_LENGTH);
           const initialScrollHeight = `${calculateScrollBodyHeight(initialRowCount)}px`;
           regularTable = $('#regular-table').DataTable({
             data: formattedRows,
@@ -1381,12 +1613,14 @@
             dom: 't<"regular-table__footer"ip>'
           });
 
-          buildColumnOptions(dataset);
+          buildColumnOptions(augmentedDataset);
           wireHeaderEvents(regularTable);
           applyTableHeight(regularTable);
+          renderFooterRow(regularTable);
           regularTable.on('draw.dt', () => {
             wireHeaderEvents(regularTable);
             applyTableHeight(regularTable);
+            renderFooterRow(regularTable);
           });
 
           regularTableInitialised = true;
