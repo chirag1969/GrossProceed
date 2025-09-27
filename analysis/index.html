@@ -358,7 +358,7 @@
     #regular-table_wrapper .dataTables_scrollFoot {
       position: sticky;
       bottom: 0;
-      z-index: 6;
+      z-index: 12;
       background: linear-gradient(180deg, #f5f7ff 0%, #ebeffd 100%);
       box-shadow: 0 -10px 24px rgba(21, 32, 56, 0.1);
       flex: 0 0 auto;
@@ -366,6 +366,7 @@
     #regular-table_wrapper .dataTables_scrollFoot th {
       position: sticky;
       bottom: 0;
+      z-index: 13;
       padding: 0.6rem 0.7rem;
       font-size: 0.82rem;
       font-weight: 700;
@@ -384,6 +385,7 @@
     #regular-table_wrapper .dataTables_scrollFoot th.cell-total-column {
       background: linear-gradient(180deg, #fff4d7 0%, #ffd897 100%);
       border-left: 2px solid rgba(15, 23, 42, 0.08);
+      z-index: 14;
     }
     #regular-table_wrapper .dataTables_scrollHead th.cell-total-column,
     #regular-table_wrapper .dataTables_scrollBody td.cell-total-column,
@@ -675,8 +677,8 @@
     const headerClickHandlers = new WeakMap();
     const HEADER_HEIGHT = 44;
     const ROW_HEIGHT = 34;
-    const MIN_VISIBLE_ROWS = 6;
-    const TABLE_BOTTOM_MARGIN = 12;
+    const MIN_VISIBLE_ROWS = 5;
+    const TABLE_BOTTOM_MARGIN = 18;
     const REGULAR_TABLE_PAGE_LENGTH = 200;
 
     function fetchDataset() {
@@ -866,10 +868,10 @@
       if (scrollFoot) {
         const footRect = scrollFoot.getBoundingClientRect();
         if (footRect && Number.isFinite(footRect.height)) {
-          paddingBottom = footRect.height;
+          paddingBottom = Math.max(0, Math.ceil(footRect.height) - 6);
         }
       }
-      scrollBody.style.paddingBottom = paddingBottom > 0 ? `${Math.ceil(paddingBottom)}px` : '0px';
+      scrollBody.style.paddingBottom = paddingBottom > 0 ? `${paddingBottom}px` : '0px';
     }
 
     function applyTableHeight(table) {
