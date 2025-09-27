@@ -1128,6 +1128,7 @@
     let regularTableInitialised = false;
     let regularTableFooterValues = [];
     let regularTableNumericColumnSet = new Set();
+    let regularTableAugmentedDataset = null;
     let datasetCache = null;
     let datasetPromise = null;
     let loTablesInitialised = false;
@@ -1544,7 +1545,9 @@
         return;
       }
       applyTableHeight(regularTable);
-      if (regularTableFooterValues.length) {
+      if (SHOW_REGULAR_TOTAL_ROW) {
+        updateRegularTableFooter(regularTable);
+      } else if (regularTableFooterValues.length) {
         renderFooterRow(regularTable);
       }
       moveRegularTablePagination();
@@ -2067,6 +2070,76 @@
       });
     }
 
+    function calculateRegularTableFooterValues(table) {
+      if (!table || !regularTableAugmentedDataset) {
+        return regularTableFooterValues;
+      }
+
+      const columns = Array.isArray(regularTableAugmentedDataset.columns)
+        ? regularTableAugmentedDataset.columns
+        : [];
+      const columnCount = columns.length;
+      if (columnCount === 0) {
+        return [];
+      }
+
+      const baseValues = buildFormattedFooterValues(regularTableAugmentedDataset);
+      const values = Array.isArray(baseValues) && baseValues.length === columnCount
+        ? baseValues.slice()
+        : (() => {
+            const fallback = new Array(columnCount).fill('');
+            const totalsRow = Array.isArray(regularTableAugmentedDataset.totalsRow)
+              ? regularTableAugmentedDataset.totalsRow
+              : [];
+            const labelValue = totalsRow[0];
+            if (typeof labelValue === 'string' && labelValue.trim().length) {
+              fallback[0] = labelValue;
+            } else {
+              fallback[0] = TOTAL_ROW_LABEL;
+            }
+            return fallback;
+          })();
+
+      if (!regularTableNumericColumnSet || regularTableNumericColumnSet.size === 0) {
+        return values;
+      }
+
+      const filteredRows = table.rows({ search: 'applied' }).data().toArray();
+
+      regularTableNumericColumnSet.forEach((columnIndex) => {
+        if (typeof columnIndex !== 'number' || columnIndex < 0 || columnIndex >= columnCount) {
+          return;
+        }
+        let sum = 0;
+        let hasValue = false;
+        filteredRows.forEach((row) => {
+          if (!row || columnIndex >= row.length) {
+            return;
+          }
+          const numericValue = parseNumericValue(row[columnIndex]);
+          if (numericValue !== null) {
+            sum += numericValue;
+            hasValue = true;
+          }
+        });
+
+        const formattedTotal = hasValue
+          ? formatCellValue(sum, columns[columnIndex])
+          : formatCellValue(0, columns[columnIndex]);
+        values[columnIndex] = formattedTotal;
+      });
+
+      return values;
+    }
+
+    function updateRegularTableFooter(table) {
+      if (!SHOW_REGULAR_TOTAL_ROW || !table) {
+        return;
+      }
+      regularTableFooterValues = calculateRegularTableFooterValues(table);
+      renderFooterRow(table);
+    }
+
     function findColumnIndex(dataset, targetName) {
       if (!dataset || !Array.isArray(dataset.columns)) {
         return -1;
@@ -2562,6 +2635,7 @@
           updateStickyOffset();
 
           const augmentedDataset = augmentDatasetWithTotals(dataset);
+          regularTableAugmentedDataset = augmentedDataset;
           totalColumnIndex = augmentedDataset.totalColumnIndex;
           const columns = augmentedDataset.columns.map((title) => ({ title }));
           const formattedRows = augmentedDataset.rows.map((row) => row.map((value, index) => formatCellValue(value, augmentedDataset.columns[index])));
@@ -2633,13 +2707,13 @@
           wireHeaderEvents(regularTable);
           applyTableHeight(regularTable);
           if (SHOW_REGULAR_TOTAL_ROW) {
-            renderFooterRow(regularTable);
+            updateRegularTableFooter(regularTable);
           }
           regularTable.on('draw.dt', () => {
             wireHeaderEvents(regularTable);
             applyTableHeight(regularTable);
             if (SHOW_REGULAR_TOTAL_ROW) {
-              renderFooterRow(regularTable);
+              updateRegularTableFooter(regularTable);
             }
             moveRegularTablePagination();
           });
