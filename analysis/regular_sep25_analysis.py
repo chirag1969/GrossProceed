@@ -357,6 +357,142 @@ def extract_lo_spend_pivot(path: Path, sheet_rel_path: str = "xl/worksheets/shee
     return {"loList": owner_labels, "rows": rows_data}
 
 
+def normalise_key(label: str, existing: set[str]) -> str:
+    base = re.sub(r"[^0-9a-zA-Z]+", "_", label.strip().lower()).strip("_")
+    if not base:
+        base = "value"
+    key = base
+    counter = 2
+    while key in existing:
+        key = f"{base}_{counter}"
+        counter += 1
+    existing.add(key)
+    return key
+
+
+def infer_column_type(label: str) -> str:
+    normalised = label.strip().lower()
+    if "qty" in normalised or "quantity" in normalised:
+        return "integer"
+    return "decimal"
+
+
+def extract_sku_summary_pivot(
+    path: Path, sheet_rel_path: str = "xl/worksheets/sheet11.xml"
+) -> Dict[str, object]:
+    with zipfile.ZipFile(path) as archive:
+        shared_strings: List[str] = []
+        if "xl/sharedStrings.xml" in archive.namelist():
+            root = ET.fromstring(archive.read("xl/sharedStrings.xml"))
+            for si in root:
+                text = "".join(t.text or "" for t in si.iter() if t.tag.endswith("}t"))
+                shared_strings.append(text)
+        sheet_root = ET.fromstring(archive.read(sheet_rel_path))
+
+    ns = {"ns": "http://schemas.openxmlformats.org/spreadsheetml/2006/main"}
+
+    def cell_value(cell: ET.Element) -> Optional[object]:
+        cell_type = cell.attrib.get("t")
+        node = cell.find("ns:v", ns)
+        text_value = node.text if node is not None else None
+        if cell_type == "s" and text_value is not None:
+            try:
+                return shared_strings[int(text_value)]
+            except (ValueError, IndexError):
+                return None
+        if text_value is not None:
+            try:
+                return float(text_value)
+            except (TypeError, ValueError):
+                return text_value
+        inline = cell.find("ns:is/ns:t", ns)
+        return inline.text if inline is not None else None
+
+    header_columns: List[Dict[str, object]] = []
+    header_keys: set[str] = set()
+    rows_data: List[Dict[str, object]] = []
+    totals: Dict[str, object] = {}
+
+    header_row_index = 4
+
+    for row in sheet_root.findall("ns:sheetData/ns:row", ns):
+        row_index = int(row.attrib.get("r", "0"))
+        cell_map: Dict[str, object] = {}
+        for cell in row.findall("ns:c", ns):
+            ref = cell.attrib.get("r")
+            if not ref:
+                continue
+            match = re.match(r"([A-Z]+)(\d+)", ref)
+            if not match:
+                continue
+            column_letters = match.group(1)
+            cell_map[column_letters] = cell_value(cell)
+
+        if row_index < header_row_index:
+            continue
+
+        if row_index == header_row_index:
+            for column_letters, raw_label in sorted(
+                cell_map.items(), key=lambda item: column_letters_to_index(item[0])
+            ):
+                if column_letters == "A":
+                    continue
+                if not isinstance(raw_label, str):
+                    continue
+                label = raw_label.strip()
+                if not label:
+                    continue
+                key = normalise_key(label, header_keys)
+                header_columns.append(
+                    {
+                        "letters": column_letters,
+                        "label": label,
+                        "key": key,
+                        "type": infer_column_type(label),
+                    }
+                )
+            continue
+
+        row_label = cell_map.get("A")
+        if isinstance(row_label, str) and row_label.strip().lower() == "grand total":
+            totals = {"sku": "Grand Total"}
+            for column in header_columns:
+                raw_value = cell_map.get(column["letters"])
+                totals[column["key"]] = clean_numeric(raw_value)
+            break
+
+        if row_label is None:
+            continue
+
+        sku_label = str(row_label).strip()
+        if not header_columns:
+            continue
+
+        row_entry: Dict[str, object] = {"sku": sku_label}
+        has_numeric = False
+        for column in header_columns:
+            raw_value = cell_map.get(column["letters"])
+            numeric_value = clean_numeric(raw_value)
+            row_entry[column["key"]] = numeric_value
+            if numeric_value not in (None, 0.0):
+                has_numeric = True
+        if not has_numeric and all(row_entry.get(column["key"]) is None for column in header_columns):
+            continue
+        rows_data.append(row_entry)
+
+    columns = [
+        {"key": "sku", "label": "SKU", "type": "string"},
+    ] + [
+        {"key": column["key"], "label": column["label"], "type": column["type"]}
+        for column in header_columns
+    ]
+
+    if totals and "sku" not in totals:
+        totals["sku"] = "Grand Total"
+
+    return {"columns": columns, "rows": rows_data, "totals": totals}
+
+
 def build_sqlite(records: Iterable[Dict[str, object]]) -> sqlite3.Connection:
     conn = sqlite3.connect(":memory:")
     cursor = conn.cursor()
@@ -743,6 +879,15 @@ def main() -> None:
     else:
         spend_pivot_path.write_text(json.dumps(spend_pivot, indent=2), encoding="utf-8")
         print(f"Saved LO spend pivot to {spend_pivot_path}")
+
+    sku_pivot_path = output_dir / "sku_summary_pivot.json"
+    try:
+        sku_pivot = extract_sku_summary_pivot(workbook_path)
+    except Exception as exc:  # pylint: disable=broad-except
+        print(f"Failed to extract SKU summary pivot: {exc}")
+    else:
+        sku_pivot_path.write_text(json.dumps(sku_pivot, indent=2), encoding="utf-8")
+        print(f"Saved SKU summary pivot to {sku_pivot_path}")
 
     dashboard_path = output_dir / "index.html"
     render_dashboard(metrics, series, dashboard_path)

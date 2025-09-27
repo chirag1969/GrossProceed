@@ -397,6 +397,195 @@
     .regular-table-container table {
       margin-top: 0;
     }
+    .sku-card {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      flex: 1 1 auto;
+      min-height: calc(100vh - var(--sticky-header-offset) - 2.75rem);
+    }
+    .sku-card__header {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+    .sku-card__title {
+      margin: 0;
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .sku-card__subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+    .sku-card__toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-top: 0.25rem;
+    }
+    .sku-card__toolbar[data-active='false'] {
+      display: none;
+    }
+    .sku-card__pagination {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-left: auto;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+    .sku-card__pagination[aria-hidden='true'] {
+      display: none;
+    }
+    .sku-card__pagination-info {
+      white-space: nowrap;
+    }
+    .sku-card__pagination-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.35rem 0.9rem;
+      border-radius: 999px;
+      border: 1px solid rgba(27, 30, 40, 0.12);
+      background: #fff;
+      color: var(--text);
+      font: inherit;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    }
+    .sku-card__pagination-button:hover,
+    .sku-card__pagination-button:focus {
+      background: rgba(20, 90, 252, 0.12);
+      border-color: rgba(20, 90, 252, 0.45);
+      color: var(--accent);
+    }
+    .sku-card__pagination-button:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+    .sku-card__pagination-button[disabled] {
+      opacity: 0.45;
+      cursor: default;
+      background: rgba(27, 30, 40, 0.06);
+      border-color: rgba(27, 30, 40, 0.08);
+      color: var(--muted);
+    }
+    .sku-card__pagination-button[disabled]:hover,
+    .sku-card__pagination-button[disabled]:focus {
+      background: rgba(27, 30, 40, 0.06);
+      border-color: rgba(27, 30, 40, 0.08);
+      color: var(--muted);
+    }
+    .sku-table-container {
+      border-radius: 0.85rem;
+      border: 1px solid rgba(64, 80, 120, 0.18);
+      box-shadow: 0 12px 30px rgba(21, 32, 56, 0.12);
+      background: #fff;
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .sku-table-scroll {
+      flex: 1 1 auto;
+      overflow-x: auto;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .sku-table {
+      width: 100%;
+      min-width: 720px;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+    .sku-table thead th {
+      position: sticky;
+      top: 0;
+      background: linear-gradient(180deg, #f6f8ff 0%, #e3e8f7 100%);
+      color: var(--muted);
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.65rem 0.75rem;
+      text-align: right;
+      z-index: 3;
+    }
+    .sku-table thead th:first-child {
+      text-align: left;
+      box-shadow: 8px 0 12px rgba(15, 23, 42, 0.08);
+      z-index: 4;
+    }
+    .sku-table tbody td,
+    .sku-table tfoot td {
+      padding: 0.45rem 0.75rem;
+      border-top: 1px solid rgba(27, 30, 40, 0.08);
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+    .sku-table tbody td:first-child {
+      position: sticky;
+      left: 0;
+      text-align: left;
+      font-weight: 600;
+      color: var(--text);
+      background: inherit;
+      box-shadow: 8px 0 12px rgba(15, 23, 42, 0.06);
+      z-index: 2;
+    }
+    .sku-table thead th:first-child,
+    .sku-table tbody td:first-child,
+    .sku-table tfoot th:first-child {
+      background-clip: padding-box;
+    }
+    .sku-table tbody tr:nth-child(odd) td {
+      background: rgba(226, 231, 244, 0.25);
+    }
+    .sku-table tbody tr:hover td {
+      background: rgba(41, 71, 137, 0.12);
+    }
+    .sku-table tfoot {
+      position: sticky;
+      bottom: 0;
+      background: linear-gradient(180deg, #f6f8ff 0%, #e3e8f7 100%);
+      box-shadow: 0 -8px 16px rgba(15, 23, 42, 0.08);
+      z-index: 1;
+    }
+    .sku-table tfoot th,
+    .sku-table tfoot td {
+      padding: 0.55rem 0.75rem;
+      border-top: 1px solid rgba(27, 30, 40, 0.14);
+      font-weight: 600;
+    }
+    .sku-table tfoot th {
+      position: sticky;
+      left: 0;
+      text-align: left;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      font-size: 0.78rem;
+      color: var(--muted);
+      box-shadow: 8px 0 12px rgba(15, 23, 42, 0.08);
+      z-index: 2;
+    }
+    .sku-table th,
+    .sku-table td {
+      border-right: none;
+      border-left: none;
+    }
+    .sku-table__message {
+      text-align: left;
+      padding: 1rem 0.75rem;
+      font-weight: 600;
+      color: var(--muted);
+    }
     .kpi-title {
       color: var(--muted);
       font-size: 0.9rem;
@@ -856,6 +1045,7 @@
 <body>
   <nav class="tab-nav" aria-label="Dashboard views">
     <button class="tab-button active" id="tab-lo-button" type="button" data-tab="lo" aria-controls="tab-lo" aria-selected="true">LO - Sales &amp; Spend</button>
+    <button class="tab-button" id="tab-sku-summary-button" type="button" data-tab="sku-summary" aria-controls="tab-sku-summary" aria-selected="false">SKU wise summary</button>
     <button class="tab-button" id="tab-regular-button" type="button" data-tab="regular" aria-controls="tab-regular" aria-selected="false">Regular</button>
   </nav>
   <div class="tab-panel active" id="tab-lo" data-tab="lo" role="tabpanel" aria-labelledby="tab-lo-button" aria-hidden="false">
@@ -877,6 +1067,24 @@
             <div class="lo-table-scroll">
               <table id="lo-spend-table" class="lo-table"></table>
             </div>
+          </div>
+        </div>
+      </article>
+    </section>
+  </div>
+  <div class="tab-panel" id="tab-sku-summary" data-tab="sku-summary" role="tabpanel" aria-labelledby="tab-sku-summary-button" aria-hidden="true">
+    <section class="grid">
+      <article class="card sku-card">
+        <header class="sku-card__header">
+          <h2 class="sku-card__title">SKU wise summary</h2>
+          <p class="sku-card__subtitle">Pivoted averages, fees, and totals by SKU directly from the workbook</p>
+          <div class="sku-card__toolbar" data-active="false">
+            <div class="sku-card__pagination" id="sku-summary-pagination" aria-label="SKU wise summary pagination" aria-hidden="true"></div>
+          </div>
+        </header>
+        <div class="table-container sku-table-container">
+          <div class="sku-table-scroll">
+            <table id="sku-summary-table" class="sku-table"></table>
           </div>
         </div>
       </article>
@@ -913,10 +1121,17 @@
     let loTablesInitialised = false;
     let spendPivotCache = null;
     let spendPivotPromise = null;
+    let skuSummaryInitialised = false;
+    let skuSummaryPivotCache = null;
+    let skuSummaryPivotPromise = null;
+    let skuSummaryCurrentPage = 1;
+    let skuSummaryPageSize = 25;
+    let skuSummaryTotalRows = 0;
 
     const NUMERIC_COLUMN_EXCLUSIONS = new Set(['ORDER NO', 'PLAIN ORDER NO', 'ORDER #', 'ORDER NO.', 'CHECKOUT']);
     const ZERO_DECIMAL_COLUMNS = new Set(['qty', 'order no', 'plain order no', 'order no.', 'order #']);
     const numberFormatter = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const integerFormatter = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 });
     const displayDateFormatter = new Intl.DateTimeFormat('en-US', { month: '2-digit', day: '2-digit' });
     const TOTAL_ROW_LABEL = 'Grand Total';
 
@@ -987,6 +1202,31 @@
           throw error;
         });
       return spendPivotPromise;
+    }
+
+    function fetchSkuSummaryPivot() {
+      if (skuSummaryPivotCache) {
+        return Promise.resolve(skuSummaryPivotCache);
+      }
+      if (skuSummaryPivotPromise) {
+        return skuSummaryPivotPromise;
+      }
+      skuSummaryPivotPromise = fetch('sku_summary_pivot.json')
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error('Unable to load SKU pivot');
+          }
+          return response.json();
+        })
+        .then((data) => {
+          skuSummaryPivotCache = data;
+          return data;
+        })
+        .catch((error) => {
+          skuSummaryPivotPromise = null;
+          throw error;
+        });
+      return skuSummaryPivotPromise;
     }
 
     function getStickyOffsetValue() {
@@ -1332,6 +1572,9 @@
       if (targetTab === 'regular') {
         loadRegularTable();
         refreshRegularTableLayout();
+      } else if (targetTab === 'sku-summary') {
+        closeHeaderMenu();
+        loadSkuSummaryTable();
       } else {
         closeHeaderMenu();
         if (targetTab === 'lo') {
@@ -2057,6 +2300,200 @@
       });
 
       return { loList, rows, totals };
+    }
+
+    function formatSkuSummaryValue(value, column) {
+      if (value === null || value === undefined || value === '') {
+        return '';
+      }
+      const columnType = column && typeof column.type === 'string' ? column.type : 'decimal';
+      const numeric = typeof value === 'number' ? value : Number(value);
+      if (Number.isFinite(numeric)) {
+        if (columnType === 'integer') {
+          return integerFormatter.format(Math.round(numeric));
+        }
+        return numberFormatter.format(numeric);
+      }
+      return escapeHtml(String(value));
+    }
+
+    function renderSkuSummaryMessage(message, columnCount = 2) {
+      const tableElement = document.getElementById('sku-summary-table');
+      if (!tableElement) {
+        return;
+      }
+      const span = Math.max(1, columnCount);
+      const content = escapeHtml(message);
+      tableElement.innerHTML = `<tbody><tr><td class="sku-table__message" colspan="${span}">${content}</td></tr></tbody>`;
+      skuSummaryTotalRows = 0;
+      skuSummaryCurrentPage = 1;
+      renderSkuSummaryPagination(0, skuSummaryPageSize, 1);
+    }
+
+    function renderSkuSummaryPagination(totalRows, pageSize, currentPage) {
+      const paginationElement = document.getElementById('sku-summary-pagination');
+      if (!paginationElement) {
+        return;
+      }
+
+      const toolbarElement = paginationElement.parentElement;
+      const safePageSize = Number.isFinite(pageSize) && pageSize > 0 ? Math.floor(pageSize) : 25;
+
+      if (!Number.isFinite(totalRows) || totalRows <= safePageSize) {
+        paginationElement.textContent = '';
+        paginationElement.setAttribute('aria-hidden', 'true');
+        if (toolbarElement && toolbarElement.classList && toolbarElement.classList.contains('sku-card__toolbar')) {
+          toolbarElement.setAttribute('data-active', 'false');
+        }
+        return;
+      }
+
+      const totalPages = Math.max(1, Math.ceil(totalRows / safePageSize));
+      const safeCurrentPage = Math.min(Math.max(1, currentPage || 1), totalPages);
+      const start = (safeCurrentPage - 1) * safePageSize + 1;
+      const end = Math.min(totalRows, start + safePageSize - 1);
+
+      const previousDisabled = safeCurrentPage <= 1 ? ' disabled' : '';
+      const nextDisabled = safeCurrentPage >= totalPages ? ' disabled' : '';
+
+      paginationElement.setAttribute('aria-hidden', 'false');
+      if (toolbarElement && toolbarElement.classList && toolbarElement.classList.contains('sku-card__toolbar')) {
+        toolbarElement.setAttribute('data-active', 'true');
+      }
+      paginationElement.innerHTML = `
+        <button type="button" class="sku-card__pagination-button" data-action="previous"${previousDisabled}>Previous</button>
+        <span class="sku-card__pagination-info">Showing ${start}&ndash;${end} of ${totalRows}</span>
+        <button type="button" class="sku-card__pagination-button" data-action="next"${nextDisabled}>Next</button>
+      `;
+    }
+
+    function renderSkuSummaryTable(pivotData, options = {}) {
+      const tableElement = document.getElementById('sku-summary-table');
+      if (!tableElement) {
+        return;
+      }
+      const columns = Array.isArray(pivotData?.columns) ? pivotData.columns : [];
+      const rows = Array.isArray(pivotData?.rows) ? pivotData.rows : [];
+      if (!columns.length) {
+        renderSkuSummaryMessage('No data available');
+        return;
+      }
+      const pageSizeOption = Number.isFinite(options.pageSize) && options.pageSize > 0 ? Math.floor(options.pageSize) : skuSummaryPageSize;
+      const safePageSize = pageSizeOption > 0 ? pageSizeOption : 25;
+      const totalRows = rows.length;
+      const totalPages = totalRows > 0 ? Math.ceil(totalRows / safePageSize) : 1;
+      const requestedPage = Number.isFinite(options.page) ? Math.floor(options.page) : skuSummaryCurrentPage;
+      const safePage = Math.min(Math.max(1, requestedPage), Math.max(1, totalPages));
+      skuSummaryPageSize = safePageSize;
+      skuSummaryCurrentPage = safePage;
+      skuSummaryTotalRows = totalRows;
+      const startIndex = (safePage - 1) * safePageSize;
+      const paginatedRows = totalRows > 0 ? rows.slice(startIndex, startIndex + safePageSize) : [];
+
+      const columnCount = columns.length;
+      let headerHtml = '<thead><tr>';
+      columns.forEach((column) => {
+        const label = typeof column.label === 'string' ? column.label : '';
+        headerHtml += `<th scope="col">${escapeHtml(label)}</th>`;
+      });
+      headerHtml += '</tr></thead>';
+
+      let bodyHtml = '<tbody>';
+      if (!paginatedRows.length) {
+        bodyHtml += `<tr><td class="sku-table__message" colspan="${columnCount}">No data available</td></tr>`;
+      } else {
+        paginatedRows.forEach((row) => {
+          bodyHtml += '<tr>';
+          columns.forEach((column, index) => {
+            const key = column.key;
+            const value = row ? row[key] : null;
+            if (index === 0) {
+              const text = value === null || value === undefined ? '' : String(value);
+              bodyHtml += `<td>${escapeHtml(text)}</td>`;
+            } else {
+              bodyHtml += `<td>${formatSkuSummaryValue(value, column)}</td>`;
+            }
+          });
+          bodyHtml += '</tr>';
+        });
+      }
+      bodyHtml += '</tbody>';
+
+      let footerHtml = '';
+      const totals = pivotData && typeof pivotData.totals === 'object' && pivotData.totals !== null
+        ? pivotData.totals
+        : null;
+      if (totals) {
+        footerHtml = '<tfoot><tr>';
+        columns.forEach((column, index) => {
+          const key = column.key;
+          const value = totals[key];
+          if (index === 0) {
+            const text = value === null || value === undefined ? 'Grand Total' : String(value);
+            footerHtml += `<th scope="row">${escapeHtml(text)}</th>`;
+          } else {
+            footerHtml += `<td>${formatSkuSummaryValue(value, column)}</td>`;
+          }
+        });
+        footerHtml += '</tr></tfoot>';
+      }
+
+      tableElement.innerHTML = `${headerHtml}${bodyHtml}${footerHtml}`;
+      renderSkuSummaryPagination(totalRows, safePageSize, safePage);
+    }
+
+    function loadSkuSummaryTable() {
+      if (skuSummaryInitialised) {
+        return;
+      }
+      renderSkuSummaryMessage('Loading data…');
+      fetchSkuSummaryPivot()
+        .then((pivotData) => {
+          skuSummaryCurrentPage = 1;
+          skuSummaryTotalRows = Array.isArray(pivotData?.rows) ? pivotData.rows.length : 0;
+          renderSkuSummaryTable(pivotData, { page: 1 });
+          skuSummaryInitialised = true;
+        })
+        .catch((error) => {
+          const message = error && error.message ? error.message : 'Unable to load SKU pivot';
+          renderSkuSummaryMessage(message);
+        });
+    }
+
+    function updateSkuSummaryPage(direction) {
+      if (!skuSummaryPivotCache) {
+        return;
+      }
+      const totalPages = Math.max(1, Math.ceil((skuSummaryTotalRows || 0) / (skuSummaryPageSize || 1)));
+      if (direction === 'previous') {
+        if (skuSummaryCurrentPage <= 1) {
+          return;
+        }
+        const targetPage = skuSummaryCurrentPage - 1;
+        renderSkuSummaryTable(skuSummaryPivotCache, { page: targetPage });
+      } else if (direction === 'next') {
+        if (skuSummaryCurrentPage >= totalPages) {
+          return;
+        }
+        const targetPage = skuSummaryCurrentPage + 1;
+        renderSkuSummaryTable(skuSummaryPivotCache, { page: targetPage });
+      }
+    }
+
+    const skuSummaryPaginationElement = document.getElementById('sku-summary-pagination');
+    if (skuSummaryPaginationElement) {
+      skuSummaryPaginationElement.addEventListener('click', (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) {
+          return;
+        }
+        if (target.matches('button[data-action]')) {
+          const action = target.getAttribute('data-action');
+          if (action === 'previous' || action === 'next') {
+            updateSkuSummaryPage(action);
+          }
+        }
+      });
     }
 
     function renderLoMessage(message) {
