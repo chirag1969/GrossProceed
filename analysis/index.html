@@ -1883,15 +1883,21 @@
       });
 
       const loList = orderedKeys.map((key) => labelMap.get(key) ?? '');
+      const totalsAccumulator = new Array(orderedKeys.length).fill(0);
+
       const rows = pivotData.rows.map((row) => {
         const displayDate = typeof row.displayDate === 'string' ? row.displayDate : '';
         const formattedValuesSource = Array.isArray(row.formattedValues) ? row.formattedValues : [];
-        const formattedValues = orderedKeys.map((key) => {
+        const formattedValues = orderedKeys.map((key, targetIndex) => {
           const columnIndex = columnIndexMap.get(key);
           if (typeof columnIndex !== 'number') {
             return '0.00';
           }
           const value = formattedValuesSource[columnIndex];
+          const numericValue = parseNumericValue(value);
+          if (numericValue !== null) {
+            totalsAccumulator[targetIndex] += numericValue;
+          }
           if (typeof value === 'string') {
             return value;
           }
@@ -1904,19 +1910,25 @@
       });
 
       const totalsSource = Array.isArray(pivotData.totals) ? pivotData.totals : [];
-      const totals = orderedKeys.map((key) => {
+      const totals = orderedKeys.map((key, targetIndex) => {
         const columnIndex = columnIndexMap.get(key);
         if (typeof columnIndex !== 'number') {
-          return '0.00';
+          const computedFallback = totalsAccumulator[targetIndex] ?? 0;
+          return formatTwoDecimal(computedFallback);
         }
         const value = totalsSource[columnIndex];
+        const numericValue = parseNumericValue(value);
+        if (numericValue !== null) {
+          return formatTwoDecimal(numericValue);
+        }
         if (typeof value === 'string') {
-          return value;
+          const trimmed = value.trim();
+          if (trimmed.length) {
+            return trimmed;
+          }
         }
-        if (typeof value === 'number' && Number.isFinite(value)) {
-          return value.toFixed(2);
-        }
-        return '0.00';
+        const computedFallback = totalsAccumulator[targetIndex] ?? 0;
+        return formatTwoDecimal(computedFallback);
       });
 
       return { loList, rows, totals };
