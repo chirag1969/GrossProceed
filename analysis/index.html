@@ -449,48 +449,6 @@
     .regular-table-container table {
       margin-top: 0;
     }
-    .table-preamble {
-      flex: 0 0 auto;
-      margin: 0.75rem 1rem 0.5rem;
-      overflow-x: auto;
-      border-radius: 0.65rem;
-      border: 1px solid rgba(27, 30, 40, 0.12);
-      background: rgba(20, 90, 252, 0.06);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
-    }
-    .table-preamble[hidden] {
-      display: none;
-    }
-    .table-preamble__table {
-      border-collapse: collapse;
-      min-width: 100%;
-      width: 100%;
-      table-layout: fixed;
-    }
-    .table-preamble__table col {
-      width: auto;
-    }
-    .table-preamble__table tbody tr:first-child td {
-      border-top: none;
-    }
-    .table-preamble__cell {
-      border: 1px solid rgba(27, 30, 40, 0.12);
-      padding: 0.4rem 0.55rem;
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: var(--text);
-      text-align: center;
-      background: rgba(255, 255, 255, 0.92);
-      white-space: nowrap;
-    }
-    .table-preamble__cell.is-empty {
-      color: var(--muted);
-      font-weight: 500;
-      background: rgba(27, 30, 40, 0.04);
-    }
-    .table-preamble__cell:first-child {
-      text-align: left;
-    }
     #tab-sku-summary .grid {
       grid-auto-rows: auto;
       align-content: flex-start;
@@ -757,9 +715,9 @@
       border-collapse: separate;
       width: 100%;
     }
-    #regular-table thead th,
+    #regular-table thead tr:last-child th,
     #regular-table tbody td,
-    #main-table thead th,
+    #main-table thead tr:last-child th,
     #main-table tbody td {
       text-align: left;
       padding: 0.3rem 0.65rem;
@@ -767,28 +725,28 @@
       line-height: 1.15;
       box-sizing: border-box;
     }
-    #regular-table thead th,
-    #main-table thead th {
+    #regular-table thead tr:last-child th,
+    #main-table thead tr:last-child th {
       white-space: normal;
     }
     #regular-table tbody td,
     #main-table tbody td {
       white-space: nowrap;
     }
-    #regular-table thead th:first-child,
+    #regular-table thead tr:last-child th:first-child,
     #regular-table tbody td:first-child,
-    #main-table thead th:first-child,
+    #main-table thead tr:last-child th:first-child,
     #main-table tbody td:first-child {
       border-left: 1px solid rgba(15, 23, 42, 0.08);
     }
-    #regular-table thead th:last-child,
+    #regular-table thead tr:last-child th:last-child,
     #regular-table tbody td:last-child,
-    #main-table thead th:last-child,
+    #main-table thead tr:last-child th:last-child,
     #main-table tbody td:last-child {
       border-right: 1px solid rgba(15, 23, 42, 0.08);
     }
-    #regular-table thead th,
-    #main-table thead th {
+    #regular-table thead tr:last-child th,
+    #main-table thead tr:last-child th {
       font-size: 0.78rem;
       letter-spacing: 0.08em;
       text-transform: uppercase;
@@ -816,9 +774,29 @@
     #main-table tbody tr:hover td {
       background: rgba(41, 71, 137, 0.12);
     }
-    #regular-table thead th.cell-numeric,
+    #main-table thead .table-preamble-row th {
+      background: rgba(20, 90, 252, 0.06);
+      border: 1px solid rgba(27, 30, 40, 0.12);
+      color: var(--text);
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0;
+      padding: 0.4rem 0.55rem;
+      text-align: center;
+      text-transform: none;
+      white-space: nowrap;
+    }
+    #main-table thead .table-preamble-row th:first-child {
+      text-align: left;
+    }
+    #main-table thead .table-preamble-row th.is-empty {
+      background: rgba(27, 30, 40, 0.04);
+      color: var(--muted);
+      font-weight: 500;
+    }
+    #regular-table thead tr:last-child th.cell-numeric,
     #regular-table tbody td.cell-numeric,
-    #main-table thead th.cell-numeric,
+    #main-table thead tr:last-child th.cell-numeric,
     #main-table tbody td.cell-numeric {
       text-align: right;
       font-variant-numeric: tabular-nums;
@@ -827,13 +805,13 @@
     #main-table tbody td.cell-qty {
       font-weight: 600;
     }
-    #regular-table thead th.is-filterable,
-    #main-table thead th.is-filterable {
+    #regular-table thead tr:last-child th.is-filterable,
+    #main-table thead tr:last-child th.is-filterable {
       cursor: pointer;
       position: relative;
     }
-    #regular-table thead th.has-filter::after,
-    #main-table thead th.has-filter::after {
+    #regular-table thead tr:last-child th.has-filter::after,
+    #main-table thead tr:last-child th.has-filter::after {
       content: '';
       position: absolute;
       top: 0.6rem;
@@ -1433,7 +1411,6 @@
           </div>
         </header>
         <div class="table-container regular-table-container">
-          <div class="table-preamble" id="main-table-preamble" hidden aria-hidden="true"></div>
           <table id="main-table" class="display" style="width:100%"></table>
         </div>
       </article>
@@ -2065,8 +2042,6 @@
       const headerTable = scrollHead ? scrollHead.querySelector('table') : null;
       const bodyTable = scrollBody ? scrollBody.querySelector('table') : null;
       const footTables = [];
-      const preambleTable = container.querySelector('.table-preamble__table');
-      const preambleColumns = preambleTable ? preambleTable.querySelectorAll('col') : null;
       if (scrollFoot) {
         const scrollFootTable = scrollFoot.querySelector('table');
         if (scrollFootTable) {
@@ -2081,8 +2056,10 @@
         return;
       }
 
+      const columnWidths = [];
       const columnIndexes = table.columns().indexes().toArray();
       columnIndexes.forEach((columnIndex) => {
+        const numericIndex = Number(columnIndex);
         const column = table.column(columnIndex);
         const headerCell = column.header();
         if (!headerCell) {
@@ -2107,7 +2084,9 @@
         }
 
         if (maxWidth > 0) {
-          const widthPx = `${Math.ceil(maxWidth)}px`;
+          const numericWidth = Math.ceil(maxWidth);
+          columnWidths[numericIndex] = numericWidth;
+          const widthPx = `${numericWidth}px`;
           headerCell.style.width = widthPx;
           headerCell.style.minWidth = widthPx;
           headerCell.style.maxWidth = widthPx;
@@ -2130,16 +2109,52 @@
               footCell.style.boxSizing = 'border-box';
             }
           });
-          if (preambleColumns && preambleColumns.length > columnIndex) {
-            const colElement = preambleColumns[columnIndex];
-            if (colElement instanceof HTMLElement) {
-              colElement.style.width = widthPx;
-              colElement.style.minWidth = widthPx;
-              colElement.style.maxWidth = widthPx;
-            }
-          }
         }
       });
+
+      const updatePreambleCellWidths = (tableLike) => {
+        if (!tableLike) {
+          return;
+        }
+        const head = tableLike.tHead || tableLike.querySelector('thead');
+        if (!head) {
+          return;
+        }
+        const rows = Array.from(head.rows);
+        if (rows.length <= 1) {
+          return;
+        }
+        const preambleRows = rows.slice(0, -1);
+        preambleRows.forEach((row) => {
+          let columnPosition = 0;
+          Array.from(row.cells).forEach((cell) => {
+            const span = Math.max(1, Number(cell.colSpan) || 1);
+            let totalWidth = 0;
+            for (let offset = 0; offset < span; offset += 1) {
+              const lookupIndex = columnPosition + offset;
+              const widthValue = columnWidths[lookupIndex];
+              if (Number.isFinite(widthValue)) {
+                totalWidth += widthValue;
+              }
+            }
+            if (totalWidth > 0) {
+              const widthPx = `${totalWidth}px`;
+              cell.style.width = widthPx;
+              cell.style.minWidth = widthPx;
+              cell.style.maxWidth = widthPx;
+              cell.style.boxSizing = 'border-box';
+            }
+            columnPosition += span;
+          });
+        });
+      };
+
+      updatePreambleCellWidths(headerTable);
+      const baseHeader = table.table().header();
+      if (baseHeader) {
+        const baseHeaderTable = baseHeader.closest('table');
+        updatePreambleCellWidths(baseHeaderTable);
+      }
 
       const bodyWidth = bodyTable.getBoundingClientRect().width;
       if (bodyWidth > 0) {
@@ -2158,9 +2173,6 @@
         footTables.forEach((footTable) => {
           footTable.style.width = widthPx;
         });
-        if (preambleTable) {
-          preambleTable.style.width = widthPx;
-        }
       }
     }
 
@@ -2186,105 +2198,121 @@
       scrollBody.style.paddingBottom = `${appliedPadding}px`;
     }
 
-    function renderMainTablePreamble(preamble, columnCount) {
-      const container = document.getElementById('main-table-preamble');
-      if (!container) {
+    function applyHeaderPreambleToTable(tableElement, preamble, columnTitles) {
+      if (!tableElement) {
         return;
       }
-      const validColumnCount = Number.isFinite(columnCount) && columnCount > 0
-        ? Math.floor(columnCount)
-        : 0;
-      if (!preamble || !Array.isArray(preamble.rows) || preamble.rows.length === 0 || validColumnCount <= 0) {
-        container.innerHTML = '';
-        container.setAttribute('hidden', '');
-        container.setAttribute('aria-hidden', 'true');
+      const columns = Array.isArray(columnTitles) ? columnTitles.slice() : [];
+      const columnCount = columns.length;
+      const existingThead = tableElement.querySelector('thead');
+      if (existingThead) {
+        tableElement.removeChild(existingThead);
+      }
+      if (columnCount === 0) {
         return;
       }
 
-      const rows = [];
-      for (let rowIndex = 0; rowIndex < preamble.rows.length; rowIndex += 1) {
-        const sourceRow = Array.isArray(preamble.rows[rowIndex]) ? preamble.rows[rowIndex] : [];
-        const normalisedRow = new Array(validColumnCount).fill('');
-        for (let columnIndex = 0; columnIndex < validColumnCount; columnIndex += 1) {
-          if (columnIndex < sourceRow.length) {
-            normalisedRow[columnIndex] = sourceRow[columnIndex];
+      const thead = document.createElement('thead');
+      const hasPreamble = preamble
+        && Array.isArray(preamble.rows)
+        && preamble.rows.length > 0;
+
+      if (hasPreamble) {
+        const normalisedRows = [];
+        for (let rowIndex = 0; rowIndex < preamble.rows.length; rowIndex += 1) {
+          const sourceRow = Array.isArray(preamble.rows[rowIndex]) ? preamble.rows[rowIndex] : [];
+          const row = new Array(columnCount).fill('');
+          for (let columnIndex = 0; columnIndex < columnCount; columnIndex += 1) {
+            if (columnIndex < sourceRow.length) {
+              row[columnIndex] = sourceRow[columnIndex];
+            }
           }
+          normalisedRows.push(row);
         }
-        rows.push(normalisedRow);
-      }
 
-      const mergeEntries = Array.isArray(preamble.merges) ? preamble.merges : [];
-      const mergeMap = new Map();
-      const skipSet = new Set();
-      mergeEntries.forEach((entry) => {
-        if (!entry) {
-          return;
-        }
-        const startRow = Number.isFinite(entry.row) ? Math.max(0, Math.floor(entry.row)) : 0;
-        const startCol = Number.isFinite(entry.column) ? Math.max(0, Math.floor(entry.column)) : 0;
-        const requestedRowSpan = Number.isFinite(entry.rowSpan) ? Math.floor(entry.rowSpan) : 1;
-        const requestedColSpan = Number.isFinite(entry.colSpan) ? Math.floor(entry.colSpan) : 1;
-        const rowSpan = Math.max(1, requestedRowSpan);
-        const colSpan = Math.max(1, requestedColSpan);
-        if (startRow >= rows.length || startCol >= validColumnCount) {
-          return;
-        }
-        const maxRow = Math.min(rows.length - 1, startRow + rowSpan - 1);
-        const maxCol = Math.min(validColumnCount - 1, startCol + colSpan - 1);
-        if (maxRow < startRow || maxCol < startCol) {
-          return;
-        }
-        const effectiveRowSpan = Math.max(1, maxRow - startRow + 1);
-        const effectiveColSpan = Math.max(1, maxCol - startCol + 1);
-        const key = `${startRow},${startCol}`;
-        mergeMap.set(key, { rowSpan: effectiveRowSpan, colSpan: effectiveColSpan });
-        for (let row = startRow; row <= maxRow; row += 1) {
-          for (let col = startCol; col <= maxCol; col += 1) {
-            if (row === startRow && col === startCol) {
+        const mergeEntries = Array.isArray(preamble.merges) ? preamble.merges : [];
+        const mergeMap = new Map();
+        const skipSet = new Set();
+        mergeEntries.forEach((entry) => {
+          if (!entry) {
+            return;
+          }
+          const startRow = Number.isFinite(entry.row) ? Math.max(0, Math.floor(entry.row)) : 0;
+          const startCol = Number.isFinite(entry.column) ? Math.max(0, Math.floor(entry.column)) : 0;
+          const requestedRowSpan = Number.isFinite(entry.rowSpan) ? Math.floor(entry.rowSpan) : 1;
+          const requestedColSpan = Number.isFinite(entry.colSpan) ? Math.floor(entry.colSpan) : 1;
+          const rowSpan = Math.max(1, requestedRowSpan);
+          const colSpan = Math.max(1, requestedColSpan);
+          if (startRow >= normalisedRows.length || startCol >= columnCount) {
+            return;
+          }
+          const maxRow = Math.min(normalisedRows.length - 1, startRow + rowSpan - 1);
+          const maxCol = Math.min(columnCount - 1, startCol + colSpan - 1);
+          if (maxRow < startRow || maxCol < startCol) {
+            return;
+          }
+          const effectiveRowSpan = Math.max(1, maxRow - startRow + 1);
+          const effectiveColSpan = Math.max(1, maxCol - startCol + 1);
+          const key = `${startRow},${startCol}`;
+          mergeMap.set(key, { rowSpan: effectiveRowSpan, colSpan: effectiveColSpan });
+          for (let row = startRow; row <= maxRow; row += 1) {
+            for (let col = startCol; col <= maxCol; col += 1) {
+              if (row === startRow && col === startCol) {
+                continue;
+              }
+              skipSet.add(`${row},${col}`);
+            }
+          }
+        });
+
+        normalisedRows.forEach((row, rowIndex) => {
+          const tr = document.createElement('tr');
+          tr.classList.add('table-preamble-row');
+          for (let columnIndex = 0; columnIndex < columnCount; columnIndex += 1) {
+            const cellKey = `${rowIndex},${columnIndex}`;
+            if (skipSet.has(cellKey)) {
               continue;
             }
-            skipSet.add(`${row},${col}`);
+            const span = mergeMap.get(cellKey) || null;
+            const rawValue = row && columnIndex < row.length ? row[columnIndex] : '';
+            const text = typeof rawValue === 'string'
+              ? rawValue
+              : (rawValue === null || rawValue === undefined ? '' : String(rawValue));
+            const trimmed = text.trim();
+            const th = document.createElement('th');
+            th.classList.add('table-preamble__cell');
+            if (span) {
+              if (span.rowSpan > 1) {
+                th.rowSpan = span.rowSpan;
+              }
+              if (span.colSpan > 1) {
+                th.colSpan = span.colSpan;
+              }
+            }
+            if (trimmed.length === 0) {
+              th.classList.add('is-empty');
+              th.innerHTML = '&nbsp;';
+            } else {
+              th.innerHTML = escapeHtml(text);
+            }
+            tr.appendChild(th);
           }
-        }
-      });
-
-      let colgroupHtml = '<colgroup>';
-      for (let colIndex = 0; colIndex < validColumnCount; colIndex += 1) {
-        colgroupHtml += `<col data-column-index="${colIndex}">`;
+          thead.appendChild(tr);
+        });
       }
-      colgroupHtml += '</colgroup>';
 
-      let bodyHtml = '<tbody>';
-      rows.forEach((row, rowIndex) => {
-        bodyHtml += '<tr>';
-        for (let colIndex = 0; colIndex < validColumnCount; colIndex += 1) {
-          const cellKey = `${rowIndex},${colIndex}`;
-          if (skipSet.has(cellKey)) {
-            continue;
-          }
-          const span = mergeMap.get(cellKey) || null;
-          const rowSpanAttr = span && span.rowSpan > 1 ? ` rowspan="${span.rowSpan}"` : '';
-          const colSpanAttr = span && span.colSpan > 1 ? ` colspan="${span.colSpan}"` : '';
-          const rawValue = row && colIndex < row.length ? row[colIndex] : '';
-          const text = typeof rawValue === 'string'
-            ? rawValue
-            : (rawValue === null || rawValue === undefined ? '' : String(rawValue));
-          const trimmed = text.trim();
-          const isEmpty = trimmed.length === 0;
-          const display = isEmpty ? '&nbsp;' : escapeHtml(text);
-          const classNames = ['table-preamble__cell'];
-          if (isEmpty) {
-            classNames.push('is-empty');
-          }
-          bodyHtml += `<td class="${classNames.join(' ')}"${rowSpanAttr}${colSpanAttr}>${display}</td>`;
-        }
-        bodyHtml += '</tr>';
+      const headerRow = document.createElement('tr');
+      columns.forEach((title, columnIndex) => {
+        const th = document.createElement('th');
+        th.dataset.columnIndex = String(columnIndex);
+        const value = typeof title === 'string'
+          ? title
+          : (title === null || title === undefined ? '' : String(title));
+        th.innerHTML = escapeHtml(value);
+        headerRow.appendChild(th);
       });
-      bodyHtml += '</tbody>';
-
-      container.innerHTML = `<table class="table-preamble__table">${colgroupHtml}${bodyHtml}</table>`;
-      container.removeAttribute('hidden');
-      container.setAttribute('aria-hidden', 'false');
+      thead.appendChild(headerRow);
+      tableElement.insertBefore(thead, tableElement.firstChild || null);
     }
 
     function calculateRegularTableReservedSpace(container) {
@@ -4936,12 +4964,11 @@
       fetchMainDataset()
         .then((dataset) => {
           updateStickyOffset();
-          const columnCount = Array.isArray(dataset.columns) ? dataset.columns.length : 0;
-          renderMainTablePreamble(dataset.headerPreamble || null, columnCount);
-
           const augmentedDataset = augmentDatasetWithTotals(dataset);
           mainTableAugmentedDataset = augmentedDataset;
           mainTotalColumnIndex = augmentedDataset.totalColumnIndex;
+          const tableElement = document.getElementById('main-table');
+          applyHeaderPreambleToTable(tableElement, dataset.headerPreamble || null, augmentedDataset.columns);
           const columns = augmentedDataset.columns.map((title) => ({ title }));
           const formattedRows = augmentedDataset.rows.map((row) => row.map((value, index) => formatCellValue(value, augmentedDataset.columns[index])));
           const productColumnIndex = augmentedDataset.columns.indexOf('Product');
@@ -5040,12 +5067,6 @@
         })
         .catch((error) => {
           console.error('Failed to initialise Main table:', error);
-          const preambleContainer = document.getElementById('main-table-preamble');
-          if (preambleContainer) {
-            preambleContainer.innerHTML = '';
-            preambleContainer.setAttribute('hidden', '');
-            preambleContainer.setAttribute('aria-hidden', 'true');
-          }
           const tableElement = document.getElementById('main-table');
           if (tableElement) {
             tableElement.outerHTML = `<p style="color: var(--muted);">${error.message}</p>`;
