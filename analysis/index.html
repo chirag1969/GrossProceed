@@ -91,8 +91,16 @@
     }
     .lo-card__header {
       display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+    .lo-card__heading {
+      display: flex;
       flex-direction: column;
       gap: 0.25rem;
+      min-width: 0;
     }
     .lo-card__title {
       margin: 0;
@@ -315,7 +323,7 @@
       flex-wrap: wrap;
       margin-left: auto;
     }
-    .regular-card__filter-button {
+    .filter-button {
       display: inline-flex;
       align-items: center;
       gap: 0.35rem;
@@ -329,20 +337,20 @@
       cursor: pointer;
       transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
     }
-    .regular-card__filter-button:hover,
-    .regular-card__filter-button:focus-visible {
+    .filter-button:hover,
+    .filter-button:focus-visible {
       border-color: var(--accent);
       background: rgba(20, 90, 252, 0.2);
       outline: none;
       box-shadow: 0 10px 22px rgba(20, 90, 252, 0.18);
     }
-    .regular-card__filter-button[data-active="true"] {
+    .filter-button[data-active="true"] {
       background: var(--accent);
       color: #fff;
       border-color: var(--accent);
       box-shadow: 0 12px 26px rgba(20, 90, 252, 0.28);
     }
-    .regular-card__filter-button[aria-disabled="true"] {
+    .filter-button[aria-disabled="true"] {
       opacity: 0.5;
       cursor: not-allowed;
       box-shadow: none;
@@ -470,11 +478,11 @@
       display: flex;
       align-items: center;
       justify-content: flex-end;
-      gap: 1rem;
+      gap: 0.75rem;
       flex-wrap: wrap;
       margin-top: 0.1rem;
     }
-    .sku-card__toolbar[data-active='false'] {
+    .sku-card__toolbar[data-active='false'] .sku-card__pagination {
       display: none;
     }
     .sku-card__pagination {
@@ -1269,6 +1277,13 @@
   <div class="tab-panel active" id="tab-lo" data-tab="lo" role="tabpanel" aria-labelledby="tab-lo-button" aria-hidden="false">
     <section class="grid lo-grid">
       <article class="card lo-card">
+        <header class="lo-card__header">
+          <div class="lo-card__heading">
+            <h2 class="lo-card__title">Listing owner performance</h2>
+            <p class="lo-card__subtitle">Daily sales and spend totals derived from regular data</p>
+          </div>
+          <button type="button" class="filter-button lo-card__filter-button" id="lo-filter-button" aria-haspopup="dialog" aria-expanded="false">Filters</button>
+        </header>
         <nav class="sub-tab-nav" aria-label="Listing owner metrics">
           <button class="sub-tab-button active" id="lo-sales-button" type="button" data-subtab="sales" aria-controls="lo-sales-panel" aria-selected="true">Sales</button>
           <button class="sub-tab-button" id="lo-spend-button" type="button" data-subtab="spend" aria-controls="lo-spend-panel" aria-selected="false">Spend</button>
@@ -1297,6 +1312,7 @@
           <h2 class="sku-card__title">SKU wise summary</h2>
           <p class="sku-card__subtitle">Pivoted averages, fees, and totals by SKU directly from the workbook</p>
           <div class="sku-card__toolbar" data-active="false">
+            <button type="button" class="filter-button sku-card__filter-button" id="sku-filter-button" aria-haspopup="dialog" aria-expanded="false">Filters</button>
             <div class="sku-card__pagination" id="sku-summary-pagination" aria-label="SKU wise summary pagination" aria-hidden="true"></div>
           </div>
         </header>
@@ -1317,7 +1333,7 @@
             <p class="regular-card__subtitle">Detailed order and spend metrics across all listings</p>
           </div>
           <div class="regular-card__controls">
-            <button type="button" class="regular-card__filter-button" id="regular-filter-button" aria-haspopup="dialog" aria-expanded="false" data-active="false">Filters</button>
+            <button type="button" class="regular-card__filter-button filter-button" id="regular-filter-button" aria-haspopup="dialog" aria-expanded="false" data-active="false">Filters</button>
             <div class="regular-card__pagination" id="regular-table-pagination" aria-label="Regular table pagination"></div>
           </div>
         </header>
@@ -1401,6 +1417,8 @@
     let regularFilterSearchTerm = '';
     let regularFilterInitialised = false;
     let regularFilterEligibleColumns = [];
+    let regularFilterButtons = [];
+    let activeRegularFilterTrigger = null;
     let totalColumnIndex = -1;
     let headerMenuElement;
     let activeHeaderCell = null;
@@ -1418,6 +1436,12 @@
     const REGULAR_TABLE_PAGE_LENGTH = 200;
     const SHOW_REGULAR_TOTAL_ROW = true;
     const REGULAR_FILTER_MAX_UNIQUE_VALUES = 350;
+
+    let loSalesOrderCache = [];
+    let loDisplayNameOverridesCache = new Map();
+    let loBaselineSpendPivot = null;
+    let loSpendScalingData = null;
+    let loBaselineAdSpendPivot = null;
 
     function fetchDataset() {
       if (datasetCache) {
@@ -1959,11 +1983,15 @@
     }
 
     function updateRegularFilterButtonState() {
-      if (!regularFilterButtonElement) {
-        return;
-      }
       const isActive = hasActiveColumnFilters();
-      regularFilterButtonElement.setAttribute('data-active', isActive ? 'true' : 'false');
+      const targets = regularFilterButtons.length
+        ? regularFilterButtons
+        : (regularFilterButtonElement ? [regularFilterButtonElement] : []);
+      targets.forEach((button) => {
+        if (button) {
+          button.setAttribute('data-active', isActive ? 'true' : 'false');
+        }
+      });
     }
 
     function syncRegularFilterSelectionFromFilters(columnIndex) {
@@ -2065,9 +2093,20 @@
       renderRegularFilterOptions();
     }
 
-    function openRegularFilter() {
-      if (!regularFilterContainerElement || !regularFilterButtonElement || !regularFilterInitialised) {
+    function openRegularFilter(triggerButton = null) {
+      if (!regularFilterContainerElement || !regularFilterInitialised) {
         return;
+      }
+      const targets = regularFilterButtons.length
+        ? regularFilterButtons.slice()
+        : (regularFilterButtonElement ? [regularFilterButtonElement] : []);
+      if (triggerButton) {
+        activeRegularFilterTrigger = triggerButton;
+      } else if (!activeRegularFilterTrigger && targets.length) {
+        activeRegularFilterTrigger = targets[0];
+      }
+      if (activeRegularFilterTrigger && !targets.includes(activeRegularFilterTrigger)) {
+        targets.push(activeRegularFilterTrigger);
       }
       if (!Number.isFinite(regularFilterActiveColumnIndex)) {
         const selectedOption = regularFilterColumnSelect && regularFilterColumnSelect.value !== ''
@@ -2085,7 +2124,12 @@
       regularFilterContainerElement.removeAttribute('hidden');
       regularFilterContainerElement.classList.add('is-visible');
       regularFilterContainerElement.setAttribute('aria-hidden', 'false');
-      regularFilterButtonElement.setAttribute('aria-expanded', 'true');
+      targets.forEach((button) => {
+        if (button) {
+          const expanded = button === activeRegularFilterTrigger;
+          button.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+        }
+      });
       requestAnimationFrame(() => {
         if (regularFilterSearchInput) {
           regularFilterSearchInput.focus();
@@ -2093,15 +2137,26 @@
       });
     }
 
-    function closeRegularFilter() {
+    function closeRegularFilter(options = {}) {
       if (!regularFilterContainerElement) {
         return;
       }
+      const { returnFocus = true } = options;
+      const previousTrigger = activeRegularFilterTrigger;
       regularFilterContainerElement.classList.remove('is-visible');
       regularFilterContainerElement.setAttribute('aria-hidden', 'true');
       regularFilterContainerElement.setAttribute('hidden', '');
-      if (regularFilterButtonElement) {
-        regularFilterButtonElement.setAttribute('aria-expanded', 'false');
+      const targets = regularFilterButtons.length
+        ? regularFilterButtons
+        : (regularFilterButtonElement ? [regularFilterButtonElement] : []);
+      targets.forEach((button) => {
+        if (button) {
+          button.setAttribute('aria-expanded', 'false');
+        }
+      });
+      activeRegularFilterTrigger = null;
+      if (returnFocus && previousTrigger && typeof previousTrigger.focus === 'function') {
+        previousTrigger.focus();
       }
     }
 
@@ -2124,7 +2179,56 @@
       });
       table.draw();
       columnFilters = {};
+      handleFilterChange();
+    }
+
+    function buildFilteredDataset(baseDataset, filters) {
+      if (!baseDataset || !Array.isArray(baseDataset.columns) || !Array.isArray(baseDataset.rows)) {
+        return baseDataset;
+      }
+      const filterEntries = Object.entries(filters || {})
+        .map(([key, values]) => {
+          const columnIndex = Number(key);
+          if (!Number.isFinite(columnIndex)) {
+            return null;
+          }
+          if (!Array.isArray(values) || values.length === 0) {
+            return null;
+          }
+          return { columnIndex, values };
+        })
+        .filter(Boolean);
+      if (!filterEntries.length) {
+        return baseDataset;
+      }
+      const filteredRows = baseDataset.rows.filter((row) => {
+        return filterEntries.every(({ columnIndex, values }) => {
+          if (columnIndex < 0 || columnIndex >= baseDataset.columns.length) {
+            return true;
+          }
+          const columnName = baseDataset.columns[columnIndex];
+          const formattedValue = formatCellValue(row[columnIndex], columnName);
+          return values.includes(formattedValue);
+        });
+      });
+      return {
+        columns: baseDataset.columns,
+        rows: filteredRows,
+      };
+    }
+
+    function handleFilterChange() {
       updateRegularFilterButtonState();
+      if (!datasetCache || !Array.isArray(datasetCache.rows)) {
+        return;
+      }
+      const filteredDataset = buildFilteredDataset(datasetCache, columnFilters);
+      if (loTablesInitialised) {
+        updateLoTablesWithDataset(filteredDataset);
+      }
+      if (skuSummaryInitialised) {
+        updateSkuSummaryWithDataset(filteredDataset);
+      }
     }
 
     function initializeRegularFilterControls(augmentedDataset) {
@@ -2143,6 +2247,9 @@
       regularFilterCloseButton = regularFilterContainerElement
         ? regularFilterContainerElement.querySelector('.regular-filter__close')
         : null;
+      const loFilterButton = document.getElementById('lo-filter-button');
+      const skuFilterButton = document.getElementById('sku-filter-button');
+      regularFilterButtons = [regularFilterButtonElement, loFilterButton, skuFilterButton].filter((button) => button);
 
       const elementsReady = [
         regularFilterButtonElement,
@@ -2161,6 +2268,26 @@
         return;
       }
 
+      const filterTargets = regularFilterButtons.length
+        ? regularFilterButtons
+        : [regularFilterButtonElement];
+
+      const registerFilterButton = (button) => {
+        if (!button) {
+          return;
+        }
+        button.addEventListener('click', () => {
+          const isVisible = regularFilterContainerElement.classList.contains('is-visible');
+          if (isVisible && activeRegularFilterTrigger === button) {
+            closeRegularFilter();
+          } else {
+            openRegularFilter(button);
+          }
+        });
+      };
+
+      filterTargets.forEach(registerFilterButton);
+
       const columns = Array.isArray(augmentedDataset?.columns)
         ? augmentedDataset.columns
             .map((title, index) => ({
@@ -2172,24 +2299,27 @@
         : [];
 
       if (!columns.length) {
-        regularFilterButtonElement.setAttribute('aria-disabled', 'true');
-        regularFilterButtonElement.disabled = true;
+        filterTargets.forEach((button) => {
+          if (button) {
+            button.setAttribute('aria-disabled', 'true');
+            button.disabled = true;
+          }
+        });
         return;
       }
+
+      filterTargets.forEach((button) => {
+        if (button) {
+          button.removeAttribute('aria-disabled');
+          button.disabled = false;
+        }
+      });
 
       regularFilterEligibleColumns = columns;
       const optionsMarkup = columns
         .map((entry) => `<option value="${entry.index}">${escapeHtml(entry.title)}</option>`)
         .join('');
       regularFilterColumnSelect.innerHTML = optionsMarkup;
-
-      regularFilterButtonElement.addEventListener('click', () => {
-        if (regularFilterContainerElement.classList.contains('is-visible')) {
-          closeRegularFilter();
-        } else {
-          openRegularFilter();
-        }
-      });
 
       regularFilterCloseButton.addEventListener('click', () => closeRegularFilter());
 
@@ -2300,7 +2430,7 @@
         if (headerCell) {
           headerCell.classList.remove('has-filter');
         }
-        updateRegularFilterButtonState();
+        handleFilterChange();
         return;
       }
       const regex = `^(${safeValues.map((value) => escapeRegex(value)).join('|')})$`;
@@ -2309,7 +2439,7 @@
       if (headerCell) {
         headerCell.classList.add('has-filter');
       }
-      updateRegularFilterButtonState();
+      handleFilterChange();
     }
 
     function positionHeaderMenu(headerCell) {
@@ -2873,6 +3003,151 @@
       tableElement.innerHTML = `${headerHtml}${bodyHtml}${footerHtml}`;
     }
 
+    function buildSpendScaling(actualPivot, referencePivot) {
+      if (!actualPivot || !referencePivot) {
+        return null;
+      }
+      const ownerKeys = Array.isArray(actualPivot.loList)
+        ? actualPivot.loList.map((label) => normalizeOwnerKey(label))
+        : [];
+      if (!ownerKeys.length) {
+        return null;
+      }
+      const scaling = {
+        ownerKeys,
+        byDate: new Map(),
+        totals: new Map(),
+      };
+      const referenceRowMap = new Map();
+      if (Array.isArray(referencePivot.rows)) {
+        referencePivot.rows.forEach((row) => {
+          referenceRowMap.set(row.displayDate, row);
+        });
+      }
+      if (Array.isArray(actualPivot.rows)) {
+        actualPivot.rows.forEach((row) => {
+          const referenceRow = referenceRowMap.get(row.displayDate);
+          const valueMap = new Map();
+          ownerKeys.forEach((ownerKey, index) => {
+            const actualValue = parseNumericValue(row.formattedValues?.[index]) ?? 0;
+            const referenceValue = referenceRow
+              ? parseNumericValue(referenceRow.formattedValues?.[index]) ?? 0
+              : 0;
+            valueMap.set(ownerKey, { actualValue, referenceValue });
+          });
+          scaling.byDate.set(row.displayDate, valueMap);
+        });
+      }
+      const referenceTotals = Array.isArray(referencePivot.totals) ? referencePivot.totals : [];
+      const actualTotals = Array.isArray(actualPivot.totals) ? actualPivot.totals : [];
+      ownerKeys.forEach((ownerKey, index) => {
+        const actualValue = parseNumericValue(actualTotals[index]) ?? 0;
+        const referenceValue = parseNumericValue(referenceTotals[index]) ?? 0;
+        scaling.totals.set(ownerKey, { actualValue, referenceValue });
+      });
+      return scaling;
+    }
+
+    function applySpendScaling(basePivot, scaling, filtersActive) {
+      if (!basePivot || !scaling) {
+        return basePivot;
+      }
+      const ownerKeys = Array.isArray(scaling.ownerKeys) ? scaling.ownerKeys : [];
+      const scaledRows = Array.isArray(basePivot.rows)
+        ? basePivot.rows.map((row) => {
+            const dateMap = scaling.byDate.get(row.displayDate);
+            const formattedValues = Array.isArray(row.formattedValues)
+              ? row.formattedValues.map((value, index) => {
+                  const ownerKey = ownerKeys[index];
+                  const reference = dateMap ? dateMap.get(ownerKey) : null;
+                  const numericValue = parseNumericValue(value) ?? 0;
+                  let scaledNumeric = numericValue;
+                  if (reference) {
+                    if (Math.abs(reference.referenceValue) > 1e-6) {
+                      const factor = reference.actualValue / reference.referenceValue;
+                      scaledNumeric = numericValue * factor;
+                    } else if (!filtersActive) {
+                      scaledNumeric = reference.actualValue;
+                    }
+                  }
+                  return formatTwoDecimal(scaledNumeric);
+                })
+              : [];
+            return { displayDate: row.displayDate, formattedValues };
+          })
+        : [];
+      const scaledTotals = Array.isArray(basePivot.totals)
+        ? basePivot.totals.map((value, index) => {
+            const ownerKey = ownerKeys[index];
+            const reference = scaling.totals.get(ownerKey);
+            const numericValue = parseNumericValue(value) ?? 0;
+            let scaledNumeric = numericValue;
+            if (reference) {
+              if (Math.abs(reference.referenceValue) > 1e-6) {
+                const factor = reference.actualValue / reference.referenceValue;
+                scaledNumeric = numericValue * factor;
+              } else if (!filtersActive) {
+                scaledNumeric = reference.actualValue;
+              }
+            }
+            return formatTwoDecimal(scaledNumeric);
+          })
+        : [];
+      return {
+        loList: Array.isArray(basePivot.loList) ? basePivot.loList.slice() : [],
+        rows: scaledRows,
+        totals: scaledTotals,
+      };
+    }
+
+    function updateLoTablesWithDataset(dataset) {
+      const salesTableElement = document.getElementById('lo-sales-table');
+      const spendTableElement = document.getElementById('lo-spend-table');
+      if (!salesTableElement || !spendTableElement) {
+        return;
+      }
+      const filtersActive = hasActiveColumnFilters();
+      const baseOptions = {};
+      if (Array.isArray(loSalesOrderCache) && loSalesOrderCache.length) {
+        baseOptions.normalizedOrder = loSalesOrderCache;
+      }
+      if (loDisplayNameOverridesCache instanceof Map && loDisplayNameOverridesCache.size) {
+        baseOptions.displayNameOverrides = loDisplayNameOverridesCache;
+      }
+      const salesPivot = buildLoPivot(dataset, 'total revenue', baseOptions);
+      if (!Array.isArray(loSalesOrderCache) || loSalesOrderCache.length === 0) {
+        loSalesOrderCache = Array.isArray(salesPivot.order) ? salesPivot.order.slice() : [];
+      }
+      if (salesPivot.displayNames instanceof Map) {
+        loDisplayNameOverridesCache = new Map(salesPivot.displayNames);
+      }
+      renderLoTable(salesTableElement, salesPivot);
+
+      let spendPivot;
+      if (!filtersActive && loBaselineSpendPivot) {
+        spendPivot = loBaselineSpendPivot;
+      } else {
+        const spendOptions = {};
+        if (Array.isArray(loSalesOrderCache) && loSalesOrderCache.length) {
+          spendOptions.normalizedOrder = loSalesOrderCache;
+        }
+        if (loDisplayNameOverridesCache instanceof Map && loDisplayNameOverridesCache.size) {
+          spendOptions.displayNameOverrides = loDisplayNameOverridesCache;
+        }
+        const adSpendPivot = buildLoPivot(dataset, 'Ad Spend', spendOptions);
+        if (!loBaselineAdSpendPivot) {
+          loBaselineAdSpendPivot = adSpendPivot;
+        }
+        if (loSpendScalingData) {
+          spendPivot = applySpendScaling(adSpendPivot, loSpendScalingData, filtersActive);
+        } else {
+          spendPivot = adSpendPivot;
+        }
+      }
+      renderLoTable(spendTableElement, spendPivot);
+      requestAnimationFrame(() => resizeLoTableContainers());
+    }
+
     function normalizeOwnerKey(label) {
       if (typeof label !== 'string') {
         return '';
@@ -2979,6 +3254,195 @@
         return numberFormatter.format(numeric);
       }
       return escapeHtml(String(value));
+    }
+
+    function buildSkuSummaryPivotFromDataset(dataset) {
+      if (!dataset || !Array.isArray(dataset.columns) || !Array.isArray(dataset.rows)) {
+        return { columns: [], rows: [], totals: null };
+      }
+      const skuIndex = findColumnIndex(dataset, 'SKU_2');
+      const salePriceIndex = findColumnIndex(dataset, 'Sale Price + Shipping');
+      const carrierFeeIndex = findColumnIndex(dataset, 'CARRIER FEE');
+      const marketplaceFeeIndex = findColumnIndex(dataset, 'Ebay/ Amazon');
+      const costIndex = findColumnIndex(dataset, 'P.COST');
+      const netPerQtyIndex = findColumnIndex(dataset, 'NET/Q');
+      const netIndex = findColumnIndex(dataset, 'NET');
+      const revenueIndex = findColumnIndex(dataset, 'Total Revenue');
+      const qtyIndex = findColumnIndex(dataset, 'Qty');
+      const requiredIndices = [
+        skuIndex,
+        salePriceIndex,
+        carrierFeeIndex,
+        marketplaceFeeIndex,
+        costIndex,
+        netPerQtyIndex,
+        netIndex,
+        revenueIndex,
+        qtyIndex,
+      ];
+      if (requiredIndices.some((index) => index === -1)) {
+        return { columns: [], rows: [], totals: null };
+      }
+
+      const summary = new Map();
+      const totalsAccumulator = {
+        salePriceSum: 0,
+        salePriceCount: 0,
+        carrierFeeSum: 0,
+        carrierFeeCount: 0,
+        marketplaceFeeSum: 0,
+        marketplaceFeeCount: 0,
+        costSum: 0,
+        costCount: 0,
+        netPerQtySum: 0,
+        netPerQtyCount: 0,
+        netSum: 0,
+        revenueSum: 0,
+        qtySum: 0,
+      };
+
+      dataset.rows.forEach((row) => {
+        const rawSku = row[skuIndex];
+        const sku = rawSku === null || rawSku === undefined ? '' : String(rawSku).trim();
+        if (!sku || sku === '-') {
+          return;
+        }
+        if (!summary.has(sku)) {
+          summary.set(sku, {
+            sku,
+            salePriceSum: 0,
+            salePriceCount: 0,
+            carrierFeeSum: 0,
+            carrierFeeCount: 0,
+            marketplaceFeeSum: 0,
+            marketplaceFeeCount: 0,
+            costSum: 0,
+            costCount: 0,
+            netPerQtySum: 0,
+            netPerQtyCount: 0,
+            netSum: 0,
+            revenueSum: 0,
+            qtySum: 0,
+          });
+        }
+        const entry = summary.get(sku);
+
+        const salePriceValue = parseNumericValue(row[salePriceIndex]);
+        if (salePriceValue !== null) {
+          entry.salePriceSum += salePriceValue;
+          entry.salePriceCount += 1;
+          totalsAccumulator.salePriceSum += salePriceValue;
+          totalsAccumulator.salePriceCount += 1;
+        }
+
+        const carrierFeeValue = parseNumericValue(row[carrierFeeIndex]);
+        if (carrierFeeValue !== null) {
+          entry.carrierFeeSum += carrierFeeValue;
+          entry.carrierFeeCount += 1;
+          totalsAccumulator.carrierFeeSum += carrierFeeValue;
+          totalsAccumulator.carrierFeeCount += 1;
+        }
+
+        const marketplaceFeeValue = parseNumericValue(row[marketplaceFeeIndex]);
+        if (marketplaceFeeValue !== null) {
+          entry.marketplaceFeeSum += marketplaceFeeValue;
+          entry.marketplaceFeeCount += 1;
+          totalsAccumulator.marketplaceFeeSum += marketplaceFeeValue;
+          totalsAccumulator.marketplaceFeeCount += 1;
+        }
+
+        const costValue = parseNumericValue(row[costIndex]);
+        if (costValue !== null) {
+          entry.costSum += costValue;
+          entry.costCount += 1;
+          totalsAccumulator.costSum += costValue;
+          totalsAccumulator.costCount += 1;
+        }
+
+        const netPerQtyValue = parseNumericValue(row[netPerQtyIndex]);
+        if (netPerQtyValue !== null) {
+          entry.netPerQtySum += netPerQtyValue;
+          entry.netPerQtyCount += 1;
+          totalsAccumulator.netPerQtySum += netPerQtyValue;
+          totalsAccumulator.netPerQtyCount += 1;
+        }
+
+        const netValue = parseNumericValue(row[netIndex]);
+        if (netValue !== null) {
+          entry.netSum += netValue;
+          totalsAccumulator.netSum += netValue;
+        }
+
+        const revenueValue = parseNumericValue(row[revenueIndex]);
+        if (revenueValue !== null) {
+          entry.revenueSum += revenueValue;
+          totalsAccumulator.revenueSum += revenueValue;
+        }
+
+        const qtyValue = parseNumericValue(row[qtyIndex]);
+        if (qtyValue !== null) {
+          entry.qtySum += qtyValue;
+          totalsAccumulator.qtySum += qtyValue;
+        }
+      });
+
+      const rows = Array.from(summary.values())
+        .map((entry) => ({
+          sku: entry.sku,
+          average_of_sale_price_shipping: entry.salePriceCount ? entry.salePriceSum / entry.salePriceCount : null,
+          average_of_carrier_fee: entry.carrierFeeCount ? entry.carrierFeeSum / entry.carrierFeeCount : null,
+          average_of_ebay_amazon: entry.marketplaceFeeCount ? entry.marketplaceFeeSum / entry.marketplaceFeeCount : null,
+          average_of_p_cost: entry.costCount ? entry.costSum / entry.costCount : null,
+          average_of_net_q: entry.netPerQtyCount ? entry.netPerQtySum / entry.netPerQtyCount : null,
+          sum_of_net: entry.netSum,
+          sum_of_total_revenue: entry.revenueSum,
+          sum_of_qty: entry.qtySum,
+        }))
+        .sort((a, b) => a.sku.localeCompare(b.sku, undefined, { numeric: true, sensitivity: 'base' }));
+
+      const totals = {
+        sku: 'Grand Total',
+        average_of_sale_price_shipping: totalsAccumulator.salePriceCount
+          ? totalsAccumulator.salePriceSum / totalsAccumulator.salePriceCount
+          : null,
+        average_of_carrier_fee: totalsAccumulator.carrierFeeCount
+          ? totalsAccumulator.carrierFeeSum / totalsAccumulator.carrierFeeCount
+          : null,
+        average_of_ebay_amazon: totalsAccumulator.marketplaceFeeCount
+          ? totalsAccumulator.marketplaceFeeSum / totalsAccumulator.marketplaceFeeCount
+          : null,
+        average_of_p_cost: totalsAccumulator.costCount
+          ? totalsAccumulator.costSum / totalsAccumulator.costCount
+          : null,
+        average_of_net_q: totalsAccumulator.netPerQtyCount
+          ? totalsAccumulator.netPerQtySum / totalsAccumulator.netPerQtyCount
+          : null,
+        sum_of_net: totalsAccumulator.netSum,
+        sum_of_total_revenue: totalsAccumulator.revenueSum,
+        sum_of_qty: totalsAccumulator.qtySum,
+      };
+
+      const columns = [
+        { key: 'sku', label: 'SKU', type: 'string' },
+        { key: 'average_of_sale_price_shipping', label: 'Average of Sale Price + Shipping', type: 'decimal' },
+        { key: 'average_of_carrier_fee', label: 'Average of CARRIER FEE', type: 'decimal' },
+        { key: 'average_of_ebay_amazon', label: 'Average of Ebay/ Amazon', type: 'decimal' },
+        { key: 'average_of_p_cost', label: 'Average of P.COST', type: 'decimal' },
+        { key: 'average_of_net_q', label: 'Average of NET/Q', type: 'decimal' },
+        { key: 'sum_of_net', label: 'Sum of NET', type: 'decimal' },
+        { key: 'sum_of_total_revenue', label: 'Sum of Total Revenue', type: 'decimal' },
+        { key: 'sum_of_qty', label: 'Sum of Qty', type: 'integer' },
+      ];
+
+      return { columns, rows, totals };
+    }
+
+    function updateSkuSummaryWithDataset(dataset) {
+      const pivot = buildSkuSummaryPivotFromDataset(dataset);
+      skuSummaryPivotCache = pivot;
+      skuSummaryCurrentPage = 1;
+      skuSummaryTotalRows = Array.isArray(pivot.rows) ? pivot.rows.length : 0;
+      renderSkuSummaryTable(pivot, { page: 1 });
     }
 
     function renderSkuSummaryMessage(message, columnCount = 2) {
@@ -3111,15 +3575,18 @@
         return;
       }
       renderSkuSummaryMessage('Loading data…');
-      fetchSkuSummaryPivot()
-        .then((pivotData) => {
+      fetchDataset()
+        .then((dataset) => {
+          const effectiveDataset = buildFilteredDataset(dataset, columnFilters);
+          const pivotData = buildSkuSummaryPivotFromDataset(effectiveDataset);
+          skuSummaryPivotCache = pivotData;
           skuSummaryCurrentPage = 1;
           skuSummaryTotalRows = Array.isArray(pivotData?.rows) ? pivotData.rows.length : 0;
           renderSkuSummaryTable(pivotData, { page: 1 });
           skuSummaryInitialised = true;
         })
         .catch((error) => {
-          const message = error && error.message ? error.message : 'Unable to load SKU pivot';
+          const message = error && error.message ? error.message : 'Unable to load SKU summary';
           renderSkuSummaryMessage(message);
         });
     }
@@ -3176,20 +3643,33 @@
 
     function initializeLoTables(dataset) {
       if (loTablesInitialised) {
+        const effectiveDataset = buildFilteredDataset(dataset, columnFilters);
+        updateLoTablesWithDataset(effectiveDataset);
         return;
       }
       const salesTable = document.getElementById('lo-sales-table');
       const spendTable = document.getElementById('lo-spend-table');
       const salesPivot = buildLoPivot(dataset, 'total revenue');
+      loSalesOrderCache = Array.isArray(salesPivot.order) ? salesPivot.order.slice() : [];
+      loDisplayNameOverridesCache = salesPivot.displayNames instanceof Map
+        ? new Map(salesPivot.displayNames)
+        : new Map();
       renderLoTable(salesTable, salesPivot);
       requestAnimationFrame(() => resizeLoTableContainers());
       if (spendTable) {
         const loadingColumns = Math.max(1, (salesPivot?.loList?.length ?? 0) + 1);
         spendTable.innerHTML = `<tbody><tr><td class="cell-date" colspan="${loadingColumns}">Loading…</td></tr></tbody>`;
       }
+      const adSpendPivot = buildLoPivot(dataset, 'Ad Spend', {
+        normalizedOrder: loSalesOrderCache,
+        displayNameOverrides: loDisplayNameOverridesCache,
+      });
+      loBaselineAdSpendPivot = adSpendPivot;
       fetchSpendPivot()
         .then((pivotData) => {
           const alignedPivot = alignPivotToReference(pivotData, salesPivot);
+          loBaselineSpendPivot = alignedPivot;
+          loSpendScalingData = buildSpendScaling(alignedPivot, adSpendPivot);
           renderLoTable(spendTable, alignedPivot);
           requestAnimationFrame(() => resizeLoTableContainers());
         })
@@ -3197,9 +3677,15 @@
           if (!spendTable) {
             return;
           }
-          const baseColumnCount = Array.isArray(salesPivot?.loList) ? salesPivot.loList.length + 1 : 1;
-          const message = escapeHtml(error.message || 'Unable to load spend pivot');
-          spendTable.innerHTML = `<tbody><tr><td class="cell-date" colspan="${baseColumnCount}">${message}</td></tr></tbody>`;
+          loSpendScalingData = null;
+          if (adSpendPivot && Array.isArray(adSpendPivot.rows) && adSpendPivot.rows.length) {
+            loBaselineSpendPivot = adSpendPivot;
+            renderLoTable(spendTable, adSpendPivot);
+          } else {
+            const baseColumnCount = Array.isArray(salesPivot?.loList) ? salesPivot.loList.length + 1 : 1;
+            const message = escapeHtml(error.message || 'Unable to load spend pivot');
+            spendTable.innerHTML = `<tbody><tr><td class="cell-date" colspan="${baseColumnCount}">${message}</td></tr></tbody>`;
+          }
           requestAnimationFrame(() => resizeLoTableContainers());
         });
       loTablesInitialised = true;
