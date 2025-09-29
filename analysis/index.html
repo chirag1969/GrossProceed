@@ -2161,23 +2161,27 @@
     }
 
     function clearAllColumnFilters(table) {
-      if (!table) {
-        return;
-      }
+      const hasTable = table && typeof table.column === 'function';
       const activeIndices = Object.keys(columnFilters)
         .map((key) => Number(key))
         .filter((index) => Number.isFinite(index));
       if (!activeIndices.length) {
+        if (Object.keys(columnFilters).length) {
+          columnFilters = {};
+          handleFilterChange();
+        }
         return;
       }
-      activeIndices.forEach((columnIndex) => {
-        table.column(columnIndex).search('', false, false);
-        const headerCell = table.column(columnIndex).header();
-        if (headerCell) {
-          headerCell.classList.remove('has-filter');
-        }
-      });
-      table.draw();
+      if (hasTable) {
+        activeIndices.forEach((columnIndex) => {
+          table.column(columnIndex).search('', false, false);
+          const headerCell = table.column(columnIndex).header();
+          if (headerCell) {
+            headerCell.classList.remove('has-filter');
+          }
+        });
+        table.draw();
+      }
       columnFilters = {};
       handleFilterChange();
     }
@@ -2371,22 +2375,21 @@
       });
 
       regularFilterApplyButton.addEventListener('click', () => {
-        if (!regularTable || !Number.isFinite(regularFilterActiveColumnIndex)) {
+        if (!Number.isFinite(regularFilterActiveColumnIndex)) {
           return;
         }
+        const tableInstance = regularTableInitialised && regularTable ? regularTable : null;
         const allOptions = columnValueOptions[regularFilterActiveColumnIndex] || [];
         const selectedValues = Array.from(regularFilterSelection);
         const valuesToApply = selectedValues.length === allOptions.length ? [] : selectedValues;
-        const headerCell = regularTable.column(regularFilterActiveColumnIndex).header();
-        applyColumnFilter(regularTable, regularFilterActiveColumnIndex, valuesToApply, headerCell);
+        const headerCell = tableInstance ? tableInstance.column(regularFilterActiveColumnIndex).header() : null;
+        applyColumnFilter(tableInstance, regularFilterActiveColumnIndex, valuesToApply, headerCell);
         closeRegularFilter();
       });
 
       regularFilterResetButton.addEventListener('click', () => {
-        if (!regularTable) {
-          return;
-        }
-        clearAllColumnFilters(regularTable);
+        const tableInstance = regularTableInitialised && regularTable ? regularTable : null;
+        clearAllColumnFilters(tableInstance);
         if (Number.isFinite(regularFilterActiveColumnIndex)) {
           syncRegularFilterSelectionFromFilters(regularFilterActiveColumnIndex);
           renderRegularFilterOptions();
@@ -2422,22 +2425,39 @@
     }
 
     function applyColumnFilter(table, columnIndex, values, headerCell) {
-      if (!table) return;
+      if (!Number.isFinite(columnIndex)) {
+        return;
+      }
       const safeValues = Array.isArray(values) ? values.slice() : [];
+      const hasTable = table && typeof table.column === 'function';
       if (safeValues.length === 0) {
-        table.column(columnIndex).search('', false, false).draw();
+        if (hasTable) {
+          table.column(columnIndex).search('', false, false).draw();
+        }
         delete columnFilters[columnIndex];
         if (headerCell) {
           headerCell.classList.remove('has-filter');
+        } else if (hasTable) {
+          const tableHeaderCell = table.column(columnIndex).header();
+          if (tableHeaderCell) {
+            tableHeaderCell.classList.remove('has-filter');
+          }
         }
         handleFilterChange();
         return;
       }
-      const regex = `^(${safeValues.map((value) => escapeRegex(value)).join('|')})$`;
-      table.column(columnIndex).search(regex, true, false).draw();
+      if (hasTable) {
+        const regex = `^(${safeValues.map((value) => escapeRegex(value)).join('|')})$`;
+        table.column(columnIndex).search(regex, true, false).draw();
+      }
       columnFilters[columnIndex] = safeValues;
       if (headerCell) {
         headerCell.classList.add('has-filter');
+      } else if (hasTable) {
+        const tableHeaderCell = table.column(columnIndex).header();
+        if (tableHeaderCell) {
+          tableHeaderCell.classList.add('has-filter');
+        }
       }
       handleFilterChange();
     }
@@ -3577,6 +3597,11 @@
       renderSkuSummaryMessage('Loading data…');
       fetchDataset()
         .then((dataset) => {
+          if (!regularFilterInitialised) {
+            const augmentedForFilters = augmentDatasetWithTotals(dataset);
+            buildColumnOptions(augmentedForFilters);
+            initializeRegularFilterControls(augmentedForFilters);
+          }
           const effectiveDataset = buildFilteredDataset(dataset, columnFilters);
           const pivotData = buildSkuSummaryPivotFromDataset(effectiveDataset);
           skuSummaryPivotCache = pivotData;
@@ -3642,6 +3667,11 @@
     }
 
     function initializeLoTables(dataset) {
+      if (!regularFilterInitialised) {
+        const augmentedForFilters = augmentDatasetWithTotals(dataset);
+        buildColumnOptions(augmentedForFilters);
+        initializeRegularFilterControls(augmentedForFilters);
+      }
       if (loTablesInitialised) {
         const effectiveDataset = buildFilteredDataset(dataset, columnFilters);
         updateLoTablesWithDataset(effectiveDataset);
