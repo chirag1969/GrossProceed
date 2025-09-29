@@ -1387,6 +1387,7 @@
             <h2 class="lo-card__title">Platform performance</h2>
             <p class="lo-card__subtitle">Daily sales and NET totals grouped by platform from regular data</p>
           </div>
+          <button type="button" class="filter-button lo-card__filter-button" id="platform-filter-button" aria-haspopup="dialog" aria-expanded="false">Filters</button>
         </header>
         <nav class="sub-tab-nav" aria-label="Platform metrics">
           <button class="sub-tab-button platform-tab-button active" id="platform-sales-button" type="button" data-subtab="sales" aria-controls="platform-sales-panel" aria-selected="true">Sales</button>
@@ -1528,6 +1529,7 @@
     const platformSubTabButtons = document.querySelectorAll('.platform-tab-button');
     const platformSubTabPanels = document.querySelectorAll('.platform-tab-panel');
     const loFilterButtonElement = document.getElementById('lo-filter-button');
+    const platformFilterButtonElement = document.getElementById('platform-filter-button');
 
     let regularTable;
     let regularTableInitialised = false;
@@ -3255,7 +3257,7 @@
         ? regularFilterContainerElement.querySelector('.regular-filter__close')
         : null;
       const skuFilterButton = document.getElementById('sku-filter-button');
-      regularFilterButtons = [regularFilterButtonElement, loFilterButtonElement, skuFilterButton].filter((button) => button);
+      regularFilterButtons = [regularFilterButtonElement, loFilterButtonElement, platformFilterButtonElement, skuFilterButton].filter((button) => button);
 
       const elementsReady = [
         regularFilterButtonElement,
