@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" />
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     :root {
       color-scheme: light;
@@ -1440,12 +1441,164 @@
     const REGULAR_TABLE_PAGE_LENGTH = 200;
     const SHOW_REGULAR_TOTAL_ROW = true;
     const REGULAR_FILTER_MAX_UNIQUE_VALUES = 350;
+    const EXCEL_WORKBOOK_PATH = '../09%20GROSS%20PROCEED%20SEP-25%20COMBINE.xlsx';
+    const EXCEL_SHEET_CANDIDATES = ['REGULAR SEP-25', 'Regular Sep-25', 'REGULAR', 'Regular'];
+    const EXCEL_KEY_COLUMN_NAMES = ['ORDER NO', 'Order No', 'ORDER NO.', 'ORDER #', 'Plain Order No'];
+    const EXCEL_MAX_BLANK_ROWS = 250;
 
     let loSalesOrderCache = [];
     let loDisplayNameOverridesCache = new Map();
     let loBaselineSpendPivot = null;
     let loSpendScalingData = null;
     let loBaselineAdSpendPivot = null;
+
+    function normaliseSheetName(value) {
+      return typeof value === 'string' ? value.trim().toLowerCase() : '';
+    }
+
+    function coerceCellValue(cell) {
+      if (cell === null || cell === undefined) {
+        return '';
+      }
+      if (typeof cell === 'number') {
+        return Number.isFinite(cell) ? String(cell) : '';
+      }
+      if (typeof cell === 'boolean') {
+        return cell ? 'TRUE' : 'FALSE';
+      }
+      const text = String(cell);
+      return text.trim().length ? text : '';
+    }
+
+    function findWorksheetFromWorkbook(workbook) {
+      if (!workbook || !Array.isArray(workbook.SheetNames) || !workbook.SheetNames.length) {
+        return { worksheet: null, sheetName: null };
+      }
+      const sheetNames = workbook.SheetNames;
+      const lookup = new Map();
+      sheetNames.forEach((name) => {
+        lookup.set(normaliseSheetName(name), name);
+      });
+      for (const candidate of EXCEL_SHEET_CANDIDATES) {
+        const normalised = normaliseSheetName(candidate);
+        if (lookup.has(normalised)) {
+          const resolvedName = lookup.get(normalised);
+          return { worksheet: workbook.Sheets[resolvedName], sheetName: resolvedName };
+        }
+      }
+      const inferred = sheetNames.find((name) => {
+        const normalised = normaliseSheetName(name);
+        return normalised.includes('regular') && normalised.includes('sep');
+      });
+      if (inferred) {
+        return { worksheet: workbook.Sheets[inferred], sheetName: inferred };
+      }
+      const firstName = sheetNames[0];
+      return { worksheet: workbook.Sheets[firstName], sheetName: firstName };
+    }
+
+    function buildDatasetFromWorksheet(worksheet) {
+      if (!worksheet) {
+        throw new Error('Worksheet not found in workbook');
+      }
+      const rawRows = XLSX.utils.sheet_to_json(worksheet, {
+        header: 1,
+        blankrows: false,
+        defval: '',
+        raw: true,
+      });
+      if (!Array.isArray(rawRows) || !rawRows.length) {
+        throw new Error('Worksheet is empty');
+      }
+      let headerRow = null;
+      let headerIndex = -1;
+      for (let i = 0; i < rawRows.length; i += 1) {
+        const row = Array.isArray(rawRows[i]) ? rawRows[i] : [];
+        const hasHeaderKey = row.some((value) => typeof value === 'string' && value.trim().toUpperCase().includes('ORDER NO'));
+        if (hasHeaderKey) {
+          headerRow = row;
+          headerIndex = i;
+          break;
+        }
+      }
+      if (!headerRow || headerIndex === -1) {
+        throw new Error('Failed to locate header row in worksheet');
+      }
+      const headerCounts = new Map();
+      const columns = headerRow.map((cell) => {
+        const baseNameRaw = typeof cell === 'string' ? cell.trim() : cell;
+        const baseName = baseNameRaw && String(baseNameRaw).trim().length ? String(baseNameRaw).trim() : 'Column';
+        const count = (headerCounts.get(baseName) || 0) + 1;
+        headerCounts.set(baseName, count);
+        if (count === 1 && baseName !== 'Column') {
+          return baseName;
+        }
+        return count === 1 ? `${baseName}` : `${baseName}_${count}`;
+      });
+      const keyColumnIndexes = columns.reduce((indexes, name, index) => {
+        const normalized = typeof name === 'string' ? name.trim().toLowerCase() : '';
+        if (EXCEL_KEY_COLUMN_NAMES.some((candidate) => candidate.trim().toLowerCase() === normalized)) {
+          indexes.push(index);
+        }
+        return indexes;
+      }, []);
+      let blankRun = 0;
+      const rows = [];
+      for (let i = headerIndex + 1; i < rawRows.length; i += 1) {
+        const sourceRow = Array.isArray(rawRows[i]) ? rawRows[i] : [];
+        const normalisedRow = columns.map((_, columnIndex) => coerceCellValue(sourceRow[columnIndex]));
+        const isBlankRow = normalisedRow.every((value) => value === '');
+        if (isBlankRow) {
+          blankRun += 1;
+          if (blankRun > EXCEL_MAX_BLANK_ROWS) {
+            break;
+          }
+          continue;
+        }
+        const hasKey = keyColumnIndexes.some((index) => {
+          if (index < 0 || index >= normalisedRow.length) {
+            return false;
+          }
+          const value = normalisedRow[index];
+          if (value === null || value === undefined) {
+            return false;
+          }
+          const trimmed = typeof value === 'string' ? value.trim() : String(value).trim();
+          return trimmed !== '' && trimmed !== '-' && trimmed !== '--';
+        });
+        if (!hasKey) {
+          blankRun += 1;
+          if (blankRun > EXCEL_MAX_BLANK_ROWS) {
+            break;
+          }
+          continue;
+        }
+        rows.push(normalisedRow);
+        blankRun = 0;
+      }
+      return { columns, rows };
+    }
+
+    function loadDatasetFromExcel() {
+      if (typeof XLSX === 'undefined') {
+        return Promise.reject(new Error('Excel parser library is not available'));
+      }
+      return fetch(EXCEL_WORKBOOK_PATH, { cache: 'no-store' })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error('Unable to load Excel workbook');
+          }
+          return response.arrayBuffer();
+        })
+        .then((buffer) => {
+          const workbook = XLSX.read(buffer, { type: 'array' });
+          const { worksheet } = findWorksheetFromWorkbook(workbook);
+          if (!worksheet) {
+            throw new Error('REGULAR SEP-25 worksheet not found in workbook');
+          }
+          return buildDatasetFromWorksheet(worksheet);
+        });
+    }
 
     function fetchDataset() {
       if (datasetCache) {
@@ -1454,12 +1607,16 @@
       if (datasetPromise) {
         return datasetPromise;
       }
-      datasetPromise = fetch('regular_sep25_data.json')
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error('Unable to load dataset');
-          }
-          return response.json();
+      datasetPromise = loadDatasetFromExcel()
+        .catch((excelError) => {
+          console.error('Failed to load dataset from Excel:', excelError);
+          return fetch('regular_sep25_data.json')
+            .then((response) => {
+              if (!response.ok) {
+                throw new Error('Unable to load fallback dataset');
+              }
+              return response.json();
+            });
         })
         .then((data) => {
           datasetCache = data;
@@ -1479,16 +1636,19 @@
       if (spendPivotPromise) {
         return spendPivotPromise;
       }
-      spendPivotPromise = fetch('lo_spend_pivot.json')
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error('Unable to load spend pivot');
+      const datasetSource = datasetCache ? Promise.resolve(datasetCache) : fetchDataset();
+      spendPivotPromise = datasetSource
+        .then((dataset) => {
+          const options = {};
+          if (Array.isArray(loSalesOrderCache) && loSalesOrderCache.length) {
+            options.normalizedOrder = loSalesOrderCache;
           }
-          return response.json();
-        })
-        .then((data) => {
-          spendPivotCache = data;
-          return data;
+          if (loDisplayNameOverridesCache instanceof Map && loDisplayNameOverridesCache.size) {
+            options.displayNameOverrides = loDisplayNameOverridesCache;
+          }
+          const pivot = buildLoPivot(dataset, 'Ad Spend', options);
+          spendPivotCache = pivot;
+          return pivot;
         })
         .catch((error) => {
           spendPivotPromise = null;
