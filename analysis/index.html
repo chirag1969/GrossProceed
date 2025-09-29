@@ -1343,6 +1343,7 @@
 <body>
   <nav class="tab-nav" aria-label="Dashboard views">
     <button class="tab-button active" id="tab-lo-button" type="button" data-tab="lo" aria-controls="tab-lo" aria-selected="true">LO - Sales &amp; Spend</button>
+    <button class="tab-button" id="tab-platform-button" type="button" data-tab="platform" aria-controls="tab-platform" aria-selected="false">Platform Sales &amp; NET</button>
     <button class="tab-button" id="tab-sku-summary-button" type="button" data-tab="sku-summary" aria-controls="tab-sku-summary" aria-selected="false">SKU wise summary</button>
     <button class="tab-button" id="tab-main-button" type="button" data-tab="main" aria-controls="tab-main" aria-selected="false">Main</button>
     <button class="tab-button" id="tab-regular-button" type="button" data-tab="regular" aria-controls="tab-regular" aria-selected="false">Regular</button>
@@ -1358,20 +1359,50 @@
           <button type="button" class="filter-button lo-card__filter-button" id="lo-filter-button" aria-haspopup="dialog" aria-expanded="false">Filters</button>
         </header>
         <nav class="sub-tab-nav" aria-label="Listing owner metrics">
-          <button class="sub-tab-button active" id="lo-sales-button" type="button" data-subtab="sales" aria-controls="lo-sales-panel" aria-selected="true">Sales</button>
-          <button class="sub-tab-button" id="lo-spend-button" type="button" data-subtab="spend" aria-controls="lo-spend-panel" aria-selected="false">Spend</button>
+          <button class="sub-tab-button lo-sub-tab-button active" id="lo-sales-button" type="button" data-subtab="sales" aria-controls="lo-sales-panel" aria-selected="true">Sales</button>
+          <button class="sub-tab-button lo-sub-tab-button" id="lo-spend-button" type="button" data-subtab="spend" aria-controls="lo-spend-panel" aria-selected="false">Spend</button>
         </nav>
-        <div class="sub-tab-panel active" id="lo-sales-panel" data-subtab="sales" role="region" aria-labelledby="lo-sales-button">
+        <div class="sub-tab-panel lo-sub-tab-panel active" id="lo-sales-panel" data-subtab="sales" role="region" aria-labelledby="lo-sales-button">
           <div class="table-container lo-table-container">
             <div class="lo-table-scroll">
               <table id="lo-sales-table" class="lo-table"></table>
             </div>
           </div>
         </div>
-        <div class="sub-tab-panel" id="lo-spend-panel" data-subtab="spend" role="region" aria-labelledby="lo-spend-button" aria-hidden="true">
+        <div class="sub-tab-panel lo-sub-tab-panel" id="lo-spend-panel" data-subtab="spend" role="region" aria-labelledby="lo-spend-button" aria-hidden="true">
           <div class="table-container lo-table-container">
             <div class="lo-table-scroll">
               <table id="lo-spend-table" class="lo-table"></table>
+            </div>
+          </div>
+        </div>
+      </article>
+    </section>
+  </div>
+  <div class="tab-panel" id="tab-platform" data-tab="platform" role="tabpanel" aria-labelledby="tab-platform-button" aria-hidden="true">
+    <section class="grid">
+      <article class="card lo-card">
+        <header class="lo-card__header">
+          <div class="lo-card__heading">
+            <h2 class="lo-card__title">Platform performance</h2>
+            <p class="lo-card__subtitle">Daily sales and NET totals grouped by platform from regular data</p>
+          </div>
+        </header>
+        <nav class="sub-tab-nav" aria-label="Platform metrics">
+          <button class="sub-tab-button platform-tab-button active" id="platform-sales-button" type="button" data-subtab="sales" aria-controls="platform-sales-panel" aria-selected="true">Sales</button>
+          <button class="sub-tab-button platform-tab-button" id="platform-net-button" type="button" data-subtab="net" aria-controls="platform-net-panel" aria-selected="false">NET</button>
+        </nav>
+        <div class="sub-tab-panel platform-tab-panel active" id="platform-sales-panel" data-subtab="sales" role="region" aria-labelledby="platform-sales-button">
+          <div class="table-container lo-table-container">
+            <div class="lo-table-scroll">
+              <table id="platform-sales-table" class="lo-table"></table>
+            </div>
+          </div>
+        </div>
+        <div class="sub-tab-panel platform-tab-panel" id="platform-net-panel" data-subtab="net" role="region" aria-labelledby="platform-net-button" aria-hidden="true">
+          <div class="table-container lo-table-container">
+            <div class="lo-table-scroll">
+              <table id="platform-net-table" class="lo-table"></table>
             </div>
           </div>
         </div>
@@ -1492,8 +1523,10 @@
   <script>
     const tabButtons = document.querySelectorAll('.tab-button');
     const tabPanels = document.querySelectorAll('.tab-panel');
-    const subTabButtons = document.querySelectorAll('.sub-tab-button');
-    const subTabPanels = document.querySelectorAll('.sub-tab-panel');
+    const loSubTabButtons = document.querySelectorAll('.lo-sub-tab-button');
+    const loSubTabPanels = document.querySelectorAll('.lo-sub-tab-panel');
+    const platformSubTabButtons = document.querySelectorAll('.platform-tab-button');
+    const platformSubTabPanels = document.querySelectorAll('.platform-tab-panel');
     const loFilterButtonElement = document.getElementById('lo-filter-button');
 
     let regularTable;
@@ -1511,6 +1544,7 @@
     let mainDatasetCache = null;
     let mainDatasetPromise = null;
     let loTablesInitialised = false;
+    let platformTablesInitialised = false;
     let spendPivotCache = null;
     let spendPivotPromise = null;
     let skuSummaryInitialised = false;
@@ -2614,16 +2648,16 @@
       button.addEventListener('click', () => setActiveTab(button.dataset.tab));
     });
 
-    function setActiveSubTab(targetSubTab) {
-      if (!subTabButtons.length) {
+    function setActiveLoSubTab(targetSubTab) {
+      if (!loSubTabButtons.length) {
         return;
       }
-      subTabButtons.forEach((button) => {
+      loSubTabButtons.forEach((button) => {
         const isActive = button.dataset.subtab === targetSubTab;
         button.classList.toggle('active', isActive);
         button.setAttribute('aria-selected', String(isActive));
       });
-      subTabPanels.forEach((panel) => {
+      loSubTabPanels.forEach((panel) => {
         const isActive = panel.dataset.subtab === targetSubTab;
         panel.classList.toggle('active', isActive);
         panel.setAttribute('aria-hidden', String(!isActive));
@@ -2644,12 +2678,37 @@
       requestAnimationFrame(() => resizeLoTableContainers());
     }
 
-    subTabButtons.forEach((button) => {
-      button.addEventListener('click', () => setActiveSubTab(button.dataset.subtab));
+    loSubTabButtons.forEach((button) => {
+      button.addEventListener('click', () => setActiveLoSubTab(button.dataset.subtab));
     });
 
-    if (subTabButtons.length > 0) {
-      setActiveSubTab('sales');
+    if (loSubTabButtons.length > 0) {
+      setActiveLoSubTab('sales');
+    }
+
+    function setActivePlatformSubTab(targetSubTab) {
+      if (!platformSubTabButtons.length) {
+        return;
+      }
+      platformSubTabButtons.forEach((button) => {
+        const isActive = button.dataset.subtab === targetSubTab;
+        button.classList.toggle('active', isActive);
+        button.setAttribute('aria-selected', String(isActive));
+      });
+      platformSubTabPanels.forEach((panel) => {
+        const isActive = panel.dataset.subtab === targetSubTab;
+        panel.classList.toggle('active', isActive);
+        panel.setAttribute('aria-hidden', String(!isActive));
+      });
+      requestAnimationFrame(() => resizeLoTableContainers());
+    }
+
+    platformSubTabButtons.forEach((button) => {
+      button.addEventListener('click', () => setActivePlatformSubTab(button.dataset.subtab));
+    });
+
+    if (platformSubTabButtons.length > 0) {
+      setActivePlatformSubTab('sales');
     }
 
     function updateStickyOffset() {
@@ -3163,6 +3222,9 @@
       const filteredDataset = buildFilteredDataset(regularDatasetCache, columnFilters);
       if (loTablesInitialised) {
         updateLoTablesWithDataset(filteredDataset);
+      }
+      if (platformTablesInitialised) {
+        updatePlatformTablesWithDataset(filteredDataset);
       }
       if (skuSummaryInitialised) {
         updateSkuSummaryWithDataset(filteredDataset);
@@ -4014,22 +4076,31 @@
       return numberFormatter.format(numeric);
     }
 
-    function buildLoPivot(dataset, targetColumnName, options = {}) {
-      const { normalizedOrder = null, displayNameOverrides = null } = options;
-      const checkoutIndex = findColumnIndex(dataset, 'checkout');
-      const ownerIndex = findColumnIndex(dataset, 'listing owner');
-      const valueIndex = findColumnIndex(dataset, targetColumnName);
-      if (checkoutIndex < 0 || ownerIndex < 0 || valueIndex < 0) {
-        return { loList: [], rows: [], order: [], displayNames: new Map() };
+    function buildDailyPivot(dataset, dimensionColumnName, targetColumnName, options = {}) {
+      if (!dataset || !Array.isArray(dataset.rows)) {
+        return { loList: [], rows: [], totals: [], order: [], displayNames: new Map() };
       }
 
-      const normalizedDisplayOverrides = displayNameOverrides instanceof Map
-        ? displayNameOverrides
-        : (displayNameOverrides && typeof displayNameOverrides === 'object'
-          ? new Map(Object.entries(displayNameOverrides))
+      const checkoutIndex = findColumnIndex(dataset, 'checkout');
+      const dimensionIndex = findColumnIndex(dataset, dimensionColumnName);
+      const valueIndex = findColumnIndex(dataset, targetColumnName);
+
+      if (checkoutIndex < 0 || dimensionIndex < 0 || valueIndex < 0) {
+        return { loList: [], rows: [], totals: [], order: [], displayNames: new Map() };
+      }
+
+      const normalizedOrder = Array.isArray(options.normalizedOrder) ? options.normalizedOrder : null;
+      const normalizedDisplayOverrides = options.displayNameOverrides instanceof Map
+        ? options.displayNameOverrides
+        : (options.displayNameOverrides && typeof options.displayNameOverrides === 'object'
+          ? new Map(Object.entries(options.displayNameOverrides))
           : new Map());
-      const listingOwners = new Map();
-      const ownerTotals = new Map();
+      const fallbackLabel = typeof options.fallbackLabel === 'string' && options.fallbackLabel.trim().length
+        ? options.fallbackLabel.trim()
+        : 'Unassigned';
+
+      const dimensionLabels = new Map();
+      const dimensionTotals = new Map();
       const dateMap = new Map();
 
       dataset.rows.forEach((row) => {
@@ -4038,81 +4109,100 @@
           return;
         }
         const isoKey = date.toISOString().slice(0, 10);
-        const ownerRaw = row[ownerIndex];
-        let owner = '';
-        if (typeof ownerRaw === 'string') {
-          owner = ownerRaw.trim();
-        } else if (ownerRaw === null || ownerRaw === undefined) {
-          owner = '';
+        const rawLabel = row[dimensionIndex];
+        let label = '';
+        if (typeof rawLabel === 'string') {
+          label = rawLabel.trim();
+        } else if (rawLabel === null || rawLabel === undefined) {
+          label = '';
         } else {
-          owner = String(ownerRaw).trim();
+          label = String(rawLabel).trim();
         }
-        const ownerName = owner || 'Unassigned';
-        const normalizedOwner = ownerName.toLocaleLowerCase();
-        const displayName = normalizedDisplayOverrides.get(normalizedOwner) ?? ownerName;
+        const effectiveLabel = label || fallbackLabel;
+        const normalizedLabel = effectiveLabel.toLocaleLowerCase();
+        const displayName = normalizedDisplayOverrides.get(normalizedLabel) ?? effectiveLabel;
 
         const rawValue = row[valueIndex];
         const numericValue = parseNumericValue(rawValue);
         const value = numericValue === null ? 0 : numericValue;
 
-        if (!listingOwners.has(normalizedOwner)) {
-          listingOwners.set(normalizedOwner, displayName);
+        if (!dimensionLabels.has(normalizedLabel)) {
+          dimensionLabels.set(normalizedLabel, displayName);
         }
-        ownerTotals.set(normalizedOwner, (ownerTotals.get(normalizedOwner) ?? 0) + value);
+        dimensionTotals.set(normalizedLabel, (dimensionTotals.get(normalizedLabel) ?? 0) + value);
         if (!dateMap.has(isoKey)) {
           dateMap.set(isoKey, { date, values: new Map() });
         }
         const entry = dateMap.get(isoKey);
-        entry.values.set(normalizedOwner, (entry.values.get(normalizedOwner) ?? 0) + value);
+        entry.values.set(normalizedLabel, (entry.values.get(normalizedLabel) ?? 0) + value);
       });
 
-      let ownerOrder;
-      if (Array.isArray(normalizedOrder) && normalizedOrder.length) {
+      if (dimensionLabels.size === 0) {
+        return { loList: [], rows: [], totals: [], order: [], displayNames: new Map() };
+      }
+
+      let dimensionOrder;
+      if (normalizedOrder && normalizedOrder.length) {
         const orderSet = new Set();
-        ownerOrder = normalizedOrder.filter((key) => {
-          if (!listingOwners.has(key) || orderSet.has(key)) {
+        dimensionOrder = normalizedOrder.filter((key) => {
+          if (!dimensionLabels.has(key) || orderSet.has(key)) {
             return false;
           }
           orderSet.add(key);
           return true;
         });
-        const remainingOwners = Array.from(listingOwners.keys()).filter((key) => !orderSet.has(key));
-        remainingOwners.sort((a, b) => {
-          const totalDiff = (ownerTotals.get(b) ?? 0) - (ownerTotals.get(a) ?? 0);
+        const remainingDimensions = Array.from(dimensionLabels.keys()).filter((key) => !orderSet.has(key));
+        remainingDimensions.sort((a, b) => {
+          const totalDiff = (dimensionTotals.get(b) ?? 0) - (dimensionTotals.get(a) ?? 0);
           if (Math.abs(totalDiff) > Number.EPSILON) {
             return totalDiff;
           }
-          return listingOwners.get(a).localeCompare(listingOwners.get(b), undefined, { sensitivity: 'base' });
+          const displayA = dimensionLabels.get(a) ?? '';
+          const displayB = dimensionLabels.get(b) ?? '';
+          return displayA.localeCompare(displayB, undefined, { sensitivity: 'base' });
         });
-        ownerOrder = ownerOrder.concat(remainingOwners);
+        dimensionOrder.push(...remainingDimensions);
       } else {
-        ownerOrder = Array.from(listingOwners.keys()).sort((a, b) => {
-          const totalDiff = (ownerTotals.get(b) ?? 0) - (ownerTotals.get(a) ?? 0);
+        dimensionOrder = Array.from(dimensionLabels.keys());
+        dimensionOrder.sort((a, b) => {
+          const totalDiff = (dimensionTotals.get(b) ?? 0) - (dimensionTotals.get(a) ?? 0);
           if (Math.abs(totalDiff) > Number.EPSILON) {
             return totalDiff;
           }
-          return listingOwners.get(a).localeCompare(listingOwners.get(b), undefined, { sensitivity: 'base' });
+          const displayA = dimensionLabels.get(a) ?? '';
+          const displayB = dimensionLabels.get(b) ?? '';
+          return displayA.localeCompare(displayB, undefined, { sensitivity: 'base' });
         });
       }
 
-      const loList = ownerOrder.map((key) => listingOwners.get(key));
+      const loList = dimensionOrder.map((dimensionKey) => dimensionLabels.get(dimensionKey) ?? dimensionKey);
       const rows = Array.from(dateMap.values())
         .sort((a, b) => a.date - b.date)
         .map(({ date, values }) => {
           const displayDate = displayDateFormatter.format(date);
-          const formattedValues = ownerOrder.map((ownerKey) => formatTwoDecimal(values.get(ownerKey) ?? 0));
+          const formattedValues = dimensionOrder.map((dimensionKey) => formatTwoDecimal(values.get(dimensionKey) ?? 0));
           return { displayDate, formattedValues };
         });
 
-      const totals = ownerOrder.map((ownerKey) => formatTwoDecimal(ownerTotals.get(ownerKey) ?? 0));
+      const totals = dimensionOrder.map((dimensionKey) => formatTwoDecimal(dimensionTotals.get(dimensionKey) ?? 0));
 
       return {
         loList,
         rows,
         totals,
-        order: ownerOrder,
-        displayNames: new Map(listingOwners),
+        order: dimensionOrder,
+        displayNames: new Map(dimensionLabels),
       };
+    }
+
+    function buildLoPivot(dataset, targetColumnName, options = {}) {
+      const mergedOptions = {
+        ...options,
+      };
+      if (!Object.prototype.hasOwnProperty.call(mergedOptions, 'fallbackLabel')) {
+        mergedOptions.fallbackLabel = 'Unassigned';
+      }
+      return buildDailyPivot(dataset, 'listing owner', targetColumnName, mergedOptions);
     }
 
     function renderLoTable(tableElement, pivotData) {
@@ -4297,6 +4387,26 @@
         }
       }
       renderLoTable(spendTableElement, spendPivot);
+      requestAnimationFrame(() => resizeLoTableContainers());
+    }
+
+    function updatePlatformTablesWithDataset(dataset) {
+      const platformSalesTableElement = document.getElementById('platform-sales-table');
+      const platformNetTableElement = document.getElementById('platform-net-table');
+      if (!platformSalesTableElement || !platformNetTableElement) {
+        return;
+      }
+
+      const platformSalesPivot = buildDailyPivot(dataset, 'Platform', 'total revenue', {
+        fallbackLabel: 'Unassigned Platform',
+      });
+      renderLoTable(platformSalesTableElement, platformSalesPivot);
+
+      const platformNetPivot = buildDailyPivot(dataset, 'Platform', 'NET', {
+        fallbackLabel: 'Unassigned Platform',
+      });
+      renderLoTable(platformNetTableElement, platformNetPivot);
+
       requestAnimationFrame(() => resizeLoTableContainers());
     }
 
@@ -4789,13 +4899,32 @@
       const markup = `<tbody><tr><td class="cell-date" colspan="1">${escaped}</td></tr></tbody>`;
       const salesTable = document.getElementById('lo-sales-table');
       const spendTable = document.getElementById('lo-spend-table');
+      const platformSalesTable = document.getElementById('platform-sales-table');
+      const platformNetTable = document.getElementById('platform-net-table');
       if (salesTable) {
         salesTable.innerHTML = markup;
       }
       if (spendTable) {
         spendTable.innerHTML = markup;
       }
+      if (platformSalesTable) {
+        platformSalesTable.innerHTML = markup;
+      }
+      if (platformNetTable) {
+        platformNetTable.innerHTML = markup;
+      }
       requestAnimationFrame(() => resizeLoTableContainers());
+    }
+
+    function initializePlatformTables(dataset) {
+      if (!dataset || !Array.isArray(dataset.rows)) {
+        updatePlatformTablesWithDataset({ columns: [], rows: [] });
+        platformTablesInitialised = true;
+        return;
+      }
+      const effectiveDataset = buildFilteredDataset(dataset, columnFilters);
+      updatePlatformTablesWithDataset(effectiveDataset);
+      platformTablesInitialised = true;
     }
 
     function initializeLoTables(dataset) {
@@ -4807,6 +4936,9 @@
       if (loTablesInitialised) {
         const effectiveDataset = buildFilteredDataset(dataset, columnFilters);
         updateLoTablesWithDataset(effectiveDataset);
+        if (platformTablesInitialised) {
+          updatePlatformTablesWithDataset(effectiveDataset);
+        }
         return;
       }
       const salesTable = document.getElementById('lo-sales-table');
@@ -4851,6 +4983,7 @@
           requestAnimationFrame(() => resizeLoTableContainers());
         });
       loTablesInitialised = true;
+      initializePlatformTables(dataset);
     }
 
     function loadRegularTable() {
