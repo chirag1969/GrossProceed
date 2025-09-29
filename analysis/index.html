@@ -1567,6 +1567,8 @@
     const EXCEL_REGULAR_SHEET_CANDIDATES = ['REGULAR SEP-25', 'Regular Sep-25', 'REGULAR', 'Regular'];
     const EXCEL_MAIN_SHEET_CANDIDATES = ['Main', 'MAIN'];
     const EXCEL_KEY_COLUMN_NAMES = ['ORDER NO', 'Order No', 'ORDER NO.', 'ORDER #', 'Plain Order No'];
+    const EXCEL_MAIN_KEY_COLUMN_NAMES = ['SKU', 'Sr. No.', 'NAME', 'DC LIST'];
+    const EXCEL_DEFAULT_HEADER_SEARCH_VALUES = EXCEL_KEY_COLUMN_NAMES;
     const EXCEL_MAX_BLANK_ROWS = 250;
 
     let loSalesOrderCache = [];
@@ -1628,7 +1630,7 @@
       return { worksheet: workbook.Sheets[firstName], sheetName: firstName };
     }
 
-    function buildDatasetFromWorksheet(worksheet) {
+    function buildDatasetFromWorksheet(worksheet, options = {}) {
       if (!worksheet) {
         throw new Error('Worksheet not found in workbook');
       }
@@ -1641,15 +1643,39 @@
       if (!Array.isArray(rawRows) || !rawRows.length) {
         throw new Error('Worksheet is empty');
       }
+      const headerSearchValues = Array.isArray(options.headerSearchValues) && options.headerSearchValues.length
+        ? options.headerSearchValues
+        : EXCEL_DEFAULT_HEADER_SEARCH_VALUES;
+      const headerSearchLower = headerSearchValues
+        .map((value) => (typeof value === 'string' ? value.trim().toLowerCase() : ''))
+        .filter((value) => value.length);
+
       let headerRow = null;
       let headerIndex = -1;
-      for (let i = 0; i < rawRows.length; i += 1) {
-        const row = Array.isArray(rawRows[i]) ? rawRows[i] : [];
-        const hasHeaderKey = row.some((value) => typeof value === 'string' && value.trim().toUpperCase().includes('ORDER NO'));
-        if (hasHeaderKey) {
-          headerRow = row;
-          headerIndex = i;
-          break;
+
+      if (Number.isInteger(options.headerRowIndex)
+        && options.headerRowIndex >= 0
+        && options.headerRowIndex < rawRows.length) {
+        headerIndex = options.headerRowIndex;
+        headerRow = Array.isArray(rawRows[headerIndex]) ? rawRows[headerIndex] : [];
+      } else {
+        for (let i = 0; i < rawRows.length; i += 1) {
+          const row = Array.isArray(rawRows[i]) ? rawRows[i] : [];
+          const hasHeaderKey = row.some((value) => {
+            if (typeof value !== 'string') {
+              return false;
+            }
+            const normalised = value.trim().toLowerCase();
+            if (!normalised) {
+              return false;
+            }
+            return headerSearchLower.some((needle) => normalised.includes(needle));
+          });
+          if (hasHeaderKey) {
+            headerRow = row;
+            headerIndex = i;
+            break;
+          }
         }
       }
       if (!headerRow || headerIndex === -1) {
@@ -1666,9 +1692,16 @@
         }
         return count === 1 ? `${baseName}` : `${baseName}_${count}`;
       });
+      const keyColumnCandidates = Array.isArray(options.keyColumnNames) && options.keyColumnNames.length
+        ? options.keyColumnNames
+        : EXCEL_KEY_COLUMN_NAMES;
+      const keyColumnLookup = keyColumnCandidates
+        .map((name) => (typeof name === 'string' ? name.trim().toLowerCase() : ''))
+        .filter((name) => name.length);
+
       const keyColumnIndexes = columns.reduce((indexes, name, index) => {
         const normalized = typeof name === 'string' ? name.trim().toLowerCase() : '';
-        if (EXCEL_KEY_COLUMN_NAMES.some((candidate) => candidate.trim().toLowerCase() === normalized)) {
+        if (keyColumnLookup.some((candidate) => candidate === normalized)) {
           indexes.push(index);
         }
         return indexes;
@@ -1730,7 +1763,11 @@
           if (!worksheet) {
             throw new Error(options.errorMessage || 'Worksheet not found in workbook');
           }
-          return buildDatasetFromWorksheet(worksheet);
+          return buildDatasetFromWorksheet(worksheet, {
+            headerRowIndex: options.headerRowIndex,
+            headerSearchValues: options.headerSearchValues,
+            keyColumnNames: options.keyColumnNames,
+          });
         });
     }
 
@@ -1784,6 +1821,9 @@
           return normalised.includes('main');
         },
         errorMessage: 'Main worksheet not found in workbook',
+        headerRowIndex: 3,
+        headerSearchValues: ['SKU', 'DC LIST', 'TOTAL SALES'],
+        keyColumnNames: EXCEL_MAIN_KEY_COLUMN_NAMES,
       })
         .then((data) => {
           mainDatasetCache = data;
