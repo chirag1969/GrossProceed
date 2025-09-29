@@ -699,42 +699,54 @@
       display: flex;
       flex-direction: column;
     }
-    #tab-regular .table-card {
+    #tab-regular .table-card,
+    #tab-main .table-card {
       background: transparent;
       box-shadow: none;
       padding: 0;
     }
-    #tab-regular .table-container {
+    #tab-regular .table-container,
+    #tab-main .table-container {
       padding-right: 0;
       padding-bottom: 0;
     }
-    #regular-table {
+    #regular-table,
+    #main-table {
       border-collapse: separate;
       width: 100%;
     }
     #regular-table thead th,
-    #regular-table tbody td {
+    #regular-table tbody td,
+    #main-table thead th,
+    #main-table tbody td {
       text-align: left;
       padding: 0.3rem 0.65rem;
       border-right: 1px solid rgba(15, 23, 42, 0.08);
       line-height: 1.15;
       box-sizing: border-box;
     }
-    #regular-table thead th {
+    #regular-table thead th,
+    #main-table thead th {
       white-space: normal;
     }
-    #regular-table tbody td {
+    #regular-table tbody td,
+    #main-table tbody td {
       white-space: nowrap;
     }
     #regular-table thead th:first-child,
-    #regular-table tbody td:first-child {
+    #regular-table tbody td:first-child,
+    #main-table thead th:first-child,
+    #main-table tbody td:first-child {
       border-left: 1px solid rgba(15, 23, 42, 0.08);
     }
     #regular-table thead th:last-child,
-    #regular-table tbody td:last-child {
+    #regular-table tbody td:last-child,
+    #main-table thead th:last-child,
+    #main-table tbody td:last-child {
       border-right: 1px solid rgba(15, 23, 42, 0.08);
     }
-    #regular-table thead th {
+    #regular-table thead th,
+    #main-table thead th {
       font-size: 0.78rem;
       letter-spacing: 0.08em;
       text-transform: uppercase;
@@ -743,34 +755,43 @@
       background: linear-gradient(180deg, #f6f8ff 0%, #e3e8f7 100%);
       border-bottom: 2px solid rgba(70, 97, 145, 0.35);
     }
-    #regular-table tbody td {
+    #regular-table tbody td,
+    #main-table tbody td {
       font-size: 0.82rem;
       color: rgba(27, 30, 40, 0.9);
       font-weight: 500;
       background: #fff;
     }
-    #regular-table tbody tr {
+    #regular-table tbody tr,
+    #main-table tbody tr {
       border-bottom: 1px solid rgba(15, 23, 42, 0.06);
     }
-    #regular-table tbody tr:nth-child(even) td {
+    #regular-table tbody tr:nth-child(even) td,
+    #main-table tbody tr:nth-child(even) td {
       background: rgba(226, 231, 244, 0.35);
     }
-    #regular-table tbody tr:hover td {
+    #regular-table tbody tr:hover td,
+    #main-table tbody tr:hover td {
       background: rgba(41, 71, 137, 0.12);
     }
     #regular-table thead th.cell-numeric,
-    #regular-table tbody td.cell-numeric {
+    #regular-table tbody td.cell-numeric,
+    #main-table thead th.cell-numeric,
+    #main-table tbody td.cell-numeric {
       text-align: right;
       font-variant-numeric: tabular-nums;
     }
-    #regular-table tbody td.cell-qty {
+    #regular-table tbody td.cell-qty,
+    #main-table tbody td.cell-qty {
       font-weight: 600;
     }
-    #regular-table thead th.is-filterable {
+    #regular-table thead th.is-filterable,
+    #main-table thead th.is-filterable {
       cursor: pointer;
       position: relative;
     }
-    #regular-table thead th.has-filter::after {
+    #regular-table thead th.has-filter::after,
+    #main-table thead th.has-filter::after {
       content: '';
       position: absolute;
       top: 0.6rem;
@@ -780,27 +801,32 @@
       border-radius: 50%;
       background: var(--accent);
     }
-    #regular-table td.cell-multiline {
+    #regular-table td.cell-multiline,
+    #main-table td.cell-multiline {
       white-space: normal !important;
       word-break: break-word;
       line-height: 1.35;
     }
     #regular-table th.cell-product,
-    #regular-table td.cell-product {
+    #regular-table td.cell-product,
+    #main-table th.cell-product,
+    #main-table td.cell-product {
       min-width: 24ch;
       max-width: 32ch;
       white-space: nowrap !important;
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    #regular-table_wrapper {
+    #regular-table_wrapper,
+    #main-table_wrapper {
       padding: 0;
       display: flex;
       flex-direction: column;
       height: 100%;
       min-height: 0;
     }
-    #regular-table_wrapper .dataTables_scroll {
+    #regular-table_wrapper .dataTables_scroll,
+    #main-table_wrapper .dataTables_scroll {
       border: none;
       border-radius: inherit;
       background: transparent;
@@ -811,7 +837,8 @@
       flex: 1 1 auto;
       min-height: 0;
     }
-    #regular-table_wrapper .dataTables_scrollHead {
+    #regular-table_wrapper .dataTables_scrollHead,
+    #main-table_wrapper .dataTables_scrollHead {
       position: relative;
       top: auto;
       z-index: 5;
@@ -820,25 +847,29 @@
       box-shadow: 0 8px 18px rgba(21, 32, 56, 0.12);
       flex: 0 0 auto;
     }
-    #regular-table_wrapper .dataTables_scrollHead table {
+    #regular-table_wrapper .dataTables_scrollHead table,
+    #main-table_wrapper .dataTables_scrollHead table {
       border-collapse: separate;
       border-spacing: 0;
       width: 100% !important;
     }
-    #regular-table_wrapper .dataTables_scrollBody {
+    #regular-table_wrapper .dataTables_scrollBody,
+    #main-table_wrapper .dataTables_scrollBody {
       border-top: none;
       overflow-y: auto !important;
       overflow-x: auto !important;
       flex: 1 1 auto;
       min-height: 0;
     }
-    #regular-table_wrapper .dataTables_scrollBody table {
+    #regular-table_wrapper .dataTables_scrollBody table,
+    #main-table_wrapper .dataTables_scrollBody table {
       border-collapse: separate;
       border-spacing: 0;
       background: #fff;
       width: 100% !important;
     }
-    #regular-table_wrapper .dataTables_scrollFoot {
+    #regular-table_wrapper .dataTables_scrollFoot,
+    #main-table_wrapper .dataTables_scrollFoot {
       position: sticky;
       bottom: 0;
       z-index: 12;
@@ -846,7 +877,8 @@
       box-shadow: 0 -10px 24px rgba(21, 32, 56, 0.1);
       flex: 0 0 auto;
     }
-    #regular-table_wrapper .dataTables_scrollFoot th {
+    #regular-table_wrapper .dataTables_scrollFoot th,
+    #main-table_wrapper .dataTables_scrollFoot th {
       position: sticky;
       bottom: 0;
       z-index: 13;
@@ -858,43 +890,54 @@
       background: transparent;
       border-top: 2px solid rgba(15, 23, 42, 0.08);
     }
-    #regular-table_wrapper .dataTables_scrollFoot th.cell-total-label {
+    #regular-table_wrapper .dataTables_scrollFoot th.cell-total-label,
+    #main-table_wrapper .dataTables_scrollFoot th.cell-total-label {
       text-align: left;
       color: #2d3748;
     }
-    #regular-table_wrapper .dataTables_scrollFoot th.cell-total {
+    #regular-table_wrapper .dataTables_scrollFoot th.cell-total,
+    #main-table_wrapper .dataTables_scrollFoot th.cell-total {
       text-align: right;
     }
-    #regular-table_wrapper .dataTables_scrollFoot th.cell-total-column {
+    #regular-table_wrapper .dataTables_scrollFoot th.cell-total-column,
+    #main-table_wrapper .dataTables_scrollFoot th.cell-total-column {
       background: linear-gradient(180deg, #fff4d7 0%, #ffd897 100%);
       border-left: 2px solid rgba(15, 23, 42, 0.08);
       z-index: 14;
     }
     #regular-table_wrapper .dataTables_scrollHead th.cell-total-column,
     #regular-table_wrapper .dataTables_scrollBody td.cell-total-column,
-    #regular-table_wrapper .dataTables_scrollFoot th.cell-total-column {
+    #regular-table_wrapper .dataTables_scrollFoot th.cell-total-column,
+    #main-table_wrapper .dataTables_scrollHead th.cell-total-column,
+    #main-table_wrapper .dataTables_scrollBody td.cell-total-column,
+    #main-table_wrapper .dataTables_scrollFoot th.cell-total-column {
       position: sticky;
       right: 0;
       z-index: 4;
     }
-    #regular-table_wrapper .dataTables_scrollHead th.cell-total-column {
+    #regular-table_wrapper .dataTables_scrollHead th.cell-total-column,
+    #main-table_wrapper .dataTables_scrollHead th.cell-total-column {
       z-index: 7;
       background: linear-gradient(180deg, #fef5e6 0%, #fbdca3 100%);
       color: #5c3c00;
       border-left: 2px solid rgba(15, 23, 42, 0.08);
     }
-    #regular-table_wrapper .dataTables_scrollBody td.cell-total-column {
+    #regular-table_wrapper .dataTables_scrollBody td.cell-total-column,
+    #main-table_wrapper .dataTables_scrollBody td.cell-total-column {
       background: linear-gradient(180deg, #fffdf7 0%, #fff0d3 100%);
       font-weight: 600;
       border-left: 2px solid rgba(15, 23, 42, 0.08);
     }
-    #regular-table_wrapper .dataTables_scrollBody tr:nth-child(even) td.cell-total-column {
+    #regular-table_wrapper .dataTables_scrollBody tr:nth-child(even) td.cell-total-column,
+    #main-table_wrapper .dataTables_scrollBody tr:nth-child(even) td.cell-total-column {
       background: linear-gradient(180deg, #fff9ec 0%, #ffe7bf 100%);
     }
-    #regular-table_wrapper .dataTables_scrollBody tr:hover td.cell-total-column {
+    #regular-table_wrapper .dataTables_scrollBody tr:hover td.cell-total-column,
+    #main-table_wrapper .dataTables_scrollBody tr:hover td.cell-total-column {
       background: rgba(41, 71, 137, 0.18);
     }
-    .regular-table__footer {
+    .regular-table__footer,
+    .main-table__footer {
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -904,13 +947,16 @@
       font-size: 0.85rem;
       flex-wrap: wrap;
     }
-    .regular-table__footer:empty {
+    .regular-table__footer:empty,
+    .main-table__footer:empty {
       display: none;
     }
-    .regular-table__footer .dataTables_paginate {
+    .regular-table__footer .dataTables_paginate,
+    .main-table__footer .dataTables_paginate {
       margin: 0 !important;
     }
-    #regular-table_wrapper .dataTables_paginate .paginate_button {
+    #regular-table_wrapper .dataTables_paginate .paginate_button,
+    #main-table_wrapper .dataTables_paginate .paginate_button {
       border-radius: 999px;
     }
     table.dataTable thead .sorting,
@@ -1065,7 +1111,8 @@
       background: rgba(20, 90, 252, 0.2);
       outline: none;
     }
-    .regular-filter {
+    .regular-filter,
+    .main-filter {
       position: fixed;
       inset: 0;
       display: none;
@@ -1073,7 +1120,8 @@
       justify-content: center;
       z-index: 60;
     }
-    .regular-filter.is-visible {
+    .regular-filter.is-visible,
+    .main-filter.is-visible {
       display: flex;
     }
     .regular-filter__backdrop {
@@ -1276,6 +1324,7 @@
   <nav class="tab-nav" aria-label="Dashboard views">
     <button class="tab-button active" id="tab-lo-button" type="button" data-tab="lo" aria-controls="tab-lo" aria-selected="true">LO - Sales &amp; Spend</button>
     <button class="tab-button" id="tab-sku-summary-button" type="button" data-tab="sku-summary" aria-controls="tab-sku-summary" aria-selected="false">SKU wise summary</button>
+    <button class="tab-button" id="tab-main-button" type="button" data-tab="main" aria-controls="tab-main" aria-selected="false">Main</button>
     <button class="tab-button" id="tab-regular-button" type="button" data-tab="regular" aria-controls="tab-regular" aria-selected="false">Regular</button>
   </nav>
   <div class="tab-panel active" id="tab-lo" data-tab="lo" role="tabpanel" aria-labelledby="tab-lo-button" aria-hidden="false">
@@ -1328,6 +1377,25 @@
       </article>
     </section>
   </div>
+  <div class="tab-panel" id="tab-main" data-tab="main" role="tabpanel" aria-labelledby="tab-main-button" aria-hidden="true">
+    <section class="grid">
+      <article class="card regular-card main-card">
+        <header class="regular-card__header">
+          <div class="regular-card__heading">
+            <h2 class="regular-card__title">Main Performance</h2>
+            <p class="regular-card__subtitle">Detailed metrics sourced from the Main worksheet</p>
+          </div>
+          <div class="regular-card__controls">
+            <button type="button" class="regular-card__filter-button filter-button" id="main-filter-button" aria-haspopup="dialog" aria-expanded="false" data-active="false">Filters</button>
+            <div class="regular-card__pagination" id="main-table-pagination" aria-label="Main table pagination"></div>
+          </div>
+        </header>
+        <div class="table-container regular-table-container">
+          <table id="main-table" class="display" style="width:100%"></table>
+        </div>
+      </article>
+    </section>
+  </div>
   <div class="tab-panel" id="tab-regular" data-tab="regular" role="tabpanel" aria-labelledby="tab-regular-button" aria-hidden="true">
     <section class="grid">
       <article class="card regular-card">
@@ -1346,6 +1414,33 @@
         </div>
       </article>
     </section>
+  </div>
+  <div class="regular-filter main-filter" id="main-filter" hidden aria-hidden="true">
+    <div class="regular-filter__backdrop"></div>
+    <div class="regular-filter__dialog" role="dialog" aria-modal="true" aria-labelledby="main-filter-title">
+      <div class="regular-filter__header">
+        <h3 class="regular-filter__title" id="main-filter-title">Filter main data</h3>
+        <button type="button" class="regular-filter__close" aria-label="Close filters">&times;</button>
+      </div>
+      <div class="regular-filter__field">
+        <label class="regular-filter__label" for="main-filter-column">Column</label>
+        <select id="main-filter-column" class="regular-filter__select"></select>
+      </div>
+      <div class="regular-filter__field">
+        <label class="regular-filter__label" for="main-filter-search">Search</label>
+        <input id="main-filter-search" class="regular-filter__search" type="search" placeholder="Search values" autocomplete="off" />
+      </div>
+      <label class="regular-filter__select-all" for="main-filter-select-all">
+        <input type="checkbox" id="main-filter-select-all" />
+        <span>Select all</span>
+      </label>
+      <div class="regular-filter__options" id="main-filter-options" role="group" aria-label="Filter values"></div>
+      <p class="regular-filter__empty" id="main-filter-empty" hidden>No matches found</p>
+      <div class="regular-filter__footer">
+        <button type="button" class="regular-filter__reset" id="main-filter-reset">Reset</button>
+        <button type="button" class="regular-filter__apply" id="main-filter-apply">Apply</button>
+      </div>
+    </div>
   </div>
   <div class="regular-filter" id="regular-filter" hidden aria-hidden="true">
     <div class="regular-filter__backdrop"></div>
@@ -1386,8 +1481,15 @@
     let regularTableFooterValues = [];
     let regularTableNumericColumnSet = new Set();
     let regularTableAugmentedDataset = null;
-    let datasetCache = null;
-    let datasetPromise = null;
+    let regularDatasetCache = null;
+    let regularDatasetPromise = null;
+    let mainTable;
+    let mainTableInitialised = false;
+    let mainTableFooterValues = [];
+    let mainTableNumericColumnSet = new Set();
+    let mainTableAugmentedDataset = null;
+    let mainDatasetCache = null;
+    let mainDatasetPromise = null;
     let loTablesInitialised = false;
     let spendPivotCache = null;
     let spendPivotPromise = null;
@@ -1407,6 +1509,8 @@
 
     let columnValueOptions = [];
     let columnFilters = {};
+    let mainColumnValueOptions = [];
+    let mainColumnFilters = {};
     let regularFilterButtonElement = null;
     let regularFilterContainerElement = null;
     let regularFilterColumnSelect = null;
@@ -1417,6 +1521,16 @@
     let regularFilterApplyButton = null;
     let regularFilterResetButton = null;
     let regularFilterCloseButton = null;
+    let mainFilterButtonElement = null;
+    let mainFilterContainerElement = null;
+    let mainFilterColumnSelect = null;
+    let mainFilterSearchInput = null;
+    let mainFilterOptionsElement = null;
+    let mainFilterEmptyElement = null;
+    let mainFilterSelectAllInput = null;
+    let mainFilterApplyButton = null;
+    let mainFilterResetButton = null;
+    let mainFilterCloseButton = null;
     let regularFilterActiveColumnIndex = null;
     let regularFilterSelection = new Set();
     let regularFilterSearchTerm = '';
@@ -1424,7 +1538,15 @@
     let regularFilterEligibleColumns = [];
     let regularFilterButtons = [];
     let activeRegularFilterTrigger = null;
+    let mainFilterActiveColumnIndex = null;
+    let mainFilterSelection = new Set();
+    let mainFilterSearchTerm = '';
+    let mainFilterInitialised = false;
+    let mainFilterEligibleColumns = [];
+    let mainFilterButtons = [];
+    let activeMainFilterTrigger = null;
     let totalColumnIndex = -1;
+    let mainTotalColumnIndex = -1;
     let headerMenuElement;
     let activeHeaderCell = null;
     let activeColumnIndex = null;
@@ -1442,7 +1564,8 @@
     const SHOW_REGULAR_TOTAL_ROW = true;
     const REGULAR_FILTER_MAX_UNIQUE_VALUES = 350;
     const EXCEL_WORKBOOK_PATH = '../09%20GROSS%20PROCEED%20SEP-25%20COMBINE.xlsx';
-    const EXCEL_SHEET_CANDIDATES = ['REGULAR SEP-25', 'Regular Sep-25', 'REGULAR', 'Regular'];
+    const EXCEL_REGULAR_SHEET_CANDIDATES = ['REGULAR SEP-25', 'Regular Sep-25', 'REGULAR', 'Regular'];
+    const EXCEL_MAIN_SHEET_CANDIDATES = ['Main', 'MAIN'];
     const EXCEL_KEY_COLUMN_NAMES = ['ORDER NO', 'Order No', 'ORDER NO.', 'ORDER #', 'Plain Order No'];
     const EXCEL_MAX_BLANK_ROWS = 250;
 
@@ -1470,7 +1593,7 @@
       return text.trim().length ? text : '';
     }
 
-    function findWorksheetFromWorkbook(workbook) {
+    function findWorksheetFromWorkbook(workbook, options = {}) {
       if (!workbook || !Array.isArray(workbook.SheetNames) || !workbook.SheetNames.length) {
         return { worksheet: null, sheetName: null };
       }
@@ -1479,17 +1602,25 @@
       sheetNames.forEach((name) => {
         lookup.set(normaliseSheetName(name), name);
       });
-      for (const candidate of EXCEL_SHEET_CANDIDATES) {
+      const candidates = Array.isArray(options.candidates) && options.candidates.length
+        ? options.candidates
+        : EXCEL_REGULAR_SHEET_CANDIDATES;
+      for (const candidate of candidates) {
         const normalised = normaliseSheetName(candidate);
         if (lookup.has(normalised)) {
           const resolvedName = lookup.get(normalised);
           return { worksheet: workbook.Sheets[resolvedName], sheetName: resolvedName };
         }
       }
-      const inferred = sheetNames.find((name) => {
-        const normalised = normaliseSheetName(name);
-        return normalised.includes('regular') && normalised.includes('sep');
-      });
+      const fallbackPredicate = typeof options.fallbackPredicate === 'function'
+        ? options.fallbackPredicate
+        : (name) => {
+            const normalised = normaliseSheetName(name);
+            return normalised.includes('regular') && normalised.includes('sep');
+          };
+      const inferred = fallbackPredicate
+        ? sheetNames.find((name) => fallbackPredicate(name))
+        : undefined;
       if (inferred) {
         return { worksheet: workbook.Sheets[inferred], sheetName: inferred };
       }
@@ -1579,7 +1710,7 @@
       return { columns, rows };
     }
 
-    function loadDatasetFromExcel() {
+    function loadDatasetFromExcel(options = {}) {
       if (typeof XLSX === 'undefined') {
         return Promise.reject(new Error('Excel parser library is not available'));
       }
@@ -1592,22 +1723,32 @@
         })
         .then((buffer) => {
           const workbook = XLSX.read(buffer, { type: 'array' });
-          const { worksheet } = findWorksheetFromWorkbook(workbook);
+          const { worksheet } = findWorksheetFromWorkbook(workbook, {
+            candidates: options.sheetCandidates,
+            fallbackPredicate: options.fallbackPredicate,
+          });
           if (!worksheet) {
-            throw new Error('REGULAR SEP-25 worksheet not found in workbook');
+            throw new Error(options.errorMessage || 'Worksheet not found in workbook');
           }
           return buildDatasetFromWorksheet(worksheet);
         });
     }
 
-    function fetchDataset() {
-      if (datasetCache) {
-        return Promise.resolve(datasetCache);
+    function fetchRegularDataset() {
+      if (regularDatasetCache) {
+        return Promise.resolve(regularDatasetCache);
       }
-      if (datasetPromise) {
-        return datasetPromise;
+      if (regularDatasetPromise) {
+        return regularDatasetPromise;
       }
-      datasetPromise = loadDatasetFromExcel()
+      regularDatasetPromise = loadDatasetFromExcel({
+        sheetCandidates: EXCEL_REGULAR_SHEET_CANDIDATES,
+        fallbackPredicate: (name) => {
+          const normalised = normaliseSheetName(name);
+          return normalised.includes('regular') && normalised.includes('sep');
+        },
+        errorMessage: 'REGULAR SEP-25 worksheet not found in workbook',
+      })
         .catch((excelError) => {
           console.error('Failed to load dataset from Excel:', excelError);
           return fetch('regular_sep25_data.json')
@@ -1619,14 +1760,40 @@
             });
         })
         .then((data) => {
-          datasetCache = data;
+          regularDatasetCache = data;
           return data;
         })
         .catch((error) => {
-          datasetPromise = null;
+          regularDatasetPromise = null;
           throw error;
         });
-      return datasetPromise;
+      return regularDatasetPromise;
+    }
+
+    function fetchMainDataset() {
+      if (mainDatasetCache) {
+        return Promise.resolve(mainDatasetCache);
+      }
+      if (mainDatasetPromise) {
+        return mainDatasetPromise;
+      }
+      mainDatasetPromise = loadDatasetFromExcel({
+        sheetCandidates: EXCEL_MAIN_SHEET_CANDIDATES,
+        fallbackPredicate: (name) => {
+          const normalised = normaliseSheetName(name);
+          return normalised.includes('main');
+        },
+        errorMessage: 'Main worksheet not found in workbook',
+      })
+        .then((data) => {
+          mainDatasetCache = data;
+          return data;
+        })
+        .catch((error) => {
+          mainDatasetPromise = null;
+          throw error;
+        });
+      return mainDatasetPromise;
     }
 
     function fetchSpendPivot() {
@@ -1636,7 +1803,7 @@
       if (spendPivotPromise) {
         return spendPivotPromise;
       }
-      const datasetSource = datasetCache ? Promise.resolve(datasetCache) : fetchDataset();
+      const datasetSource = regularDatasetCache ? Promise.resolve(regularDatasetCache) : fetchRegularDataset();
       spendPivotPromise = datasetSource
         .then((dataset) => {
           const options = {};
@@ -1871,7 +2038,7 @@
       if (!container) {
         return reservedSpace;
       }
-      const footer = container.querySelector('.regular-table__footer');
+      const footer = container.querySelector('.regular-table__footer, .main-table__footer');
       if (!footer) {
         return reservedSpace;
       }
@@ -1910,7 +2077,7 @@
       });
     }
 
-    function applyFooterValuesToCells(cells, values, numericColumnSet) {
+    function applyFooterValuesToCells(cells, values, numericColumnSet, totalIndex = totalColumnIndex) {
       if (!cells || !values || values.length === 0) {
         return;
       }
@@ -1922,7 +2089,7 @@
         const displayValue = value ?? '';
         const isLabelCell = index === 0;
         const isNumeric = numericColumnSet.has(index);
-        const isTotalColumn = totalColumnIndex >= 0 && index === totalColumnIndex;
+        const isTotalColumn = Number.isFinite(totalIndex) && totalIndex >= 0 && index === totalIndex;
         cell.textContent = displayValue;
         cell.classList.toggle('cell-total-label', isLabelCell);
         cell.classList.toggle('cell-total', !isLabelCell);
@@ -1938,7 +2105,7 @@
       });
     }
 
-    function ensureTableFooter(tableElement, columnCount, values = [], numericColumnSet = new Set()) {
+    function ensureTableFooter(tableElement, columnCount, values = [], numericColumnSet = new Set(), totalIndex = totalColumnIndex) {
       if (!tableElement) {
         return;
       }
@@ -1955,12 +2122,12 @@
       tableElement.appendChild(tfoot);
       if (values.length === columnCount) {
         const cells = tfoot.querySelectorAll('th');
-        applyFooterValuesToCells(cells, values, numericColumnSet);
+        applyFooterValuesToCells(cells, values, numericColumnSet, totalIndex);
       }
     }
 
-    function renderFooterRow(table) {
-      if (!table || !regularTableFooterValues.length) {
+    function renderFooterRow(table, values, numericColumnSet, totalIndex) {
+      if (!table || !Array.isArray(values) || !values.length) {
         return;
       }
       const container = table.table().container();
@@ -1975,7 +2142,7 @@
       }
       footerTables.forEach((footerTable) => {
         const cells = footerTable.querySelectorAll('th');
-        applyFooterValuesToCells(cells, regularTableFooterValues, regularTableNumericColumnSet);
+        applyFooterValuesToCells(cells, values, numericColumnSet, totalIndex);
       });
       adjustScrollBodyPadding(table);
     }
@@ -1988,7 +2155,7 @@
       if (SHOW_REGULAR_TOTAL_ROW) {
         updateRegularTableFooter(regularTable);
       } else if (regularTableFooterValues.length) {
-        renderFooterRow(regularTable);
+        renderFooterRow(regularTable, regularTableFooterValues, regularTableNumericColumnSet, totalColumnIndex);
       }
       moveRegularTablePagination();
     }
@@ -1996,6 +2163,109 @@
     function moveRegularTablePagination() {
       const paginationHost = document.getElementById('regular-table-pagination');
       const tableWrapper = document.getElementById('regular-table_wrapper');
+      if (!paginationHost || !tableWrapper) {
+        return;
+      }
+      let paginate = tableWrapper.querySelector('.dataTables_paginate');
+      if (!paginate) {
+        paginate = paginationHost.querySelector('.dataTables_paginate');
+      }
+      if (!paginate) {
+        paginationHost.textContent = '';
+        return;
+      }
+      if (paginate.parentElement !== paginationHost) {
+        paginationHost.textContent = '';
+        paginationHost.appendChild(paginate);
+      }
+    }
+
+    function calculateMainTableFooterValues(table) {
+      if (!table || !mainTableAugmentedDataset) {
+        return mainTableFooterValues;
+      }
+
+      const columns = Array.isArray(mainTableAugmentedDataset.columns)
+        ? mainTableAugmentedDataset.columns
+        : [];
+      const columnCount = columns.length;
+      if (columnCount === 0) {
+        return [];
+      }
+
+      const baseValues = buildFormattedFooterValues(mainTableAugmentedDataset);
+      const values = Array.isArray(baseValues) && baseValues.length === columnCount
+        ? baseValues.slice()
+        : (() => {
+            const fallback = new Array(columnCount).fill('');
+            const totalsRow = Array.isArray(mainTableAugmentedDataset.totalsRow)
+              ? mainTableAugmentedDataset.totalsRow
+              : [];
+            const labelValue = totalsRow[0];
+            if (typeof labelValue === 'string' && labelValue.trim().length) {
+              fallback[0] = labelValue;
+            } else {
+              fallback[0] = TOTAL_ROW_LABEL;
+            }
+            return fallback;
+          })();
+
+      if (!mainTableNumericColumnSet || mainTableNumericColumnSet.size === 0) {
+        return values;
+      }
+
+      const filteredRows = table.rows({ search: 'applied' }).data().toArray();
+
+      mainTableNumericColumnSet.forEach((columnIndex) => {
+        if (typeof columnIndex !== 'number' || columnIndex < 0 || columnIndex >= columnCount) {
+          return;
+        }
+        let sum = 0;
+        let hasValue = false;
+        filteredRows.forEach((row) => {
+          if (!row || columnIndex >= row.length) {
+            return;
+          }
+          const numericValue = parseNumericValue(row[columnIndex]);
+          if (numericValue !== null) {
+            sum += numericValue;
+            hasValue = true;
+          }
+        });
+
+        const formattedTotal = hasValue
+          ? formatCellValue(sum, columns[columnIndex])
+          : formatCellValue(0, columns[columnIndex]);
+        values[columnIndex] = formattedTotal;
+      });
+
+      return values;
+    }
+
+    function updateMainTableFooter(table) {
+      if (!SHOW_REGULAR_TOTAL_ROW || !table) {
+        return;
+      }
+      mainTableFooterValues = calculateMainTableFooterValues(table);
+      renderFooterRow(table, mainTableFooterValues, mainTableNumericColumnSet, mainTotalColumnIndex);
+    }
+
+    function refreshMainTableLayout() {
+      if (!mainTableInitialised || !mainTable) {
+        return;
+      }
+      applyTableHeight(mainTable);
+      if (SHOW_REGULAR_TOTAL_ROW) {
+        updateMainTableFooter(mainTable);
+      } else if (mainTableFooterValues.length) {
+        renderFooterRow(mainTable, mainTableFooterValues, mainTableNumericColumnSet, mainTotalColumnIndex);
+      }
+      moveMainTablePagination();
+    }
+
+    function moveMainTablePagination() {
+      const paginationHost = document.getElementById('main-table-pagination');
+      const tableWrapper = document.getElementById('main-table_wrapper');
       if (!paginationHost || !tableWrapper) {
         return;
       }
@@ -2024,9 +2294,19 @@
         panel.classList.toggle('active', isActive);
         panel.setAttribute('aria-hidden', String(!isActive));
       });
+      if (targetTab !== 'main' && mainFilterContainerElement && mainFilterContainerElement.classList.contains('is-visible')) {
+        closeMainFilter({ returnFocus: false });
+      }
       if (targetTab === 'regular') {
         loadRegularTable();
         refreshRegularTableLayout();
+      } else if (targetTab === 'main') {
+        closeHeaderMenu();
+        if (regularFilterContainerElement && regularFilterContainerElement.classList.contains('is-visible')) {
+          closeRegularFilter({ returnFocus: false });
+        }
+        loadMainTable();
+        refreshMainTableLayout();
       } else if (targetTab === 'sku-summary') {
         closeHeaderMenu();
         loadSkuSummaryTable();
@@ -2036,7 +2316,7 @@
           if (!loTablesInitialised) {
             renderLoMessage('Loading data…');
           }
-          fetchDataset()
+          fetchRegularDataset()
             .then((dataset) => {
               initializeLoTables(dataset);
             })
@@ -2107,6 +2387,9 @@
       if (regularTableInitialised && regularTable) {
         applyTableHeight(regularTable);
       }
+      if (mainTableInitialised && mainTable) {
+        applyTableHeight(mainTable);
+      }
     });
 
     function ensureHeaderMenu() {
@@ -2120,7 +2403,7 @@
         document.addEventListener('click', (event) => {
           if (!headerMenuElement.classList.contains('hidden')) {
             const target = event.target;
-            if (headerMenuElement && !headerMenuElement.contains(target) && !(target.closest('#regular-table thead'))) {
+            if (headerMenuElement && !headerMenuElement.contains(target) && !(target.closest('#regular-table thead')) && !(target.closest('#main-table thead'))) {
               closeHeaderMenu();
             }
           }
@@ -2155,8 +2438,9 @@
       activeColumnIndex = null;
     }
 
-    function hasActiveColumnFilters() {
-      return Object.values(columnFilters).some((values) => Array.isArray(values) && values.length > 0);
+    function hasActiveColumnFilters(filters = columnFilters) {
+      const source = filters || {};
+      return Object.values(source).some((values) => Array.isArray(values) && values.length > 0);
     }
 
     function updateRegularFilterButtonState() {
@@ -2164,6 +2448,18 @@
       const targets = regularFilterButtons.length
         ? regularFilterButtons
         : (regularFilterButtonElement ? [regularFilterButtonElement] : []);
+      targets.forEach((button) => {
+        if (button) {
+          button.setAttribute('data-active', isActive ? 'true' : 'false');
+        }
+      });
+    }
+
+    function updateMainFilterButtonState() {
+      const isActive = hasActiveColumnFilters(mainColumnFilters);
+      const targets = mainFilterButtons.length
+        ? mainFilterButtons
+        : (mainFilterButtonElement ? [mainFilterButtonElement] : []);
       targets.forEach((button) => {
         if (button) {
           button.setAttribute('data-active', isActive ? 'true' : 'false');
@@ -2185,6 +2481,23 @@
         activeValues.forEach((value) => regularFilterSelection.add(value));
       } else {
         options.forEach((value) => regularFilterSelection.add(value));
+      }
+    }
+
+    function syncMainFilterSelectionFromFilters(columnIndex) {
+      if (!Number.isFinite(columnIndex)) {
+        return;
+      }
+      if (!(mainFilterSelection instanceof Set)) {
+        mainFilterSelection = new Set();
+      }
+      mainFilterSelection.clear();
+      const options = mainColumnValueOptions[columnIndex] || [];
+      const activeValues = mainColumnFilters[columnIndex];
+      if (Array.isArray(activeValues) && activeValues.length > 0) {
+        activeValues.forEach((value) => mainFilterSelection.add(value));
+      } else {
+        options.forEach((value) => mainFilterSelection.add(value));
       }
     }
 
@@ -2223,6 +2536,41 @@
       }
     }
 
+    function updateMainFilterSelectAllState() {
+      if (!mainFilterSelectAllInput) {
+        return;
+      }
+      const checkboxes = mainFilterOptionsElement
+        ? Array.from(mainFilterOptionsElement.querySelectorAll('input[type="checkbox"]'))
+        : [];
+      if (!checkboxes.length) {
+        mainFilterSelectAllInput.checked = false;
+        mainFilterSelectAllInput.indeterminate = false;
+        mainFilterSelectAllInput.disabled = true;
+        return;
+      }
+      mainFilterSelectAllInput.disabled = false;
+      let selectedCount = 0;
+      checkboxes.forEach((checkbox) => {
+        if (mainFilterSelection.has(checkbox.value)) {
+          checkbox.checked = true;
+          selectedCount += 1;
+        } else {
+          checkbox.checked = false;
+        }
+      });
+      if (selectedCount === 0) {
+        mainFilterSelectAllInput.checked = false;
+        mainFilterSelectAllInput.indeterminate = false;
+      } else if (selectedCount === checkboxes.length) {
+        mainFilterSelectAllInput.checked = true;
+        mainFilterSelectAllInput.indeterminate = false;
+      } else {
+        mainFilterSelectAllInput.checked = false;
+        mainFilterSelectAllInput.indeterminate = true;
+      }
+    }
+
     function renderRegularFilterOptions() {
       if (!regularFilterOptionsElement || !Number.isFinite(regularFilterActiveColumnIndex)) {
         return;
@@ -2254,6 +2602,37 @@
       updateRegularFilterSelectAllState();
     }
 
+    function renderMainFilterOptions() {
+      if (!mainFilterOptionsElement || !Number.isFinite(mainFilterActiveColumnIndex)) {
+        return;
+      }
+      const allOptions = mainColumnValueOptions[mainFilterActiveColumnIndex] || [];
+      const normalizedQuery = mainFilterSearchTerm.trim().toLowerCase();
+      const filteredOptions = normalizedQuery.length
+        ? allOptions.filter((value) => optionLabel(value).toLowerCase().includes(normalizedQuery))
+        : allOptions.slice();
+
+      if (!filteredOptions.length) {
+        mainFilterOptionsElement.innerHTML = '';
+      } else {
+        const optionsMarkup = filteredOptions
+          .map((value) => {
+            const label = optionLabel(value);
+            const safeLabel = escapeHtml(label);
+            const safeValue = escapeHtml(value);
+            const checkedAttr = mainFilterSelection.has(value) ? ' checked' : '';
+            return `<label class="regular-filter__option"><input type="checkbox" value="${safeValue}"${checkedAttr}>${safeLabel}</label>`;
+          })
+          .join('');
+        mainFilterOptionsElement.innerHTML = optionsMarkup;
+      }
+
+      if (mainFilterEmptyElement) {
+        mainFilterEmptyElement.hidden = filteredOptions.length !== 0;
+      }
+      updateMainFilterSelectAllState();
+    }
+
     function setRegularFilterColumn(columnIndex) {
       if (!Number.isFinite(columnIndex)) {
         return;
@@ -2268,6 +2647,22 @@
         regularFilterSearchInput.value = '';
       }
       renderRegularFilterOptions();
+    }
+
+    function setMainFilterColumn(columnIndex) {
+      if (!Number.isFinite(columnIndex)) {
+        return;
+      }
+      mainFilterActiveColumnIndex = columnIndex;
+      if (mainFilterColumnSelect) {
+        mainFilterColumnSelect.value = String(columnIndex);
+      }
+      syncMainFilterSelectionFromFilters(columnIndex);
+      mainFilterSearchTerm = '';
+      if (mainFilterSearchInput) {
+        mainFilterSearchInput.value = '';
+      }
+      renderMainFilterOptions();
     }
 
     function openRegularFilter(triggerButton = null) {
@@ -2337,15 +2732,89 @@
       }
     }
 
-    function clearAllColumnFilters(table) {
+    function openMainFilter(triggerButton = null) {
+      if (!mainFilterContainerElement || !mainFilterInitialised) {
+        return;
+      }
+      const targets = mainFilterButtons.length
+        ? mainFilterButtons.slice()
+        : (mainFilterButtonElement ? [mainFilterButtonElement] : []);
+      if (triggerButton) {
+        activeMainFilterTrigger = triggerButton;
+      } else if (!activeMainFilterTrigger && targets.length) {
+        activeMainFilterTrigger = targets[0];
+      }
+      if (activeMainFilterTrigger && !targets.includes(activeMainFilterTrigger)) {
+        targets.push(activeMainFilterTrigger);
+      }
+      if (!Number.isFinite(mainFilterActiveColumnIndex)) {
+        const selectedOption = mainFilterColumnSelect && mainFilterColumnSelect.value !== ''
+          ? Number(mainFilterColumnSelect.value)
+          : null;
+        if (Number.isFinite(selectedOption)) {
+          setMainFilterColumn(selectedOption);
+        } else if (mainFilterEligibleColumns.length) {
+          setMainFilterColumn(mainFilterEligibleColumns[0].index);
+        }
+      } else {
+        syncMainFilterSelectionFromFilters(mainFilterActiveColumnIndex);
+        renderMainFilterOptions();
+      }
+      mainFilterContainerElement.removeAttribute('hidden');
+      mainFilterContainerElement.classList.add('is-visible');
+      mainFilterContainerElement.setAttribute('aria-hidden', 'false');
+      targets.forEach((button) => {
+        if (button) {
+          const expanded = button === activeMainFilterTrigger;
+          button.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+        }
+      });
+      requestAnimationFrame(() => {
+        if (mainFilterSearchInput) {
+          mainFilterSearchInput.focus();
+        }
+      });
+    }
+
+    function closeMainFilter(options = {}) {
+      if (!mainFilterContainerElement) {
+        return;
+      }
+      const { returnFocus = true } = options;
+      const previousTrigger = activeMainFilterTrigger;
+      mainFilterContainerElement.classList.remove('is-visible');
+      mainFilterContainerElement.setAttribute('aria-hidden', 'true');
+      mainFilterContainerElement.setAttribute('hidden', '');
+      const targets = mainFilterButtons.length
+        ? mainFilterButtons
+        : (mainFilterButtonElement ? [mainFilterButtonElement] : []);
+      targets.forEach((button) => {
+        if (button) {
+          button.setAttribute('aria-expanded', 'false');
+        }
+      });
+      activeMainFilterTrigger = null;
+      if (returnFocus && previousTrigger && typeof previousTrigger.focus === 'function') {
+        previousTrigger.focus();
+      }
+    }
+
+    function clearAllColumnFilters(table, filters = columnFilters, onChange = handleFilterChange) {
       const hasTable = table && typeof table.column === 'function';
-      const activeIndices = Object.keys(columnFilters)
+      const filterSource = filters || {};
+      const activeIndices = Object.keys(filterSource)
         .map((key) => Number(key))
         .filter((index) => Number.isFinite(index));
       if (!activeIndices.length) {
-        if (Object.keys(columnFilters).length) {
-          columnFilters = {};
-          handleFilterChange();
+        if (Object.keys(filterSource).length) {
+          if (filters === columnFilters) {
+            columnFilters = {};
+          } else {
+            Object.keys(filterSource).forEach((key) => {
+              delete filterSource[key];
+            });
+          }
+          onChange();
         }
         return;
       }
@@ -2359,8 +2828,14 @@
         });
         table.draw();
       }
-      columnFilters = {};
-      handleFilterChange();
+      if (filters === columnFilters) {
+        columnFilters = {};
+      } else {
+        Object.keys(filterSource).forEach((key) => {
+          delete filterSource[key];
+        });
+      }
+      onChange();
     }
 
     function buildFilteredDataset(baseDataset, filters) {
@@ -2400,15 +2875,22 @@
 
     function handleFilterChange() {
       updateRegularFilterButtonState();
-      if (!datasetCache || !Array.isArray(datasetCache.rows)) {
+      if (!regularDatasetCache || !Array.isArray(regularDatasetCache.rows)) {
         return;
       }
-      const filteredDataset = buildFilteredDataset(datasetCache, columnFilters);
+      const filteredDataset = buildFilteredDataset(regularDatasetCache, columnFilters);
       if (loTablesInitialised) {
         updateLoTablesWithDataset(filteredDataset);
       }
       if (skuSummaryInitialised) {
         updateSkuSummaryWithDataset(filteredDataset);
+      }
+    }
+
+    function handleMainFilterChange() {
+      updateMainFilterButtonState();
+      if (mainTableInitialised && mainTable) {
+        requestAnimationFrame(() => updateMainTableFooter(mainTable));
       }
     }
 
@@ -2587,6 +3069,184 @@
       }
     }
 
+    function initializeMainFilterControls(augmentedDataset) {
+      if (mainFilterInitialised) {
+        return;
+      }
+      mainFilterButtonElement = document.getElementById('main-filter-button');
+      mainFilterContainerElement = document.getElementById('main-filter');
+      mainFilterColumnSelect = document.getElementById('main-filter-column');
+      mainFilterSearchInput = document.getElementById('main-filter-search');
+      mainFilterOptionsElement = document.getElementById('main-filter-options');
+      mainFilterEmptyElement = document.getElementById('main-filter-empty');
+      mainFilterSelectAllInput = document.getElementById('main-filter-select-all');
+      mainFilterApplyButton = document.getElementById('main-filter-apply');
+      mainFilterResetButton = document.getElementById('main-filter-reset');
+      mainFilterCloseButton = mainFilterContainerElement
+        ? mainFilterContainerElement.querySelector('.regular-filter__close')
+        : null;
+      mainFilterButtons = [mainFilterButtonElement].filter((button) => button);
+
+      const elementsReady = [
+        mainFilterButtonElement,
+        mainFilterContainerElement,
+        mainFilterColumnSelect,
+        mainFilterSearchInput,
+        mainFilterOptionsElement,
+        mainFilterEmptyElement,
+        mainFilterSelectAllInput,
+        mainFilterApplyButton,
+        mainFilterResetButton,
+        mainFilterCloseButton,
+      ].every(Boolean);
+
+      if (!elementsReady) {
+        return;
+      }
+
+      const filterTargets = mainFilterButtons.length
+        ? mainFilterButtons
+        : [mainFilterButtonElement];
+
+      const registerFilterButton = (button) => {
+        if (!button) {
+          return;
+        }
+        button.addEventListener('click', () => {
+          const isVisible = mainFilterContainerElement.classList.contains('is-visible');
+          if (isVisible && activeMainFilterTrigger === button) {
+            closeMainFilter();
+          } else {
+            openMainFilter(button);
+          }
+        });
+      };
+
+      filterTargets.forEach(registerFilterButton);
+
+      const columns = Array.isArray(augmentedDataset?.columns)
+        ? augmentedDataset.columns
+            .map((title, index) => ({
+              title: title || `Column ${index + 1}`,
+              index,
+              options: mainColumnValueOptions[index] || [],
+            }))
+            .filter((entry) => entry.options.length > 0 && entry.options.length <= REGULAR_FILTER_MAX_UNIQUE_VALUES)
+        : [];
+
+      if (!columns.length) {
+        filterTargets.forEach((button) => {
+          if (button) {
+            button.setAttribute('aria-disabled', 'true');
+            button.disabled = true;
+          }
+        });
+        return;
+      }
+
+      filterTargets.forEach((button) => {
+        if (button) {
+          button.removeAttribute('aria-disabled');
+          button.disabled = false;
+        }
+      });
+
+      mainFilterEligibleColumns = columns;
+      const optionsMarkup = columns
+        .map((entry) => `<option value="${entry.index}">${escapeHtml(entry.title)}</option>`)
+        .join('');
+      mainFilterColumnSelect.innerHTML = optionsMarkup;
+
+      mainFilterCloseButton.addEventListener('click', () => closeMainFilter());
+      mainFilterContainerElement.addEventListener('click', (event) => {
+        const target = event.target;
+        if (target === mainFilterContainerElement || (target instanceof HTMLElement && target.classList.contains('regular-filter__backdrop'))) {
+          closeMainFilter();
+        }
+      });
+
+      mainFilterColumnSelect.addEventListener('change', (event) => {
+        const selectedValue = Number(event.target.value);
+        if (Number.isFinite(selectedValue)) {
+          setMainFilterColumn(selectedValue);
+        }
+      });
+
+      mainFilterSearchInput.addEventListener('input', (event) => {
+        mainFilterSearchTerm = event.target.value || '';
+        renderMainFilterOptions();
+      });
+
+      mainFilterOptionsElement.addEventListener('change', (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLInputElement) || target.type !== 'checkbox') {
+          return;
+        }
+        if (!mainFilterSelection) {
+          mainFilterSelection = new Set();
+        }
+        if (target.checked) {
+          mainFilterSelection.add(target.value);
+        } else {
+          mainFilterSelection.delete(target.value);
+        }
+        updateMainFilterSelectAllState();
+      });
+
+      mainFilterSelectAllInput.addEventListener('change', (event) => {
+        if (!Number.isFinite(mainFilterActiveColumnIndex)) {
+          return;
+        }
+        const selectAll = event.target.checked;
+        const allOptions = mainColumnValueOptions[mainFilterActiveColumnIndex] || [];
+        if (selectAll) {
+          mainFilterSelection = new Set(allOptions);
+        } else {
+          mainFilterSelection = new Set();
+        }
+        renderMainFilterOptions();
+      });
+
+      mainFilterApplyButton.addEventListener('click', () => {
+        if (!Number.isFinite(mainFilterActiveColumnIndex)) {
+          return;
+        }
+        const tableInstance = mainTableInitialised && mainTable ? mainTable : null;
+        const allOptions = mainColumnValueOptions[mainFilterActiveColumnIndex] || [];
+        const selectedValues = Array.from(mainFilterSelection);
+        const valuesToApply = selectedValues.length === allOptions.length ? [] : selectedValues;
+        const headerCell = tableInstance ? tableInstance.column(mainFilterActiveColumnIndex).header() : null;
+        applyColumnFilter(tableInstance, mainFilterActiveColumnIndex, valuesToApply, headerCell, {
+          filters: mainColumnFilters,
+          onChange: handleMainFilterChange,
+        });
+        closeMainFilter();
+      });
+
+      mainFilterResetButton.addEventListener('click', () => {
+        const tableInstance = mainTableInitialised && mainTable ? mainTable : null;
+        clearAllColumnFilters(tableInstance, mainColumnFilters, handleMainFilterChange);
+        if (Number.isFinite(mainFilterActiveColumnIndex)) {
+          syncMainFilterSelectionFromFilters(mainFilterActiveColumnIndex);
+          renderMainFilterOptions();
+        }
+      });
+
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && mainFilterContainerElement.classList.contains('is-visible')) {
+          closeMainFilter();
+        }
+      });
+
+      mainFilterInitialised = true;
+      updateMainFilterButtonState();
+
+      const firstColumn = columns[0];
+      if (firstColumn) {
+        setMainFilterColumn(firstColumn.index);
+      }
+    }
+
     function escapeRegex(value) {
       return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
@@ -2600,17 +3260,21 @@
       return String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
 
-    function applyColumnFilter(table, columnIndex, values, headerCell) {
+    function applyColumnFilter(table, columnIndex, values, headerCell, options = {}) {
       if (!Number.isFinite(columnIndex)) {
         return;
       }
       const safeValues = Array.isArray(values) ? values.slice() : [];
       const hasTable = table && typeof table.column === 'function';
+      const filters = options.filters || columnFilters;
+      const onChange = typeof options.onChange === 'function' ? options.onChange : handleFilterChange;
       if (safeValues.length === 0) {
         if (hasTable) {
           table.column(columnIndex).search('', false, false).draw();
         }
-        delete columnFilters[columnIndex];
+        if (filters && typeof filters === 'object') {
+          delete filters[columnIndex];
+        }
         if (headerCell) {
           headerCell.classList.remove('has-filter');
         } else if (hasTable) {
@@ -2619,14 +3283,16 @@
             tableHeaderCell.classList.remove('has-filter');
           }
         }
-        handleFilterChange();
+        onChange();
         return;
       }
       if (hasTable) {
         const regex = `^(${safeValues.map((value) => escapeRegex(value)).join('|')})$`;
         table.column(columnIndex).search(regex, true, false).draw();
       }
-      columnFilters[columnIndex] = safeValues;
+      if (filters && typeof filters === 'object') {
+        filters[columnIndex] = safeValues;
+      }
       if (headerCell) {
         headerCell.classList.add('has-filter');
       } else if (hasTable) {
@@ -2635,7 +3301,7 @@
           tableHeaderCell.classList.add('has-filter');
         }
       }
-      handleFilterChange();
+      onChange();
     }
 
     function positionHeaderMenu(headerCell) {
@@ -2647,7 +3313,7 @@
       headerMenuElement.style.left = `${left}px`;
     }
 
-    function openHeaderMenu(headerCell, table) {
+    function openHeaderMenu(headerCell, table, options = {}) {
       ensureHeaderMenu();
       if (!headerMenuElement) return;
 
@@ -2661,10 +3327,13 @@
         activeColumnIndex = headerCell.cellIndex ?? 0;
       }
       const columnTitle = headerCell.textContent.trim();
-      const options = columnValueOptions[activeColumnIndex] || [];
-      const selectedValues = columnFilters[activeColumnIndex] ? [...columnFilters[activeColumnIndex]] : [];
+      const valueOptions = Array.isArray(options.valueOptions) ? options.valueOptions : columnValueOptions;
+      const filters = options.filters || columnFilters;
+      const onChange = typeof options.onChange === 'function' ? options.onChange : handleFilterChange;
+      const optionsForColumn = Array.isArray(valueOptions) ? valueOptions[activeColumnIndex] || [] : [];
+      const selectedValues = filters[activeColumnIndex] ? [...filters[activeColumnIndex]] : [];
 
-      const optionsMarkup = options.map((value) => {
+      const optionsMarkup = optionsForColumn.map((value) => {
         const checked = selectedValues.includes(value) ? 'checked' : '';
         const rawLabel = optionLabel(value);
         const safeLabel = escapeHtml(rawLabel);
@@ -2672,7 +3341,7 @@
         const dataLabel = escapeHtml(rawLabel.toLowerCase());
         return `<label class="header-menu__option" data-label="${dataLabel}"><input type="checkbox" value="${safeValueAttr}" ${checked}>${safeLabel}</label>`;
       }).join('');
-      const hasOptions = options.length > 0;
+      const hasOptions = optionsForColumn.length > 0;
 
       headerMenuElement.innerHTML = `
         <div class="header-menu__header">
@@ -2744,7 +3413,7 @@
       applyButton?.addEventListener('click', () => {
         const checkedInputs = optionsContainer ? Array.from(optionsContainer.querySelectorAll('input[type="checkbox"]')).filter((input) => input.checked) : [];
         const values = checkedInputs.map((input) => input.value);
-        applyColumnFilter(table, activeColumnIndex, values, headerCell);
+        applyColumnFilter(table, activeColumnIndex, values, headerCell, { filters, onChange });
         closeHeaderMenu();
       });
 
@@ -2755,7 +3424,7 @@
             input.checked = false;
           });
         }
-        applyColumnFilter(table, activeColumnIndex, [], headerCell);
+        applyColumnFilter(table, activeColumnIndex, [], headerCell, { filters, onChange });
         closeHeaderMenu();
       });
     }
@@ -2769,10 +3438,10 @@
           sets[index].add(formatted);
         });
       });
-      columnValueOptions = sets.map((set) => Array.from(set).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })));
+      return sets.map((set) => Array.from(set).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })));
     }
 
-    function wireHeaderEvents(table) {
+    function wireHeaderEvents(table, options = {}) {
       const container = table.table().container();
       const headerCells = Array.from(container.querySelectorAll('thead th'));
 
@@ -2793,14 +3462,15 @@
           cell.removeEventListener('click', existingHandler);
           headerClickHandlers.delete(cell);
         }
-        const isTotalColumn = totalColumnIndex >= 0 && index === totalColumnIndex;
+        const totalIndex = Number.isFinite(options.totalIndex) ? options.totalIndex : totalColumnIndex;
+        const isTotalColumn = Number.isFinite(totalIndex) && totalIndex >= 0 && index === totalIndex;
         if (isTotalColumn) {
           return;
         }
         const handler = (event) => {
           event.preventDefault();
           event.stopPropagation();
-          openHeaderMenu(cell, table);
+          openHeaderMenu(cell, table, options);
         };
         headerClickHandlers.set(cell, handler);
         cell.addEventListener('click', handler);
@@ -3042,7 +3712,7 @@
         return;
       }
       regularTableFooterValues = calculateRegularTableFooterValues(table);
-      renderFooterRow(table);
+      renderFooterRow(table, regularTableFooterValues, regularTableNumericColumnSet, totalColumnIndex);
     }
 
     function findColumnIndex(dataset, targetName) {
@@ -3771,11 +4441,11 @@
         return;
       }
       renderSkuSummaryMessage('Loading data…');
-      fetchDataset()
+      fetchRegularDataset()
         .then((dataset) => {
           if (!regularFilterInitialised) {
             const augmentedForFilters = augmentDatasetWithTotals(dataset);
-            buildColumnOptions(augmentedForFilters);
+            columnValueOptions = buildColumnOptions(augmentedForFilters);
             initializeRegularFilterControls(augmentedForFilters);
           }
           const effectiveDataset = buildFilteredDataset(dataset, columnFilters);
@@ -3845,7 +4515,7 @@
     function initializeLoTables(dataset) {
       if (!regularFilterInitialised) {
         const augmentedForFilters = augmentDatasetWithTotals(dataset);
-        buildColumnOptions(augmentedForFilters);
+        columnValueOptions = buildColumnOptions(augmentedForFilters);
         initializeRegularFilterControls(augmentedForFilters);
       }
       if (loTablesInitialised) {
@@ -3901,7 +4571,7 @@
       if (regularTableInitialised) {
         return;
       }
-      fetchDataset()
+      fetchRegularDataset()
         .then((dataset) => {
           updateStickyOffset();
 
@@ -3974,7 +4644,7 @@
           });
 
           moveRegularTablePagination();
-          buildColumnOptions(augmentedDataset);
+          columnValueOptions = buildColumnOptions(augmentedDataset);
           initializeRegularFilterControls(augmentedDataset);
           wireHeaderEvents(regularTable);
           applyTableHeight(regularTable);
@@ -3997,6 +4667,134 @@
           const tableElement = document.getElementById('regular-table');
           if (tableElement) {
             tableElement.outerHTML = `<p style="color: var(--muted);">${error.message}</p>`;
+          }
+        });
+    }
+
+    function loadMainTable() {
+      if (mainTableInitialised) {
+        return;
+      }
+      fetchMainDataset()
+        .then((dataset) => {
+          updateStickyOffset();
+
+          const augmentedDataset = augmentDatasetWithTotals(dataset);
+          mainTableAugmentedDataset = augmentedDataset;
+          mainTotalColumnIndex = augmentedDataset.totalColumnIndex;
+          const columns = augmentedDataset.columns.map((title) => ({ title }));
+          const formattedRows = augmentedDataset.rows.map((row) => row.map((value, index) => formatCellValue(value, augmentedDataset.columns[index])));
+          const productColumnIndex = augmentedDataset.columns.indexOf('Product');
+          const quantityColumnIndex = augmentedDataset.columns.findIndex((column) => column && column.trim().toLowerCase() === 'qty');
+          const numericColumnIndices = augmentedDataset.numericColumnIndices;
+
+          mainTableFooterValues = SHOW_REGULAR_TOTAL_ROW
+            ? buildFormattedFooterValues(augmentedDataset)
+            : [];
+          mainTableNumericColumnSet = SHOW_REGULAR_TOTAL_ROW
+            ? new Set(numericColumnIndices)
+            : new Set();
+
+          if (SHOW_REGULAR_TOTAL_ROW) {
+            const tableElement = document.getElementById('main-table');
+            if (tableElement) {
+              ensureTableFooter(
+                tableElement,
+                augmentedDataset.columns.length,
+                mainTableFooterValues,
+                mainTableNumericColumnSet,
+                mainTotalColumnIndex
+              );
+            }
+          }
+
+          const columnClassMap = new Map();
+          const addColumnClass = (columnIndex, className) => {
+            if (columnIndex < 0) {
+              return;
+            }
+            if (!columnClassMap.has(columnIndex)) {
+              columnClassMap.set(columnIndex, new Set());
+            }
+            columnClassMap.get(columnIndex).add(className);
+          };
+
+          addColumnClass(productColumnIndex, 'cell-product');
+          addColumnClass(quantityColumnIndex, 'cell-qty');
+          numericColumnIndices.forEach((columnIndex) => addColumnClass(columnIndex, 'cell-numeric'));
+
+          const columnDefs = Array.from(columnClassMap.entries()).map(([columnIndex, classSet]) => ({
+            targets: Number(columnIndex),
+            className: Array.from(classSet).join(' '),
+          }));
+
+          const initialRowCount = Math.min(augmentedDataset.rows.length, REGULAR_TABLE_PAGE_LENGTH);
+          const initialReservedSpace = calculateRegularTableReservedSpace();
+          const initialScrollHeight = `${calculateScrollBodyHeight(initialRowCount, undefined, initialReservedSpace)}px`;
+          mainTable = $('#main-table').DataTable({
+            data: formattedRows,
+            columns,
+            columnDefs,
+            scrollX: true,
+            scrollY: initialScrollHeight,
+            scrollCollapse: true,
+            deferRender: true,
+            autoWidth: true,
+            order: [],
+            paging: true,
+            pageLength: REGULAR_TABLE_PAGE_LENGTH,
+            lengthChange: false,
+            info: false,
+            dom: 't<"main-table__footer"p>'
+          });
+
+          moveMainTablePagination();
+          mainColumnValueOptions = buildColumnOptions(augmentedDataset);
+          initializeMainFilterControls(augmentedDataset);
+          wireHeaderEvents(mainTable, {
+            valueOptions: mainColumnValueOptions,
+            filters: mainColumnFilters,
+            onChange: handleMainFilterChange,
+            totalIndex: mainTotalColumnIndex,
+          });
+          applyTableHeight(mainTable);
+          if (SHOW_REGULAR_TOTAL_ROW) {
+            updateMainTableFooter(mainTable);
+          }
+          mainTable.on('draw.dt', () => {
+            wireHeaderEvents(mainTable, {
+              valueOptions: mainColumnValueOptions,
+              filters: mainColumnFilters,
+              onChange: handleMainFilterChange,
+              totalIndex: mainTotalColumnIndex,
+            });
+            applyTableHeight(mainTable);
+            if (SHOW_REGULAR_TOTAL_ROW) {
+              updateMainTableFooter(mainTable);
+            }
+            moveMainTablePagination();
+          });
+
+          mainTableInitialised = true;
+          requestAnimationFrame(() => refreshMainTableLayout());
+        })
+        .catch((error) => {
+          console.error('Failed to initialise Main table:', error);
+          const tableElement = document.getElementById('main-table');
+          if (tableElement) {
+            tableElement.outerHTML = `<p style="color: var(--muted);">${error.message}</p>`;
+          }
+          const filterButton = document.getElementById('main-filter-button');
+          if (filterButton) {
+            filterButton.setAttribute('disabled', 'true');
+            filterButton.setAttribute('aria-hidden', 'true');
+            filterButton.setAttribute('aria-expanded', 'false');
+            filterButton.dataset.active = 'false';
+          }
+          if (mainFilterContainerElement) {
+            closeMainFilter({ returnFocus: false });
+            mainFilterContainerElement.setAttribute('hidden', '');
+            mainFilterContainerElement.setAttribute('aria-hidden', 'true');
           }
         });
     }
