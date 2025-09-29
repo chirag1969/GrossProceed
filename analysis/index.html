@@ -307,6 +307,46 @@
       gap: 0.35rem;
       min-width: 0;
     }
+    .regular-card__controls {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      margin-left: auto;
+    }
+    .regular-card__filter-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      border-radius: 999px;
+      border: 1px solid rgba(20, 90, 252, 0.35);
+      background: rgba(20, 90, 252, 0.12);
+      color: var(--accent);
+      font-weight: 600;
+      font-size: 0.9rem;
+      padding: 0.55rem 1.1rem;
+      cursor: pointer;
+      transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .regular-card__filter-button:hover,
+    .regular-card__filter-button:focus-visible {
+      border-color: var(--accent);
+      background: rgba(20, 90, 252, 0.2);
+      outline: none;
+      box-shadow: 0 10px 22px rgba(20, 90, 252, 0.18);
+    }
+    .regular-card__filter-button[data-active="true"] {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 12px 26px rgba(20, 90, 252, 0.28);
+    }
+    .regular-card__filter-button[aria-disabled="true"] {
+      opacity: 0.5;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
     .regular-card__title {
       margin: 0;
       font-size: 1.3rem;
@@ -1013,6 +1053,167 @@
       background: rgba(20, 90, 252, 0.2);
       outline: none;
     }
+    .regular-filter {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 60;
+    }
+    .regular-filter.is-visible {
+      display: flex;
+    }
+    .regular-filter__backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.35);
+      backdrop-filter: blur(2px);
+    }
+    .regular-filter__dialog {
+      position: relative;
+      z-index: 1;
+      width: min(92vw, 420px);
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      background: var(--card-bg);
+      border-radius: 0.85rem;
+      box-shadow: 0 28px 55px rgba(15, 23, 42, 0.22);
+      padding: 1.35rem;
+    }
+    .regular-filter__header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+    }
+    .regular-filter__title {
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .regular-filter__close {
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-size: 1.5rem;
+      cursor: pointer;
+      line-height: 1;
+      padding: 0;
+    }
+    .regular-filter__field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+    .regular-filter__label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+    }
+    .regular-filter__select,
+    .regular-filter__search {
+      border-radius: 0.65rem;
+      border: 1px solid rgba(27, 30, 40, 0.15);
+      padding: 0.55rem 0.7rem;
+      font: inherit;
+      background: #fff;
+      color: var(--text);
+    }
+    .regular-filter__select:disabled,
+    .regular-filter__search:disabled {
+      background: rgba(244, 246, 251, 0.65);
+      cursor: not-allowed;
+    }
+    .regular-filter__select-all {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .regular-filter__select-all input[type="checkbox"] {
+      width: 1rem;
+      height: 1rem;
+      accent-color: var(--accent);
+    }
+    .regular-filter__options {
+      flex: 1 1 auto;
+      overflow-y: auto;
+      border: 1px solid rgba(27, 30, 40, 0.12);
+      border-radius: 0.75rem;
+      padding: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+      min-height: 180px;
+      background: rgba(244, 246, 251, 0.55);
+    }
+    .regular-filter__options:empty {
+      padding: 0;
+      border: none;
+      min-height: 0;
+    }
+    .regular-filter__option {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 0.88rem;
+      color: var(--text);
+      line-height: 1.3;
+    }
+    .regular-filter__option input[type="checkbox"] {
+      width: 1rem;
+      height: 1rem;
+      accent-color: var(--accent);
+    }
+    .regular-filter__empty {
+      margin: 0;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+    .regular-filter__footer {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+    .regular-filter__apply,
+    .regular-filter__reset {
+      flex: 1 1 auto;
+      border-radius: 999px;
+      padding: 0.6rem 1rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .regular-filter__apply {
+      background: var(--accent);
+      color: #fff;
+    }
+    .regular-filter__apply:hover,
+    .regular-filter__apply:focus-visible {
+      background: #0f46c2;
+      outline: none;
+      box-shadow: 0 12px 24px rgba(20, 90, 252, 0.32);
+    }
+    .regular-filter__reset {
+      background: rgba(20, 90, 252, 0.14);
+      color: var(--accent);
+      border-color: rgba(20, 90, 252, 0.32);
+    }
+    .regular-filter__reset:hover,
+    .regular-filter__reset:focus-visible {
+      background: rgba(20, 90, 252, 0.22);
+      outline: none;
+    }
     .sr-only {
       position: absolute;
       width: 1px;
@@ -1029,6 +1230,11 @@
         flex-direction: column;
         align-items: stretch;
         gap: 0.75rem;
+      }
+      .regular-card__controls {
+        width: 100%;
+        justify-content: flex-start;
+        margin-left: 0;
       }
       .regular-card__pagination {
         width: 100%;
@@ -1110,13 +1316,43 @@
             <h2 class="regular-card__title">Regular Performance</h2>
             <p class="regular-card__subtitle">Detailed order and spend metrics across all listings</p>
           </div>
-          <div class="regular-card__pagination" id="regular-table-pagination" aria-label="Regular table pagination"></div>
+          <div class="regular-card__controls">
+            <button type="button" class="regular-card__filter-button" id="regular-filter-button" aria-haspopup="dialog" aria-expanded="false" data-active="false">Filters</button>
+            <div class="regular-card__pagination" id="regular-table-pagination" aria-label="Regular table pagination"></div>
+          </div>
         </header>
         <div class="table-container regular-table-container">
           <table id="regular-table" class="display" style="width:100%"></table>
         </div>
       </article>
     </section>
+  </div>
+  <div class="regular-filter" id="regular-filter" hidden aria-hidden="true">
+    <div class="regular-filter__backdrop"></div>
+    <div class="regular-filter__dialog" role="dialog" aria-modal="true" aria-labelledby="regular-filter-title">
+      <div class="regular-filter__header">
+        <h3 class="regular-filter__title" id="regular-filter-title">Filter regular data</h3>
+        <button type="button" class="regular-filter__close" aria-label="Close filters">&times;</button>
+      </div>
+      <div class="regular-filter__field">
+        <label class="regular-filter__label" for="regular-filter-column">Column</label>
+        <select id="regular-filter-column" class="regular-filter__select"></select>
+      </div>
+      <div class="regular-filter__field">
+        <label class="regular-filter__label" for="regular-filter-search">Search</label>
+        <input id="regular-filter-search" class="regular-filter__search" type="search" placeholder="Search values" autocomplete="off" />
+      </div>
+      <label class="regular-filter__select-all" for="regular-filter-select-all">
+        <input type="checkbox" id="regular-filter-select-all" />
+        <span>Select all</span>
+      </label>
+      <div class="regular-filter__options" id="regular-filter-options" role="group" aria-label="Filter values"></div>
+      <p class="regular-filter__empty" id="regular-filter-empty" hidden>No matches found</p>
+      <div class="regular-filter__footer">
+        <button type="button" class="regular-filter__reset" id="regular-filter-reset">Reset</button>
+        <button type="button" class="regular-filter__apply" id="regular-filter-apply">Apply</button>
+      </div>
+    </div>
   </div>
   <script>
     const tabButtons = document.querySelectorAll('.tab-button');
@@ -1150,6 +1386,21 @@
 
     let columnValueOptions = [];
     let columnFilters = {};
+    let regularFilterButtonElement = null;
+    let regularFilterContainerElement = null;
+    let regularFilterColumnSelect = null;
+    let regularFilterSearchInput = null;
+    let regularFilterOptionsElement = null;
+    let regularFilterEmptyElement = null;
+    let regularFilterSelectAllInput = null;
+    let regularFilterApplyButton = null;
+    let regularFilterResetButton = null;
+    let regularFilterCloseButton = null;
+    let regularFilterActiveColumnIndex = null;
+    let regularFilterSelection = new Set();
+    let regularFilterSearchTerm = '';
+    let regularFilterInitialised = false;
+    let regularFilterEligibleColumns = [];
     let totalColumnIndex = -1;
     let headerMenuElement;
     let activeHeaderCell = null;
@@ -1166,6 +1417,7 @@
     const DEFAULT_REGULAR_TABLE_RESERVED_SPACE = TABLE_BOTTOM_MARGIN + REGULAR_TABLE_FOOTER_MIN_SPACE;
     const REGULAR_TABLE_PAGE_LENGTH = 200;
     const SHOW_REGULAR_TOTAL_ROW = true;
+    const REGULAR_FILTER_MAX_UNIQUE_VALUES = 350;
 
     function fetchDataset() {
       if (datasetCache) {
@@ -1702,6 +1954,330 @@
       activeColumnIndex = null;
     }
 
+    function hasActiveColumnFilters() {
+      return Object.values(columnFilters).some((values) => Array.isArray(values) && values.length > 0);
+    }
+
+    function updateRegularFilterButtonState() {
+      if (!regularFilterButtonElement) {
+        return;
+      }
+      const isActive = hasActiveColumnFilters();
+      regularFilterButtonElement.setAttribute('data-active', isActive ? 'true' : 'false');
+    }
+
+    function syncRegularFilterSelectionFromFilters(columnIndex) {
+      if (!Number.isFinite(columnIndex)) {
+        return;
+      }
+      if (!(regularFilterSelection instanceof Set)) {
+        regularFilterSelection = new Set();
+      }
+      regularFilterSelection.clear();
+      const options = columnValueOptions[columnIndex] || [];
+      const activeValues = columnFilters[columnIndex];
+      if (Array.isArray(activeValues) && activeValues.length > 0) {
+        activeValues.forEach((value) => regularFilterSelection.add(value));
+      } else {
+        options.forEach((value) => regularFilterSelection.add(value));
+      }
+    }
+
+    function updateRegularFilterSelectAllState() {
+      if (!regularFilterSelectAllInput) {
+        return;
+      }
+      const checkboxes = regularFilterOptionsElement
+        ? Array.from(regularFilterOptionsElement.querySelectorAll('input[type="checkbox"]'))
+        : [];
+      if (!checkboxes.length) {
+        regularFilterSelectAllInput.checked = false;
+        regularFilterSelectAllInput.indeterminate = false;
+        regularFilterSelectAllInput.disabled = true;
+        return;
+      }
+      regularFilterSelectAllInput.disabled = false;
+      let selectedCount = 0;
+      checkboxes.forEach((checkbox) => {
+        if (regularFilterSelection.has(checkbox.value)) {
+          checkbox.checked = true;
+          selectedCount += 1;
+        } else {
+          checkbox.checked = false;
+        }
+      });
+      if (selectedCount === 0) {
+        regularFilterSelectAllInput.checked = false;
+        regularFilterSelectAllInput.indeterminate = false;
+      } else if (selectedCount === checkboxes.length) {
+        regularFilterSelectAllInput.checked = true;
+        regularFilterSelectAllInput.indeterminate = false;
+      } else {
+        regularFilterSelectAllInput.checked = false;
+        regularFilterSelectAllInput.indeterminate = true;
+      }
+    }
+
+    function renderRegularFilterOptions() {
+      if (!regularFilterOptionsElement || !Number.isFinite(regularFilterActiveColumnIndex)) {
+        return;
+      }
+      const allOptions = columnValueOptions[regularFilterActiveColumnIndex] || [];
+      const normalizedQuery = regularFilterSearchTerm.trim().toLowerCase();
+      const filteredOptions = normalizedQuery.length
+        ? allOptions.filter((value) => optionLabel(value).toLowerCase().includes(normalizedQuery))
+        : allOptions.slice();
+
+      if (!filteredOptions.length) {
+        regularFilterOptionsElement.innerHTML = '';
+      } else {
+        const optionsMarkup = filteredOptions
+          .map((value) => {
+            const label = optionLabel(value);
+            const safeLabel = escapeHtml(label);
+            const safeValue = escapeHtml(value);
+            const checkedAttr = regularFilterSelection.has(value) ? ' checked' : '';
+            return `<label class="regular-filter__option"><input type="checkbox" value="${safeValue}"${checkedAttr}>${safeLabel}</label>`;
+          })
+          .join('');
+        regularFilterOptionsElement.innerHTML = optionsMarkup;
+      }
+
+      if (regularFilterEmptyElement) {
+        regularFilterEmptyElement.hidden = filteredOptions.length !== 0;
+      }
+      updateRegularFilterSelectAllState();
+    }
+
+    function setRegularFilterColumn(columnIndex) {
+      if (!Number.isFinite(columnIndex)) {
+        return;
+      }
+      regularFilterActiveColumnIndex = columnIndex;
+      if (regularFilterColumnSelect) {
+        regularFilterColumnSelect.value = String(columnIndex);
+      }
+      syncRegularFilterSelectionFromFilters(columnIndex);
+      regularFilterSearchTerm = '';
+      if (regularFilterSearchInput) {
+        regularFilterSearchInput.value = '';
+      }
+      renderRegularFilterOptions();
+    }
+
+    function openRegularFilter() {
+      if (!regularFilterContainerElement || !regularFilterButtonElement || !regularFilterInitialised) {
+        return;
+      }
+      if (!Number.isFinite(regularFilterActiveColumnIndex)) {
+        const selectedOption = regularFilterColumnSelect && regularFilterColumnSelect.value !== ''
+          ? Number(regularFilterColumnSelect.value)
+          : null;
+        if (Number.isFinite(selectedOption)) {
+          setRegularFilterColumn(selectedOption);
+        } else if (regularFilterEligibleColumns.length) {
+          setRegularFilterColumn(regularFilterEligibleColumns[0].index);
+        }
+      } else {
+        syncRegularFilterSelectionFromFilters(regularFilterActiveColumnIndex);
+        renderRegularFilterOptions();
+      }
+      regularFilterContainerElement.removeAttribute('hidden');
+      regularFilterContainerElement.classList.add('is-visible');
+      regularFilterContainerElement.setAttribute('aria-hidden', 'false');
+      regularFilterButtonElement.setAttribute('aria-expanded', 'true');
+      requestAnimationFrame(() => {
+        if (regularFilterSearchInput) {
+          regularFilterSearchInput.focus();
+        }
+      });
+    }
+
+    function closeRegularFilter() {
+      if (!regularFilterContainerElement) {
+        return;
+      }
+      regularFilterContainerElement.classList.remove('is-visible');
+      regularFilterContainerElement.setAttribute('aria-hidden', 'true');
+      regularFilterContainerElement.setAttribute('hidden', '');
+      if (regularFilterButtonElement) {
+        regularFilterButtonElement.setAttribute('aria-expanded', 'false');
+      }
+    }
+
+    function clearAllColumnFilters(table) {
+      if (!table) {
+        return;
+      }
+      const activeIndices = Object.keys(columnFilters)
+        .map((key) => Number(key))
+        .filter((index) => Number.isFinite(index));
+      if (!activeIndices.length) {
+        return;
+      }
+      activeIndices.forEach((columnIndex) => {
+        table.column(columnIndex).search('', false, false);
+        const headerCell = table.column(columnIndex).header();
+        if (headerCell) {
+          headerCell.classList.remove('has-filter');
+        }
+      });
+      table.draw();
+      columnFilters = {};
+      updateRegularFilterButtonState();
+    }
+
+    function initializeRegularFilterControls(augmentedDataset) {
+      if (regularFilterInitialised) {
+        return;
+      }
+      regularFilterButtonElement = document.getElementById('regular-filter-button');
+      regularFilterContainerElement = document.getElementById('regular-filter');
+      regularFilterColumnSelect = document.getElementById('regular-filter-column');
+      regularFilterSearchInput = document.getElementById('regular-filter-search');
+      regularFilterOptionsElement = document.getElementById('regular-filter-options');
+      regularFilterEmptyElement = document.getElementById('regular-filter-empty');
+      regularFilterSelectAllInput = document.getElementById('regular-filter-select-all');
+      regularFilterApplyButton = document.getElementById('regular-filter-apply');
+      regularFilterResetButton = document.getElementById('regular-filter-reset');
+      regularFilterCloseButton = regularFilterContainerElement
+        ? regularFilterContainerElement.querySelector('.regular-filter__close')
+        : null;
+
+      const elementsReady = [
+        regularFilterButtonElement,
+        regularFilterContainerElement,
+        regularFilterColumnSelect,
+        regularFilterSearchInput,
+        regularFilterOptionsElement,
+        regularFilterEmptyElement,
+        regularFilterSelectAllInput,
+        regularFilterApplyButton,
+        regularFilterResetButton,
+        regularFilterCloseButton,
+      ].every(Boolean);
+
+      if (!elementsReady) {
+        return;
+      }
+
+      const columns = Array.isArray(augmentedDataset?.columns)
+        ? augmentedDataset.columns
+            .map((title, index) => ({
+              title: title || `Column ${index + 1}`,
+              index,
+              options: columnValueOptions[index] || [],
+            }))
+            .filter((entry) => entry.options.length > 0 && entry.options.length <= REGULAR_FILTER_MAX_UNIQUE_VALUES)
+        : [];
+
+      if (!columns.length) {
+        regularFilterButtonElement.setAttribute('aria-disabled', 'true');
+        regularFilterButtonElement.disabled = true;
+        return;
+      }
+
+      regularFilterEligibleColumns = columns;
+      const optionsMarkup = columns
+        .map((entry) => `<option value="${entry.index}">${escapeHtml(entry.title)}</option>`)
+        .join('');
+      regularFilterColumnSelect.innerHTML = optionsMarkup;
+
+      regularFilterButtonElement.addEventListener('click', () => {
+        if (regularFilterContainerElement.classList.contains('is-visible')) {
+          closeRegularFilter();
+        } else {
+          openRegularFilter();
+        }
+      });
+
+      regularFilterCloseButton.addEventListener('click', () => closeRegularFilter());
+
+      regularFilterContainerElement.addEventListener('click', (event) => {
+        const target = event.target;
+        if (target === regularFilterContainerElement || (target instanceof HTMLElement && target.classList.contains('regular-filter__backdrop'))) {
+          closeRegularFilter();
+        }
+      });
+
+      regularFilterColumnSelect.addEventListener('change', (event) => {
+        const selectedValue = Number(event.target.value);
+        if (Number.isFinite(selectedValue)) {
+          setRegularFilterColumn(selectedValue);
+        }
+      });
+
+      regularFilterSearchInput.addEventListener('input', (event) => {
+        regularFilterSearchTerm = event.target.value || '';
+        renderRegularFilterOptions();
+      });
+
+      regularFilterOptionsElement.addEventListener('change', (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLInputElement) || target.type !== 'checkbox') {
+          return;
+        }
+        const value = target.value;
+        if (target.checked) {
+          regularFilterSelection.add(value);
+        } else {
+          regularFilterSelection.delete(value);
+        }
+        updateRegularFilterSelectAllState();
+      });
+
+      regularFilterSelectAllInput.addEventListener('change', (event) => {
+        if (!Number.isFinite(regularFilterActiveColumnIndex)) {
+          return;
+        }
+        const selectAll = event.target.checked;
+        const allOptions = columnValueOptions[regularFilterActiveColumnIndex] || [];
+        if (selectAll) {
+          regularFilterSelection = new Set(allOptions);
+        } else {
+          regularFilterSelection = new Set();
+        }
+        renderRegularFilterOptions();
+      });
+
+      regularFilterApplyButton.addEventListener('click', () => {
+        if (!regularTable || !Number.isFinite(regularFilterActiveColumnIndex)) {
+          return;
+        }
+        const allOptions = columnValueOptions[regularFilterActiveColumnIndex] || [];
+        const selectedValues = Array.from(regularFilterSelection);
+        const valuesToApply = selectedValues.length === allOptions.length ? [] : selectedValues;
+        const headerCell = regularTable.column(regularFilterActiveColumnIndex).header();
+        applyColumnFilter(regularTable, regularFilterActiveColumnIndex, valuesToApply, headerCell);
+        closeRegularFilter();
+      });
+
+      regularFilterResetButton.addEventListener('click', () => {
+        if (!regularTable) {
+          return;
+        }
+        clearAllColumnFilters(regularTable);
+        if (Number.isFinite(regularFilterActiveColumnIndex)) {
+          syncRegularFilterSelectionFromFilters(regularFilterActiveColumnIndex);
+          renderRegularFilterOptions();
+        }
+      });
+
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && regularFilterContainerElement.classList.contains('is-visible')) {
+          closeRegularFilter();
+        }
+      });
+
+      regularFilterInitialised = true;
+      updateRegularFilterButtonState();
+
+      const firstColumn = columns[0];
+      if (firstColumn) {
+        setRegularFilterColumn(firstColumn.index);
+      }
+    }
+
     function escapeRegex(value) {
       return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
@@ -1717,20 +2293,23 @@
 
     function applyColumnFilter(table, columnIndex, values, headerCell) {
       if (!table) return;
-      if (values.length === 0) {
+      const safeValues = Array.isArray(values) ? values.slice() : [];
+      if (safeValues.length === 0) {
         table.column(columnIndex).search('', false, false).draw();
         delete columnFilters[columnIndex];
         if (headerCell) {
           headerCell.classList.remove('has-filter');
         }
+        updateRegularFilterButtonState();
         return;
       }
-      const regex = `^(${values.map((value) => escapeRegex(value)).join('|')})$`;
+      const regex = `^(${safeValues.map((value) => escapeRegex(value)).join('|')})$`;
       table.column(columnIndex).search(regex, true, false).draw();
-      columnFilters[columnIndex] = values;
+      columnFilters[columnIndex] = safeValues;
       if (headerCell) {
         headerCell.classList.add('has-filter');
       }
+      updateRegularFilterButtonState();
     }
 
     function positionHeaderMenu(headerCell) {
@@ -2704,6 +3283,7 @@
 
           moveRegularTablePagination();
           buildColumnOptions(augmentedDataset);
+          initializeRegularFilterControls(augmentedDataset);
           wireHeaderEvents(regularTable);
           applyTableHeight(regularTable);
           if (SHOW_REGULAR_TOTAL_ROW) {
