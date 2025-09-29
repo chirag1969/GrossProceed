@@ -449,6 +449,48 @@
     .regular-table-container table {
       margin-top: 0;
     }
+    .table-preamble {
+      flex: 0 0 auto;
+      margin: 0.75rem 1rem 0.5rem;
+      overflow-x: auto;
+      border-radius: 0.65rem;
+      border: 1px solid rgba(27, 30, 40, 0.12);
+      background: rgba(20, 90, 252, 0.06);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
+    }
+    .table-preamble[hidden] {
+      display: none;
+    }
+    .table-preamble__table {
+      border-collapse: collapse;
+      min-width: 100%;
+      width: 100%;
+      table-layout: fixed;
+    }
+    .table-preamble__table col {
+      width: auto;
+    }
+    .table-preamble__table tbody tr:first-child td {
+      border-top: none;
+    }
+    .table-preamble__cell {
+      border: 1px solid rgba(27, 30, 40, 0.12);
+      padding: 0.4rem 0.55rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text);
+      text-align: center;
+      background: rgba(255, 255, 255, 0.92);
+      white-space: nowrap;
+    }
+    .table-preamble__cell.is-empty {
+      color: var(--muted);
+      font-weight: 500;
+      background: rgba(27, 30, 40, 0.04);
+    }
+    .table-preamble__cell:first-child {
+      text-align: left;
+    }
     #tab-sku-summary .grid {
       grid-auto-rows: auto;
       align-content: flex-start;
@@ -1391,6 +1433,7 @@
           </div>
         </header>
         <div class="table-container regular-table-container">
+          <div class="table-preamble" id="main-table-preamble" hidden aria-hidden="true"></div>
           <table id="main-table" class="display" style="width:100%"></table>
         </div>
       </article>
@@ -1652,6 +1695,7 @@
 
       let headerRow = null;
       let headerIndex = -1;
+      const includeHeaderPreamble = options.includeHeaderPreamble === true;
 
       if (Number.isInteger(options.headerRowIndex)
         && options.headerRowIndex >= 0
@@ -1706,6 +1750,56 @@
         }
         return indexes;
       }, []);
+      let headerPreamble = null;
+      if (includeHeaderPreamble && headerIndex > 0) {
+        const columnCount = columns.length;
+        const normalizedRows = [];
+        for (let rowIndex = 0; rowIndex < headerIndex; rowIndex += 1) {
+          const sourceRow = Array.isArray(rawRows[rowIndex]) ? rawRows[rowIndex] : [];
+          const normalizedRow = [];
+          for (let columnIndex = 0; columnIndex < columnCount; columnIndex += 1) {
+            normalizedRow.push(coerceCellValue(sourceRow[columnIndex]));
+          }
+          normalizedRows.push(normalizedRow);
+        }
+        const merges = Array.isArray(worksheet['!merges']) ? worksheet['!merges'] : [];
+        const mergeEntries = [];
+        merges.forEach((merge) => {
+          if (!merge || typeof merge !== 'object') {
+            return;
+          }
+          const startRef = merge.s || merge.start || {};
+          const endRef = merge.e || merge.end || {};
+          const startRow = Number.isFinite(startRef.r) ? startRef.r : 0;
+          const endRow = Number.isFinite(endRef.r) ? endRef.r : startRow;
+          if (startRow >= headerIndex || endRow >= headerIndex) {
+            return;
+          }
+          const startCol = Number.isFinite(startRef.c) ? startRef.c : 0;
+          if (startCol >= columnCount) {
+            return;
+          }
+          const rawEndCol = Number.isFinite(endRef.c) ? endRef.c : startCol;
+          const endCol = Math.min(columnCount - 1, rawEndCol);
+          if (endCol < startCol) {
+            return;
+          }
+          const rowSpan = Math.max(1, (endRow - startRow) + 1);
+          const colSpan = Math.max(1, (endCol - startCol) + 1);
+          mergeEntries.push({
+            row: startRow,
+            column: startCol,
+            rowSpan,
+            colSpan,
+          });
+        });
+        if (normalizedRows.length) {
+          headerPreamble = {
+            rows: normalizedRows,
+            merges: mergeEntries,
+          };
+        }
+      }
       let blankRun = 0;
       const rows = [];
       for (let i = headerIndex + 1; i < rawRows.length; i += 1) {
@@ -1740,7 +1834,11 @@
         rows.push(normalisedRow);
         blankRun = 0;
       }
-      return { columns, rows };
+      const dataset = { columns, rows };
+      if (headerPreamble) {
+        dataset.headerPreamble = headerPreamble;
+      }
+      return dataset;
     }
 
     function loadDatasetFromExcel(options = {}) {
@@ -1767,6 +1865,7 @@
             headerRowIndex: options.headerRowIndex,
             headerSearchValues: options.headerSearchValues,
             keyColumnNames: options.keyColumnNames,
+            includeHeaderPreamble: options.includeHeaderPreamble,
           });
         });
     }
@@ -1824,6 +1923,7 @@
         headerRowIndex: 3,
         headerSearchValues: ['SKU', 'DC LIST', 'TOTAL SALES'],
         keyColumnNames: EXCEL_MAIN_KEY_COLUMN_NAMES,
+        includeHeaderPreamble: true,
       })
         .then((data) => {
           mainDatasetCache = data;
@@ -1965,6 +2065,8 @@
       const headerTable = scrollHead ? scrollHead.querySelector('table') : null;
       const bodyTable = scrollBody ? scrollBody.querySelector('table') : null;
       const footTables = [];
+      const preambleTable = container.querySelector('.table-preamble__table');
+      const preambleColumns = preambleTable ? preambleTable.querySelectorAll('col') : null;
       if (scrollFoot) {
         const scrollFootTable = scrollFoot.querySelector('table');
         if (scrollFootTable) {
@@ -2028,6 +2130,14 @@
               footCell.style.boxSizing = 'border-box';
             }
           });
+          if (preambleColumns && preambleColumns.length > columnIndex) {
+            const colElement = preambleColumns[columnIndex];
+            if (colElement instanceof HTMLElement) {
+              colElement.style.width = widthPx;
+              colElement.style.minWidth = widthPx;
+              colElement.style.maxWidth = widthPx;
+            }
+          }
         }
       });
 
@@ -2048,6 +2158,9 @@
         footTables.forEach((footTable) => {
           footTable.style.width = widthPx;
         });
+        if (preambleTable) {
+          preambleTable.style.width = widthPx;
+        }
       }
     }
 
@@ -2071,6 +2184,107 @@
       const MINIMUM_PADDING = 16;
       const appliedPadding = Math.max(paddingBottom, MINIMUM_PADDING);
       scrollBody.style.paddingBottom = `${appliedPadding}px`;
+    }
+
+    function renderMainTablePreamble(preamble, columnCount) {
+      const container = document.getElementById('main-table-preamble');
+      if (!container) {
+        return;
+      }
+      const validColumnCount = Number.isFinite(columnCount) && columnCount > 0
+        ? Math.floor(columnCount)
+        : 0;
+      if (!preamble || !Array.isArray(preamble.rows) || preamble.rows.length === 0 || validColumnCount <= 0) {
+        container.innerHTML = '';
+        container.setAttribute('hidden', '');
+        container.setAttribute('aria-hidden', 'true');
+        return;
+      }
+
+      const rows = [];
+      for (let rowIndex = 0; rowIndex < preamble.rows.length; rowIndex += 1) {
+        const sourceRow = Array.isArray(preamble.rows[rowIndex]) ? preamble.rows[rowIndex] : [];
+        const normalisedRow = new Array(validColumnCount).fill('');
+        for (let columnIndex = 0; columnIndex < validColumnCount; columnIndex += 1) {
+          if (columnIndex < sourceRow.length) {
+            normalisedRow[columnIndex] = sourceRow[columnIndex];
+          }
+        }
+        rows.push(normalisedRow);
+      }
+
+      const mergeEntries = Array.isArray(preamble.merges) ? preamble.merges : [];
+      const mergeMap = new Map();
+      const skipSet = new Set();
+      mergeEntries.forEach((entry) => {
+        if (!entry) {
+          return;
+        }
+        const startRow = Number.isFinite(entry.row) ? Math.max(0, Math.floor(entry.row)) : 0;
+        const startCol = Number.isFinite(entry.column) ? Math.max(0, Math.floor(entry.column)) : 0;
+        const requestedRowSpan = Number.isFinite(entry.rowSpan) ? Math.floor(entry.rowSpan) : 1;
+        const requestedColSpan = Number.isFinite(entry.colSpan) ? Math.floor(entry.colSpan) : 1;
+        const rowSpan = Math.max(1, requestedRowSpan);
+        const colSpan = Math.max(1, requestedColSpan);
+        if (startRow >= rows.length || startCol >= validColumnCount) {
+          return;
+        }
+        const maxRow = Math.min(rows.length - 1, startRow + rowSpan - 1);
+        const maxCol = Math.min(validColumnCount - 1, startCol + colSpan - 1);
+        if (maxRow < startRow || maxCol < startCol) {
+          return;
+        }
+        const effectiveRowSpan = Math.max(1, maxRow - startRow + 1);
+        const effectiveColSpan = Math.max(1, maxCol - startCol + 1);
+        const key = `${startRow},${startCol}`;
+        mergeMap.set(key, { rowSpan: effectiveRowSpan, colSpan: effectiveColSpan });
+        for (let row = startRow; row <= maxRow; row += 1) {
+          for (let col = startCol; col <= maxCol; col += 1) {
+            if (row === startRow && col === startCol) {
+              continue;
+            }
+            skipSet.add(`${row},${col}`);
+          }
+        }
+      });
+
+      let colgroupHtml = '<colgroup>';
+      for (let colIndex = 0; colIndex < validColumnCount; colIndex += 1) {
+        colgroupHtml += `<col data-column-index="${colIndex}">`;
+      }
+      colgroupHtml += '</colgroup>';
+
+      let bodyHtml = '<tbody>';
+      rows.forEach((row, rowIndex) => {
+        bodyHtml += '<tr>';
+        for (let colIndex = 0; colIndex < validColumnCount; colIndex += 1) {
+          const cellKey = `${rowIndex},${colIndex}`;
+          if (skipSet.has(cellKey)) {
+            continue;
+          }
+          const span = mergeMap.get(cellKey) || null;
+          const rowSpanAttr = span && span.rowSpan > 1 ? ` rowspan="${span.rowSpan}"` : '';
+          const colSpanAttr = span && span.colSpan > 1 ? ` colspan="${span.colSpan}"` : '';
+          const rawValue = row && colIndex < row.length ? row[colIndex] : '';
+          const text = typeof rawValue === 'string'
+            ? rawValue
+            : (rawValue === null || rawValue === undefined ? '' : String(rawValue));
+          const trimmed = text.trim();
+          const isEmpty = trimmed.length === 0;
+          const display = isEmpty ? '&nbsp;' : escapeHtml(text);
+          const classNames = ['table-preamble__cell'];
+          if (isEmpty) {
+            classNames.push('is-empty');
+          }
+          bodyHtml += `<td class="${classNames.join(' ')}"${rowSpanAttr}${colSpanAttr}>${display}</td>`;
+        }
+        bodyHtml += '</tr>';
+      });
+      bodyHtml += '</tbody>';
+
+      container.innerHTML = `<table class="table-preamble__table">${colgroupHtml}${bodyHtml}</table>`;
+      container.removeAttribute('hidden');
+      container.setAttribute('aria-hidden', 'false');
     }
 
     function calculateRegularTableReservedSpace(container) {
@@ -3656,13 +3870,17 @@
         }
       });
 
-      return {
+      const augmented = {
         columns: baseColumns,
         rows: augmentedRows,
         totalsRow,
         numericColumnIndices,
         totalColumnIndex: -1,
       };
+      if (dataset.headerPreamble && Array.isArray(dataset.headerPreamble.rows)) {
+        augmented.headerPreamble = dataset.headerPreamble;
+      }
+      return augmented;
     }
 
     function buildFormattedFooterValues(augmentedDataset) {
@@ -4718,6 +4936,8 @@
       fetchMainDataset()
         .then((dataset) => {
           updateStickyOffset();
+          const columnCount = Array.isArray(dataset.columns) ? dataset.columns.length : 0;
+          renderMainTablePreamble(dataset.headerPreamble || null, columnCount);
 
           const augmentedDataset = augmentDatasetWithTotals(dataset);
           mainTableAugmentedDataset = augmentedDataset;
@@ -4820,6 +5040,12 @@
         })
         .catch((error) => {
           console.error('Failed to initialise Main table:', error);
+          const preambleContainer = document.getElementById('main-table-preamble');
+          if (preambleContainer) {
+            preambleContainer.innerHTML = '';
+            preambleContainer.setAttribute('hidden', '');
+            preambleContainer.setAttribute('aria-hidden', 'true');
+          }
           const tableElement = document.getElementById('main-table');
           if (tableElement) {
             tableElement.outerHTML = `<p style="color: var(--muted);">${error.message}</p>`;
