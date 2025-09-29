@@ -337,6 +337,9 @@
       cursor: pointer;
       transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
     }
+    .lo-card__filter-button--hidden {
+      display: none !important;
+    }
     .filter-button:hover,
     .filter-button:focus-visible {
       border-color: var(--accent);
@@ -1375,6 +1378,7 @@
     const tabPanels = document.querySelectorAll('.tab-panel');
     const subTabButtons = document.querySelectorAll('.sub-tab-button');
     const subTabPanels = document.querySelectorAll('.sub-tab-panel');
+    const loFilterButtonElement = document.getElementById('lo-filter-button');
 
     let regularTable;
     let regularTableInitialised = false;
@@ -1902,6 +1906,19 @@
         panel.classList.toggle('active', isActive);
         panel.setAttribute('aria-hidden', String(!isActive));
       });
+      if (loFilterButtonElement) {
+        const hideFilter = targetSubTab === 'spend';
+        loFilterButtonElement.classList.toggle('lo-card__filter-button--hidden', hideFilter);
+        loFilterButtonElement.setAttribute('aria-hidden', String(hideFilter));
+        if (hideFilter) {
+          loFilterButtonElement.setAttribute('tabindex', '-1');
+          if (regularFilterContainerElement && regularFilterContainerElement.classList.contains('is-visible')) {
+            closeRegularFilter({ returnFocus: false });
+          }
+        } else {
+          loFilterButtonElement.removeAttribute('tabindex');
+        }
+      }
       requestAnimationFrame(() => resizeLoTableContainers());
     }
 
@@ -2251,9 +2268,8 @@
       regularFilterCloseButton = regularFilterContainerElement
         ? regularFilterContainerElement.querySelector('.regular-filter__close')
         : null;
-      const loFilterButton = document.getElementById('lo-filter-button');
       const skuFilterButton = document.getElementById('sku-filter-button');
-      regularFilterButtons = [regularFilterButtonElement, loFilterButton, skuFilterButton].filter((button) => button);
+      regularFilterButtons = [regularFilterButtonElement, loFilterButtonElement, skuFilterButton].filter((button) => button);
 
       const elementsReady = [
         regularFilterButtonElement,
