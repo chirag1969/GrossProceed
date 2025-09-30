@@ -1774,7 +1774,6 @@
     const EXCEL_WORKBOOK_PATH = '../09%20GROSS%20PROCEED%20SEP-25%20COMBINE.xlsx';
     const EXCEL_REGULAR_SHEET_CANDIDATES = ['REGULAR SEP-25', 'Regular Sep-25', 'REGULAR', 'Regular'];
     const EXCEL_MAIN_SHEET_CANDIDATES = ['Main', 'MAIN'];
-    const EXCEL_DASHBOARD_SHEET_CANDIDATES = ['DASHBOARD', 'Dashboard'];
     const EXCEL_KEY_COLUMN_NAMES = ['ORDER NO', 'Order No', 'ORDER NO.', 'ORDER #', 'Plain Order No'];
     const EXCEL_MAIN_KEY_COLUMN_NAMES = ['SKU', 'Sr. No.', 'NAME', 'DC LIST'];
     const DASHBOARD_PIVOT_CONFIGS = [
@@ -1965,10 +1964,10 @@
         const baseName = baseNameRaw && String(baseNameRaw).trim().length ? String(baseNameRaw).trim() : 'Column';
         const count = (headerCounts.get(baseName) || 0) + 1;
         headerCounts.set(baseName, count);
-        if (count === 1 && baseName !== 'Column') {
+        if (count === 1) {
           return baseName;
         }
-        return count === 1 ? `${baseName}` : `${baseName}_${count}`;
+        return `${baseName}${count}`;
       });
       const keyColumnCandidates = Array.isArray(options.keyColumnNames) && options.keyColumnNames.length
         ? options.keyColumnNames
@@ -2104,126 +2103,6 @@
         });
     }
 
-    function buildDashboardPivotRow(sourceRow, config) {
-      const rowValues = [];
-      const label = coerceCellValue(Array.isArray(sourceRow) ? sourceRow[0] : '');
-      rowValues.push(label);
-      const columns = Array.isArray(config?.columns) ? config.columns : [];
-      if (!columns.length) {
-        return rowValues;
-      }
-      columns.forEach((column, columnIndex) => {
-        const cell = Array.isArray(sourceRow) ? sourceRow[columnIndex + 1] : '';
-        const coerced = coerceCellValue(cell);
-        const columnKey = typeof column?.source === 'string' ? column.source : '';
-        rowValues.push(formatCellValue(coerced, columnKey));
-      });
-      return rowValues;
-    }
-
-    function extractDashboardPivotFromRows(rawRows, config) {
-      if (!Array.isArray(rawRows) || !config) {
-        return null;
-      }
-      const normalise = (value) => (typeof value === 'string' ? value.trim().toLowerCase() : '');
-      const configColumns = Array.isArray(config.columns) ? config.columns : [];
-      const sheetGroupColumn = typeof config.sheetGroupColumn === 'string' && config.sheetGroupColumn.trim()
-        ? config.sheetGroupColumn.trim()
-        : 'Row Labels';
-      const expectedHeaders = [sheetGroupColumn, ...configColumns.map((column) => {
-        if (typeof column?.sheetHeader === 'string' && column.sheetHeader.trim()) {
-          return column.sheetHeader;
-        }
-        if (typeof column?.header === 'string' && column.header.trim()) {
-          return column.header;
-        }
-        return typeof column?.source === 'string' ? column.source : '';
-      })];
-      const expectedNormalised = expectedHeaders.map((header) => normalise(header));
-
-      for (let rowIndex = 0; rowIndex < rawRows.length; rowIndex += 1) {
-        const candidateRow = Array.isArray(rawRows[rowIndex]) ? rawRows[rowIndex] : [];
-        if (!candidateRow.length) {
-          continue;
-        }
-        const normalisedRow = candidateRow.map((cell) => normalise(coerceCellValue(cell)));
-        let matches = true;
-        for (let columnIndex = 0; columnIndex < expectedNormalised.length; columnIndex += 1) {
-          const expectedValue = expectedNormalised[columnIndex];
-          if (!expectedValue) {
-            continue;
-          }
-          if (normalisedRow[columnIndex] !== expectedValue) {
-            matches = false;
-            break;
-          }
-        }
-        if (!matches) {
-          continue;
-        }
-
-        const displayLabel = typeof config.displayLabel === 'string' && config.displayLabel.trim()
-          ? config.displayLabel
-          : sheetGroupColumn;
-        const columns = [displayLabel, ...configColumns.map((column) => {
-          if (typeof column?.header === 'string') {
-            return column.header;
-          }
-          if (typeof column?.sheetHeader === 'string' && column.sheetHeader.trim()) {
-            return column.sheetHeader;
-          }
-          return typeof column?.source === 'string' ? column.source : '';
-        })];
-
-        const rows = [];
-        let totalRow = null;
-        for (let dataIndex = rowIndex + 1; dataIndex < rawRows.length; dataIndex += 1) {
-          const sourceRow = Array.isArray(rawRows[dataIndex]) ? rawRows[dataIndex] : [];
-          const label = coerceCellValue(sourceRow[0]);
-          const normalisedLabel = normalise(label);
-          const hasValues = configColumns.some((_, columnIndex) => {
-            const value = coerceCellValue(sourceRow[columnIndex + 1]);
-            return value !== '';
-          });
-          if (!label && !hasValues) {
-            break;
-          }
-          if (normalisedLabel === 'grand total') {
-            totalRow = buildDashboardPivotRow(sourceRow, { ...config, columns: configColumns });
-            break;
-          }
-          if (!label) {
-            continue;
-          }
-          rows.push(buildDashboardPivotRow(sourceRow, { ...config, columns: configColumns }));
-        }
-
-        return { columns, rows, totalRow };
-      }
-
-      return null;
-    }
-
-    function buildDashboardPivotsFromRows(rawRows) {
-      const results = new Map();
-      if (!Array.isArray(rawRows) || !rawRows.length) {
-        return results;
-      }
-      DASHBOARD_PIVOT_CONFIGS.forEach((config) => {
-        try {
-          const pivot = extractDashboardPivotFromRows(rawRows, config);
-          if (pivot) {
-            results.set(config.id, pivot);
-          } else {
-            results.set(config.id, { error: 'Unable to locate dashboard section in worksheet' });
-          }
-        } catch (error) {
-          results.set(config.id, { error: error && error.message ? error.message : 'Unable to build dashboard view' });
-        }
-      });
-      return results;
-    }
-
     function loadDashboardPivotSectionsFromExcel() {
       if (typeof XLSX === 'undefined') {
         return Promise.reject(new Error('Excel parser library is not available'));
@@ -2238,19 +2117,20 @@
         .then((buffer) => {
           const workbook = XLSX.read(buffer, { type: 'array' });
           const { worksheet } = findWorksheetFromWorkbook(workbook, {
-            candidates: EXCEL_DASHBOARD_SHEET_CANDIDATES,
-            fallbackPredicate: (name) => normaliseSheetName(name).includes('dashboard'),
+            candidates: EXCEL_MAIN_SHEET_CANDIDATES,
+            fallbackPredicate: (name) => normaliseSheetName(name).includes('main'),
           });
           if (!worksheet) {
-            throw new Error('DASHBOARD worksheet not found in workbook');
+            throw new Error('Main worksheet not found in workbook');
           }
-          const rawRows = XLSX.utils.sheet_to_json(worksheet, {
-            header: 1,
-            blankrows: false,
-            defval: '',
-            raw: true,
+          const dataset = buildDatasetFromWorksheet(worksheet, {
+            headerRowIndex: 3,
+            headerSearchValues: ['SKU', 'DC LIST', 'TOTAL SALES'],
+            keyColumnNames: EXCEL_MAIN_KEY_COLUMN_NAMES,
+            includeHeaderPreamble: true,
           });
-          return buildDashboardPivotsFromRows(rawRows);
+          mainDatasetCache = dataset;
+          return buildDashboardPivotResultsFromDataset(dataset);
         });
     }
 
@@ -5495,6 +5375,19 @@
       return { columns, rows, totalRow };
     }
 
+    function buildDashboardPivotResultsFromDataset(dataset) {
+      const results = new Map();
+      DASHBOARD_PIVOT_CONFIGS.forEach((config) => {
+        try {
+          results.set(config.id, buildDashboardPivot(dataset, config));
+        } catch (error) {
+          const message = error && error.message ? error.message : 'Unable to build dashboard view';
+          results.set(config.id, { error: message });
+        }
+      });
+      return results;
+    }
+
     function renderMainDashboard(pivotMap) {
       DASHBOARD_PIVOT_CONFIGS.forEach((config) => {
         const pivot = pivotMap instanceof Map ? pivotMap.get(config.id) : null;
@@ -5525,18 +5418,11 @@
           renderMainDashboard(results);
         })
         .catch((dashboardError) => {
-          console.error('Failed to load dashboard pivots from DASHBOARD worksheet:', dashboardError);
+          console.error('Failed to build dashboard pivots from Main worksheet:', dashboardError);
           const datasetSource = mainDatasetCache ? Promise.resolve(mainDatasetCache) : fetchMainDataset();
           datasetSource
             .then((dataset) => {
-              const results = new Map();
-              DASHBOARD_PIVOT_CONFIGS.forEach((config) => {
-                try {
-                  results.set(config.id, buildDashboardPivot(dataset, config));
-                } catch (error) {
-                  results.set(config.id, { error: error.message || 'Unable to build dashboard view' });
-                }
-              });
+              const results = buildDashboardPivotResultsFromDataset(dataset);
               mainDashboardPivotCache = results;
               mainDashboardInitialised = true;
               renderMainDashboard(results);
