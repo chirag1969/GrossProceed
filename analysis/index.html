@@ -1792,7 +1792,17 @@
           { source: 'Achieved IP', sheetHeader: 'Sum of Achieved IP', header: 'Sum of Achieved IP' },
           { source: 'Diff in IP', sheetHeader: 'Sum of Diff in IP', header: 'Sum of Diff in IP' },
           { source: 'ADVT SPEND', sheetHeader: 'Sum of ADVT SPEND', header: 'Sum of ADVT SPEND' },
-          { source: 'A- Ad Spend %', sheetHeader: 'Sum of A- Ad Spend %', header: 'Sum of A- Ad Spend %' },
+          {
+            source: 'A- Ad Spend %',
+            sheetHeader: 'Sum of A- Ad Spend %',
+            header: 'Sum of A- Ad Spend %',
+            computed: {
+              type: 'ratio',
+              numerator: 'ADVT SPEND',
+              denominator: 'REV ACH TILL DATE',
+              asPercentage: true,
+            },
+          },
           { source: 'Storage Fees', sheetHeader: 'Sum of Storage Fees', header: 'Sum of Storage Fees' },
           { source: '% of Ip Ach', sheetHeader: 'Sum of % of Ip Ach', header: 'Sum of % of Ip Ach' },
           { source: 'REV ACH TILL DATE', sheetHeader: 'Sum of REV ACH TILL DATE', header: 'Sum of REV ACH TILL DATE' },
@@ -1814,7 +1824,17 @@
           { source: 'Achieved IP2', sheetHeader: 'Sum of Achieved IP2', header: 'Sum of Achieved IP2' },
           { source: 'Diff in IP2', sheetHeader: 'Sum of Diff in IP2', header: 'Sum of Diff in IP2' },
           { source: 'ADVT SPEND2', sheetHeader: 'Sum of ADVT SPEND2', header: 'Sum of ADVT SPEND2' },
-          { source: 'Ad Spend %', sheetHeader: 'Sum of Ad Spend %', header: 'Sum of Ad Spend %' },
+          {
+            source: 'Ad Spend %',
+            sheetHeader: 'Sum of Ad Spend %',
+            header: 'Sum of Ad Spend %',
+            computed: {
+              type: 'ratio',
+              numerator: 'ADVT SPEND2',
+              denominator: 'REV ACH TILL DATE(EBAY)',
+              asPercentage: true,
+            },
+          },
           { source: 'Storage Fees2', sheetHeader: 'Sum of Storage Fees2', header: 'Sum of Storage Fees2' },
           { source: '% of Ip Ach(ebay)', sheetHeader: 'Sum of % of Ip Ach(ebay)', header: 'Sum of % of Ip Ach(ebay)' },
           { source: 'REV ACH TILL DATE(EBAY)', sheetHeader: 'Sum of REV ACH TILL DATE(EBAY)', header: 'Sum of REV ACH TILL DATE(EBAY)' },
@@ -1836,7 +1856,17 @@
           { source: 'Achieved IP3', sheetHeader: 'Sum of Achieved IP3', header: 'Sum of Achieved IP3' },
           { source: 'Diff in IP3', sheetHeader: 'Sum of Diff in IP3', header: 'Sum of Diff in IP3' },
           { source: 'ADVT SPEND3', sheetHeader: 'Sum of ADVT SPEND3', header: 'Sum of ADVT SPEND3' },
-          { source: 'AD SPEND%(WEBSITE)', sheetHeader: 'Sum of AD SPEND%(WEBSITE)', header: 'Sum of AD SPEND%(WEBSITE)' },
+          {
+            source: 'AD SPEND%(WEBSITE)',
+            sheetHeader: 'Sum of AD SPEND%(WEBSITE)',
+            header: 'Sum of AD SPEND%(WEBSITE)',
+            computed: {
+              type: 'ratio',
+              numerator: 'ADVT SPEND3',
+              denominator: 'REV ACH TILL DATE(WEBSITE)',
+              asPercentage: true,
+            },
+          },
           { source: 'Storage Fees3', sheetHeader: 'Sum of Storage Fees3', header: 'Sum of Storage Fees3' },
           { source: '% of IP ACH(WEBSITE)', sheetHeader: 'Sum of % of IP ACH(WEBSITE)', header: 'Sum of % of IP ACH(WEBSITE)' },
           { source: 'REV ACH TILL DATE(WEBSITE)', sheetHeader: 'Sum of REV ACH TILL DATE(WEBSITE)', header: 'Sum of REV ACH TILL DATE(WEBSITE)' },
@@ -4196,6 +4226,42 @@
       return typeof value === 'string' ? value : String(value ?? '');
     }
 
+    const RATIO_EPSILON = 1e-9;
+
+    function getRatioMultiplier(computedConfig) {
+      if (!computedConfig || typeof computedConfig !== 'object') {
+        return 100;
+      }
+      const { multiplier, asPercentage } = computedConfig;
+      if (typeof multiplier === 'number' && Number.isFinite(multiplier)) {
+        return multiplier;
+      }
+      if (asPercentage === false) {
+        return 1;
+      }
+      return 100;
+    }
+
+    function formatDashboardRatioValue(metric, columnConfig) {
+      if (!metric) {
+        return '';
+      }
+      const numeratorHasValue = Boolean(metric.numeratorHasValue);
+      const denominatorHasValue = Boolean(metric.denominatorHasValue);
+      if (!numeratorHasValue && !denominatorHasValue) {
+        return '';
+      }
+      const denominator = typeof metric.denominator === 'number' ? metric.denominator : 0;
+      if (!denominatorHasValue || Math.abs(denominator) < RATIO_EPSILON) {
+        return numeratorHasValue ? '#DIV/0!' : '';
+      }
+      const numerator = typeof metric.numerator === 'number' ? metric.numerator : 0;
+      const multiplier = getRatioMultiplier(columnConfig?.computed);
+      const ratioValue = (numerator / denominator) * multiplier;
+      const columnName = columnConfig?.header || columnConfig?.source;
+      return formatCellValue(ratioValue, columnName);
+    }
+
     function augmentDatasetWithTotals(dataset) {
       if (!dataset || !Array.isArray(dataset.columns) || !Array.isArray(dataset.rows)) {
         return {
@@ -5259,12 +5325,35 @@
       if (groupIndex === undefined) {
         throw new Error(`Column "${config.groupColumn}" not found in Main dataset`);
       }
-      const valueIndexes = config.columns.map((column) => {
+      const columnDescriptors = config.columns.map((column) => {
+        if (column && column.computed && column.computed.type === 'ratio') {
+          const numeratorName = column.computed.numerator;
+          const denominatorName = column.computed.denominator;
+          const numeratorIndex = columnLookup.get(normalise(numeratorName));
+          if (numeratorIndex === undefined) {
+            throw new Error(
+              `Column "${numeratorName}" not found in Main dataset (required for computed column "${column.source || column.header}")`
+            );
+          }
+          const denominatorIndex = columnLookup.get(normalise(denominatorName));
+          if (denominatorIndex === undefined) {
+            throw new Error(
+              `Column "${denominatorName}" not found in Main dataset (required for computed column "${column.source || column.header}")`
+            );
+          }
+          return {
+            type: 'ratio',
+            numeratorIndex,
+            denominatorIndex,
+            numeratorSource: numeratorName,
+            denominatorSource: denominatorName,
+          };
+        }
         const index = columnLookup.get(normalise(column.source));
         if (index === undefined) {
           throw new Error(`Column "${column.source}" not found in Main dataset`);
         }
-        return index;
+        return { type: 'direct', datasetIndex: index };
       });
       const groups = [];
       const groupLookup = new Map();
@@ -5284,13 +5373,46 @@
         if (!entry) {
           entry = {
             label,
-            metrics: config.columns.map(() => ({ sum: 0, hasValue: false, hasError: false, errorValue: '', textValue: '' })),
+            metrics: columnDescriptors.map((descriptor) => {
+              if (descriptor && descriptor.type === 'ratio') {
+                return {
+                  numerator: 0,
+                  denominator: 0,
+                  numeratorHasValue: false,
+                  denominatorHasValue: false,
+                };
+              }
+              return { sum: 0, hasValue: false, hasError: false, errorValue: '', textValue: '' };
+            }),
           };
           groupLookup.set(key, entry);
           groups.push(entry);
         }
         config.columns.forEach((column, columnIndex) => {
-          const datasetColumnIndex = valueIndexes[columnIndex];
+          const descriptor = columnDescriptors[columnIndex];
+          if (!descriptor) {
+            return;
+          }
+          const metric = entry.metrics[columnIndex];
+          if (!metric) {
+            return;
+          }
+          if (descriptor.type === 'ratio') {
+            const numeratorRaw = descriptor.numeratorIndex < row.length ? row[descriptor.numeratorIndex] : null;
+            const denominatorRaw = descriptor.denominatorIndex < row.length ? row[descriptor.denominatorIndex] : null;
+            const numeratorValue = parseNumericValue(numeratorRaw);
+            if (numeratorValue !== null) {
+              metric.numerator += numeratorValue;
+              metric.numeratorHasValue = true;
+            }
+            const denominatorValue = parseNumericValue(denominatorRaw);
+            if (denominatorValue !== null) {
+              metric.denominator += denominatorValue;
+              metric.denominatorHasValue = true;
+            }
+            return;
+          }
+          const datasetColumnIndex = descriptor.datasetIndex;
           if (datasetColumnIndex === undefined || datasetColumnIndex >= row.length) {
             return;
           }
@@ -5299,7 +5421,6 @@
             return;
           }
           const numericValue = parseNumericValue(rawValue);
-          const metric = entry.metrics[columnIndex];
           if (numericValue !== null) {
             metric.sum += numericValue;
             metric.hasValue = true;
@@ -5322,8 +5443,14 @@
       const rows = groups.map((entry) => {
         const values = [entry.label];
         entry.metrics.forEach((metric, columnIndex) => {
+          const descriptor = columnDescriptors[columnIndex];
+          const column = config.columns[columnIndex];
+          if (descriptor && descriptor.type === 'ratio') {
+            values.push(formatDashboardRatioValue(metric, column));
+            return;
+          }
           if (metric.hasValue) {
-            values.push(formatCellValue(metric.sum, config.columns[columnIndex].source));
+            values.push(formatCellValue(metric.sum, column.source));
           } else if (metric.hasError) {
             values.push(metric.errorValue || '#DIV/0!');
           } else if (metric.textValue) {
@@ -5339,6 +5466,35 @@
       if (rows.length) {
         totalRow = ['Grand Total'];
         config.columns.forEach((column, columnIndex) => {
+          const descriptor = columnDescriptors[columnIndex];
+          if (descriptor && descriptor.type === 'ratio') {
+            let numeratorSum = 0;
+            let denominatorSum = 0;
+            let numeratorHasValue = false;
+            let denominatorHasValue = false;
+            groups.forEach((entry) => {
+              const metric = entry.metrics[columnIndex];
+              if (!metric) {
+                return;
+              }
+              if (metric.numeratorHasValue) {
+                numeratorHasValue = true;
+                numeratorSum += metric.numerator;
+              }
+              if (metric.denominatorHasValue) {
+                denominatorHasValue = true;
+                denominatorSum += metric.denominator;
+              }
+            });
+            const aggregateMetric = {
+              numerator: numeratorSum,
+              denominator: denominatorSum,
+              numeratorHasValue,
+              denominatorHasValue,
+            };
+            totalRow.push(formatDashboardRatioValue(aggregateMetric, column));
+            return;
+          }
           let aggregate = 0;
           let hasValue = false;
           let errorValue = '';
