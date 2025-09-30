@@ -665,8 +665,20 @@
     }
     .dashboard-card__header {
       display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+    .dashboard-card__heading {
+      display: flex;
       flex-direction: column;
       gap: 0.35rem;
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+    .dashboard-card__filter-button {
+      margin-left: auto;
     }
     .dashboard-card__title {
       margin: 0;
@@ -1548,8 +1560,20 @@
     <section class="grid dashboard-grid">
       <article class="card dashboard-card">
         <header class="dashboard-card__header">
-          <h2 class="dashboard-card__title">Name wise targets &amp; performance</h2>
-          <p class="dashboard-card__subtitle">Aggregated Main sheet totals grouped by NAME (Excel dashboard pivot 1)</p>
+          <div class="dashboard-card__heading">
+            <h2 class="dashboard-card__title">Name wise targets &amp; performance</h2>
+            <p class="dashboard-card__subtitle">Aggregated Main sheet totals grouped by NAME (Excel dashboard pivot 1)</p>
+          </div>
+          <button
+            type="button"
+            class="filter-button dashboard-card__filter-button"
+            id="dashboard-filter-button"
+            aria-haspopup="dialog"
+            aria-expanded="false"
+            data-active="false"
+          >
+            Filters
+          </button>
         </header>
         <div class="dashboard-table-container">
           <div class="dashboard-table-scroll">
@@ -1559,8 +1583,10 @@
       </article>
       <article class="card dashboard-card">
         <header class="dashboard-card__header">
-          <h2 class="dashboard-card__title">eBay performance snapshot</h2>
-          <p class="dashboard-card__subtitle">Main sheet eBay metrics grouped by EBAY owner (Excel dashboard pivot 2)</p>
+          <div class="dashboard-card__heading">
+            <h2 class="dashboard-card__title">eBay performance snapshot</h2>
+            <p class="dashboard-card__subtitle">Main sheet eBay metrics grouped by EBAY owner (Excel dashboard pivot 2)</p>
+          </div>
         </header>
         <div class="dashboard-table-container">
           <div class="dashboard-table-scroll">
@@ -1570,8 +1596,10 @@
       </article>
       <article class="card dashboard-card">
         <header class="dashboard-card__header">
-          <h2 class="dashboard-card__title">Website performance snapshot</h2>
-          <p class="dashboard-card__subtitle">Website-focused metrics grouped by WEBSITE lead (Excel dashboard pivot 3)</p>
+          <div class="dashboard-card__heading">
+            <h2 class="dashboard-card__title">Website performance snapshot</h2>
+            <p class="dashboard-card__subtitle">Website-focused metrics grouped by WEBSITE lead (Excel dashboard pivot 3)</p>
+          </div>
         </header>
         <div class="dashboard-table-container">
           <div class="dashboard-table-scroll">
@@ -1682,6 +1710,7 @@
     const platformSubTabPanels = document.querySelectorAll('.platform-tab-panel');
     const loFilterButtonElement = document.getElementById('lo-filter-button');
     const platformFilterButtonElement = document.getElementById('platform-filter-button');
+    const dashboardFilterButtonElement = document.getElementById('dashboard-filter-button');
 
     let regularTable;
     let regularTableInitialised = false;
@@ -2163,6 +2192,7 @@
             includeHeaderPreamble: true,
           });
           mainDatasetCache = dataset;
+          ensureMainFilterSetup(dataset);
           return buildDashboardPivotResultsFromDataset(dataset);
         });
     }
@@ -3547,6 +3577,26 @@
       if (mainTableInitialised && mainTable) {
         requestAnimationFrame(() => updateMainTableFooter(mainTable));
       }
+      const datasetSource = mainDatasetCache
+        ? Promise.resolve(mainDatasetCache)
+        : fetchMainDataset();
+      datasetSource
+        .then((dataset) => {
+          if (!dataset) {
+            return;
+          }
+          ensureMainFilterSetup(dataset);
+          const effectiveDataset = buildFilteredDataset(dataset, mainColumnFilters);
+          const pivotResults = buildDashboardPivotResultsFromDataset(effectiveDataset);
+          if (pivotResults instanceof Map) {
+            mainDashboardPivotCache = pivotResults;
+            mainDashboardInitialised = true;
+            renderMainDashboard(pivotResults);
+          }
+        })
+        .catch((error) => {
+          console.error('Failed to update dashboard filters:', error);
+        });
     }
 
     function initializeRegularFilterControls(augmentedDataset) {
@@ -3740,7 +3790,7 @@
       mainFilterCloseButton = mainFilterContainerElement
         ? mainFilterContainerElement.querySelector('.regular-filter__close')
         : null;
-      mainFilterButtons = [mainFilterButtonElement].filter((button) => button);
+      mainFilterButtons = [mainFilterButtonElement, dashboardFilterButtonElement].filter((button) => button);
 
       const elementsReady = [
         mainFilterButtonElement,
@@ -3899,6 +3949,25 @@
       const firstColumn = columns[0];
       if (firstColumn) {
         setMainFilterColumn(firstColumn.index);
+      }
+    }
+
+    function ensureMainFilterSetup(dataset) {
+      if (!dataset || !Array.isArray(dataset.columns)) {
+        return;
+      }
+      if (!mainTableAugmentedDataset) {
+        mainTableAugmentedDataset = augmentDatasetWithTotals(dataset);
+      }
+      const augmented = mainTableAugmentedDataset;
+      if (!augmented || !Array.isArray(augmented.columns) || !augmented.columns.length) {
+        return;
+      }
+      if (!Array.isArray(mainColumnValueOptions) || !mainColumnValueOptions.length) {
+        mainColumnValueOptions = buildColumnOptions(augmented);
+      }
+      if (!mainFilterInitialised) {
+        initializeMainFilterControls(augmented);
       }
     }
 
@@ -5629,6 +5698,7 @@
     }
 
     function loadMainDashboard() {
+      const filtersInitiallyActive = hasActiveColumnFilters(mainColumnFilters);
       if (mainDashboardInitialised && mainDashboardPivotCache instanceof Map) {
         renderMainDashboard(mainDashboardPivotCache);
         return;
@@ -5636,10 +5706,32 @@
       DASHBOARD_PIVOT_CONFIGS.forEach((config) => {
         setDashboardTableMessage(config.tableId, 'Loading data…', (config.columns?.length || 0) + 1);
       });
-      fetchDashboardPivotSections()
-        .then((results) => {
+
+      const loadFromDataset = () => {
+        const datasetPromise = mainDatasetCache ? Promise.resolve(mainDatasetCache) : fetchMainDataset();
+        return datasetPromise.then((dataset) => {
+          if (!dataset) {
+            throw new Error('Dataset is unavailable');
+          }
+          ensureMainFilterSetup(dataset);
+          const filtersActive = hasActiveColumnFilters(mainColumnFilters);
+          const effectiveDataset = filtersActive ? buildFilteredDataset(dataset, mainColumnFilters) : dataset;
+          const results = buildDashboardPivotResultsFromDataset(effectiveDataset);
+          return { results, filtersActiveAtBuild: filtersActive };
+        });
+      };
+
+      const sourcePromise = filtersInitiallyActive
+        ? loadFromDataset()
+        : fetchDashboardPivotSections().then((results) => ({ results, filtersActiveAtBuild: false }));
+
+      sourcePromise
+        .then(({ results, filtersActiveAtBuild }) => {
           if (!(results instanceof Map)) {
             throw new Error('Dashboard data is unavailable');
+          }
+          if (hasActiveColumnFilters(mainColumnFilters) !== filtersActiveAtBuild) {
+            return;
           }
           mainDashboardPivotCache = results;
           mainDashboardInitialised = true;
@@ -5647,10 +5739,14 @@
         })
         .catch((dashboardError) => {
           console.error('Failed to build dashboard pivots from Main worksheet:', dashboardError);
-          const datasetSource = mainDatasetCache ? Promise.resolve(mainDatasetCache) : fetchMainDataset();
-          datasetSource
-            .then((dataset) => {
-              const results = buildDashboardPivotResultsFromDataset(dataset);
+          loadFromDataset()
+            .then(({ results, filtersActiveAtBuild }) => {
+              if (!(results instanceof Map)) {
+                throw new Error('Dashboard data is unavailable');
+              }
+              if (hasActiveColumnFilters(mainColumnFilters) !== filtersActiveAtBuild) {
+                return;
+              }
               mainDashboardPivotCache = results;
               mainDashboardInitialised = true;
               renderMainDashboard(results);
@@ -5660,6 +5756,19 @@
               DASHBOARD_PIVOT_CONFIGS.forEach((config) => {
                 setDashboardTableMessage(config.tableId, message, (config.columns?.length || 0) + 1);
               });
+              const mainFilterButton = document.getElementById('main-filter-button');
+              if (mainFilterButton) {
+                mainFilterButton.setAttribute('disabled', 'true');
+                mainFilterButton.setAttribute('aria-hidden', 'true');
+                mainFilterButton.setAttribute('aria-expanded', 'false');
+                mainFilterButton.dataset.active = 'false';
+              }
+              if (dashboardFilterButtonElement) {
+                dashboardFilterButtonElement.setAttribute('disabled', 'true');
+                dashboardFilterButtonElement.setAttribute('aria-hidden', 'true');
+                dashboardFilterButtonElement.setAttribute('aria-expanded', 'false');
+                dashboardFilterButtonElement.dataset.active = 'false';
+              }
             });
         });
     }
@@ -5996,6 +6105,12 @@
             filterButton.setAttribute('aria-hidden', 'true');
             filterButton.setAttribute('aria-expanded', 'false');
             filterButton.dataset.active = 'false';
+          }
+          if (dashboardFilterButtonElement) {
+            dashboardFilterButtonElement.setAttribute('disabled', 'true');
+            dashboardFilterButtonElement.setAttribute('aria-hidden', 'true');
+            dashboardFilterButtonElement.setAttribute('aria-expanded', 'false');
+            dashboardFilterButtonElement.dataset.active = 'false';
           }
           if (mainFilterContainerElement) {
             closeMainFilter({ returnFocus: false });
