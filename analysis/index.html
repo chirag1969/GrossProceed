@@ -5180,25 +5180,73 @@
       if (skuSummaryInitialised) {
         return;
       }
+
       renderSkuSummaryMessage('Loading data…');
-      fetchRegularDataset()
+
+      const datasetPromise = fetchRegularDataset()
         .then((dataset) => {
           if (!regularFilterInitialised) {
             const augmentedForFilters = augmentDatasetWithTotals(dataset);
             columnValueOptions = buildColumnOptions(augmentedForFilters);
             initializeRegularFilterControls(augmentedForFilters);
           }
-          const effectiveDataset = buildFilteredDataset(dataset, columnFilters);
-          const pivotData = buildSkuSummaryPivotFromDataset(effectiveDataset);
+          return dataset;
+        })
+        .catch((datasetError) => {
+          console.error('Failed to load dataset for SKU summary:', datasetError);
+          return null;
+        });
+
+      if (hasActiveColumnFilters()) {
+        datasetPromise
+          .then((dataset) => {
+            if (!dataset) {
+              throw new Error('Dataset is unavailable');
+            }
+            const effectiveDataset = buildFilteredDataset(dataset, columnFilters);
+            const pivotData = buildSkuSummaryPivotFromDataset(effectiveDataset);
+            skuSummaryPivotCache = pivotData;
+            skuSummaryCurrentPage = 1;
+            skuSummaryTotalRows = Array.isArray(pivotData?.rows) ? pivotData.rows.length : 0;
+            renderSkuSummaryTable(pivotData, { page: 1 });
+            skuSummaryInitialised = true;
+          })
+          .catch((error) => {
+            const message = error && error.message ? error.message : 'Unable to load SKU summary';
+            renderSkuSummaryMessage(message);
+          });
+        return;
+      }
+
+      fetchSkuSummaryPivot()
+        .then((pivotData) => {
+          if (!pivotData || !Array.isArray(pivotData.columns) || !pivotData.columns.length) {
+            throw new Error('SKU summary pivot is unavailable');
+          }
           skuSummaryPivotCache = pivotData;
           skuSummaryCurrentPage = 1;
           skuSummaryTotalRows = Array.isArray(pivotData?.rows) ? pivotData.rows.length : 0;
           renderSkuSummaryTable(pivotData, { page: 1 });
           skuSummaryInitialised = true;
         })
-        .catch((error) => {
-          const message = error && error.message ? error.message : 'Unable to load SKU summary';
-          renderSkuSummaryMessage(message);
+        .catch(() => {
+          datasetPromise
+            .then((dataset) => {
+              if (!dataset) {
+                throw new Error('Dataset is unavailable');
+              }
+              const effectiveDataset = buildFilteredDataset(dataset, columnFilters);
+              const pivotData = buildSkuSummaryPivotFromDataset(effectiveDataset);
+              skuSummaryPivotCache = pivotData;
+              skuSummaryCurrentPage = 1;
+              skuSummaryTotalRows = Array.isArray(pivotData?.rows) ? pivotData.rows.length : 0;
+              renderSkuSummaryTable(pivotData, { page: 1 });
+              skuSummaryInitialised = true;
+            })
+            .catch((error) => {
+              const message = error && error.message ? error.message : 'Unable to load SKU summary';
+              renderSkuSummaryMessage(message);
+            });
         });
     }
 
