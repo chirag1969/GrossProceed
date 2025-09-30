@@ -650,6 +650,117 @@
       font-weight: 600;
       color: var(--muted);
     }
+    .dashboard-grid {
+      padding: 0 2rem 1.5rem;
+      gap: 1.25rem;
+      grid-auto-rows: auto;
+    }
+    .dashboard-card {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .dashboard-card__header {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+    .dashboard-card__title {
+      margin: 0;
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .dashboard-card__subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+    .dashboard-table-container {
+      border-radius: 0.85rem;
+      border: 1px solid rgba(27, 30, 40, 0.1);
+      background: #fff;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+      overflow: hidden;
+    }
+    .dashboard-table-scroll {
+      overflow-x: auto;
+      overflow-y: hidden;
+      max-width: 100%;
+    }
+    .dashboard-table {
+      width: 100%;
+      min-width: 960px;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+    .dashboard-table thead th {
+      position: sticky;
+      top: 0;
+      background: linear-gradient(180deg, #f6f8ff 0%, #e3e8f7 100%);
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 600;
+      padding: 0.6rem 0.75rem;
+      border-bottom: 2px solid rgba(27, 30, 40, 0.12);
+      text-align: right;
+      white-space: nowrap;
+      z-index: 1;
+    }
+    .dashboard-table thead th:first-child {
+      text-align: left;
+    }
+    .dashboard-table th,
+    .dashboard-table td {
+      border-left: none;
+      border-right: none;
+    }
+    .dashboard-table tbody th,
+    .dashboard-table tbody td,
+    .dashboard-table tfoot th,
+    .dashboard-table tfoot td {
+      padding: 0.45rem 0.75rem;
+      border-bottom: 1px solid rgba(27, 30, 40, 0.08);
+      font-variant-numeric: tabular-nums;
+    }
+    .dashboard-table tbody th,
+    .dashboard-table tfoot th {
+      text-align: left;
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+    }
+    .dashboard-table tbody td,
+    .dashboard-table tfoot td {
+      text-align: right;
+      color: rgba(27, 30, 40, 0.92);
+    }
+    .dashboard-table tbody tr:nth-child(even) td,
+    .dashboard-table tbody tr:nth-child(even) th {
+      background: rgba(226, 231, 244, 0.35);
+    }
+    .dashboard-table tbody tr:hover td,
+    .dashboard-table tbody tr:hover th {
+      background: rgba(41, 71, 137, 0.12);
+    }
+    .dashboard-table__total {
+      background: linear-gradient(180deg, #f6f8ff 0%, #e3e8f7 100%);
+      font-weight: 700;
+    }
+    .dashboard-table__total th,
+    .dashboard-table__total td {
+      border-top: 2px solid rgba(27, 30, 40, 0.18);
+    }
+    .dashboard-table__value--error {
+      color: #b42318;
+      font-weight: 600;
+    }
+    .dashboard-table__message {
+      text-align: center;
+      padding: 1rem 0.75rem;
+      color: var(--muted);
+    }
     .kpi-title {
       color: var(--muted);
       font-size: 0.9rem;
@@ -1345,6 +1456,7 @@
     <button class="tab-button active" id="tab-lo-button" type="button" data-tab="lo" aria-controls="tab-lo" aria-selected="true">LO - Sales &amp; Spend</button>
     <button class="tab-button" id="tab-platform-button" type="button" data-tab="platform" aria-controls="tab-platform" aria-selected="false">Platform Sales &amp; NET</button>
     <button class="tab-button" id="tab-sku-summary-button" type="button" data-tab="sku-summary" aria-controls="tab-sku-summary" aria-selected="false">SKU wise summary</button>
+    <button class="tab-button" id="tab-dashboard-button" type="button" data-tab="dashboard" aria-controls="tab-dashboard" aria-selected="false">Dashboard</button>
     <button class="tab-button" id="tab-main-button" type="button" data-tab="main" aria-controls="tab-main" aria-selected="false">Main</button>
     <button class="tab-button" id="tab-regular-button" type="button" data-tab="regular" aria-controls="tab-regular" aria-selected="false">Regular</button>
   </nav>
@@ -1424,6 +1536,43 @@
         <div class="table-container sku-table-container">
           <div class="sku-table-scroll">
             <table id="sku-summary-table" class="sku-table"></table>
+          </div>
+        </div>
+      </article>
+    </section>
+  </div>
+  <div class="tab-panel" id="tab-dashboard" data-tab="dashboard" role="tabpanel" aria-labelledby="tab-dashboard-button" aria-hidden="true">
+    <section class="grid dashboard-grid">
+      <article class="card dashboard-card">
+        <header class="dashboard-card__header">
+          <h2 class="dashboard-card__title">Name wise targets &amp; performance</h2>
+          <p class="dashboard-card__subtitle">Aggregated Main sheet totals grouped by NAME (Excel dashboard pivot 1)</p>
+        </header>
+        <div class="dashboard-table-container">
+          <div class="dashboard-table-scroll">
+            <table id="dashboard-table-name" class="dashboard-table"></table>
+          </div>
+        </div>
+      </article>
+      <article class="card dashboard-card">
+        <header class="dashboard-card__header">
+          <h2 class="dashboard-card__title">eBay performance snapshot</h2>
+          <p class="dashboard-card__subtitle">Main sheet eBay metrics grouped by EBAY owner (Excel dashboard pivot 2)</p>
+        </header>
+        <div class="dashboard-table-container">
+          <div class="dashboard-table-scroll">
+            <table id="dashboard-table-ebay" class="dashboard-table"></table>
+          </div>
+        </div>
+      </article>
+      <article class="card dashboard-card">
+        <header class="dashboard-card__header">
+          <h2 class="dashboard-card__title">Website performance snapshot</h2>
+          <p class="dashboard-card__subtitle">Website-focused metrics grouped by WEBSITE lead (Excel dashboard pivot 3)</p>
+        </header>
+        <div class="dashboard-table-container">
+          <div class="dashboard-table-scroll">
+            <table id="dashboard-table-website" class="dashboard-table"></table>
           </div>
         </div>
       </article>
@@ -1555,6 +1704,8 @@
     let skuSummaryCurrentPage = 1;
     let skuSummaryPageSize = 25;
     let skuSummaryTotalRows = 0;
+    let mainDashboardInitialised = false;
+    let mainDashboardPivotCache = null;
 
     const NUMERIC_COLUMN_EXCLUSIONS = new Set(['ORDER NO', 'PLAIN ORDER NO', 'ORDER #', 'ORDER NO.', 'CHECKOUT']);
     const ZERO_DECIMAL_COLUMNS = new Set(['qty', 'order no', 'plain order no', 'order no.', 'order #']);
@@ -1624,6 +1775,68 @@
     const EXCEL_MAIN_SHEET_CANDIDATES = ['Main', 'MAIN'];
     const EXCEL_KEY_COLUMN_NAMES = ['ORDER NO', 'Order No', 'ORDER NO.', 'ORDER #', 'Plain Order No'];
     const EXCEL_MAIN_KEY_COLUMN_NAMES = ['SKU', 'Sr. No.', 'NAME', 'DC LIST'];
+    const DASHBOARD_PIVOT_CONFIGS = [
+      {
+        id: 'name',
+        tableId: 'dashboard-table-name',
+        groupColumn: 'NAME',
+        columns: [
+          { source: 'TOTAL TARGET SALES', header: 'Sum of TOTAL TARGET SALES' },
+          { source: 'Desired Rev Till Date', header: 'Sum of Desired Rev Till Date' },
+          { source: 'ACHIVED REV', header: 'Sum of ACHIVED REV' },
+          { source: 'Diff in rev', header: 'Sum of Diff in rev' },
+          { source: 'Desired IP till Date', header: 'Sum of Desired IP till Date' },
+          { source: 'Achieved IP', header: 'Sum of Achieved IP' },
+          { source: 'Diff in IP', header: 'Sum of Diff in IP' },
+          { source: 'ADVT SPEND', header: 'Sum of ADVT SPEND' },
+          { source: 'A- Ad Spend %', header: 'Sum of A- Ad Spend %' },
+          { source: 'Storage Fees', header: 'Sum of Storage Fees' },
+          { source: '% of Ip Ach', header: 'Sum of % of Ip Ach' },
+          { source: 'REV ACH TILL DATE', header: 'Sum of REV ACH TILL DATE' },
+          { source: 'IP ACH TILL DATE', header: 'Sum of IP ACH TILL DATE' },
+        ],
+      },
+      {
+        id: 'ebay',
+        tableId: 'dashboard-table-ebay',
+        groupColumn: 'EBAY',
+        columns: [
+          { source: 'TOTAL TARGET SALES2', header: 'Sum of TOTAL TARGET SALES2' },
+          { source: 'Desired Rev Till Date2', header: 'Sum of Desired Rev Till Date2' },
+          { source: 'ACHIVED REV2', header: 'Sum of ACHIVED REV2' },
+          { source: 'Diff in rev2', header: 'Sum of Diff in rev2' },
+          { source: 'Desired IP till Date2', header: 'Sum of Desired IP till Date2' },
+          { source: 'Achieved IP2', header: 'Sum of Achieved IP2' },
+          { source: 'Diff in IP2', header: 'Sum of Diff in IP2' },
+          { source: 'ADVT SPEND2', header: 'Sum of ADVT SPEND2' },
+          { source: 'Ad Spend %', header: 'Sum of Ad Spend %' },
+          { source: 'Storage Fees2', header: 'Sum of Storage Fees2' },
+          { source: '% of Ip Ach(ebay)', header: 'Sum of % of Ip Ach(ebay)' },
+          { source: 'REV ACH TILL DATE(EBAY)', header: 'Sum of REV ACH TILL DATE(EBAY)' },
+          { source: 'IP ACH TILL DATE(EBAY)', header: 'Sum of IP ACH TILL DATE(EBAY)' },
+        ],
+      },
+      {
+        id: 'website',
+        tableId: 'dashboard-table-website',
+        groupColumn: 'Website',
+        columns: [
+          { source: 'TOTAL TARGET SALES3', header: 'Sum of TOTAL TARGET SALES3' },
+          { source: 'Desired Rev Till Date3', header: 'Sum of Desired Rev Till Date3' },
+          { source: 'ACHIVED REV3', header: 'Sum of ACHIVED REV3' },
+          { source: 'Diff in rev3', header: 'Sum of Diff in rev3' },
+          { source: 'Desired IP till Date3', header: 'Sum of Desired IP till Date3' },
+          { source: 'Achieved IP3', header: 'Sum of Achieved IP3' },
+          { source: 'Diff in IP3', header: 'Sum of Diff in IP3' },
+          { source: 'ADVT SPEND3', header: 'Sum of ADVT SPEND3' },
+          { source: 'AD SPEND%(WEBSITE)', header: 'Sum of AD SPEND%(WEBSITE)' },
+          { source: 'Storage Fees3', header: 'Sum of Storage Fees3' },
+          { source: '% of IP ACH(WEBSITE)', header: 'Sum of % of IP ACH(WEBSITE)' },
+          { source: 'REV ACH TILL DATE(WEBSITE)', header: 'Sum of REV ACH TILL DATE(WEBSITE)' },
+          { source: 'ACH IP TILL DATE(WEBSITE)', header: 'Sum of ACH IP TILL DATE(WEBSITE)' },
+        ],
+      },
+    ];
     const EXCEL_DEFAULT_HEADER_SEARCH_VALUES = EXCEL_KEY_COLUMN_NAMES;
     const EXCEL_MAX_BLANK_ROWS = 250;
 
@@ -2625,6 +2838,12 @@
         }
         loadMainTable();
         refreshMainTableLayout();
+      } else if (targetTab === 'dashboard') {
+        closeHeaderMenu();
+        if (regularFilterContainerElement && regularFilterContainerElement.classList.contains('is-visible')) {
+          closeRegularFilter({ returnFocus: false });
+        }
+        loadMainDashboard();
       } else if (targetTab === 'sku-summary') {
         closeHeaderMenu();
         loadSkuSummaryTable();
@@ -4878,6 +5097,268 @@
         const targetPage = skuSummaryCurrentPage + 1;
         renderSkuSummaryTable(skuSummaryPivotCache, { page: targetPage });
       }
+    }
+
+    function setDashboardTableMessage(tableId, message, columnCount = 2) {
+      const tableElement = document.getElementById(tableId);
+      if (!tableElement) {
+        return;
+      }
+      const span = Math.max(1, columnCount);
+      tableElement.innerHTML = '';
+      const tbody = tableElement.createTBody();
+      const row = document.createElement('tr');
+      const cell = document.createElement('td');
+      cell.colSpan = span;
+      cell.className = 'dashboard-table__message';
+      cell.textContent = message;
+      row.appendChild(cell);
+      tbody.appendChild(row);
+    }
+
+    function renderDashboardPivotTable(config, pivot) {
+      const tableElement = document.getElementById(config.tableId);
+      if (!tableElement) {
+        return;
+      }
+      const columns = Array.isArray(pivot?.columns) ? pivot.columns : [];
+      if (!columns.length) {
+        setDashboardTableMessage(config.tableId, 'No data available', (config.columns?.length || 0) + 1);
+        return;
+      }
+      const rows = Array.isArray(pivot?.rows) ? pivot.rows : [];
+      const totalRow = Array.isArray(pivot?.totalRow) ? pivot.totalRow : null;
+
+      tableElement.innerHTML = '';
+      const thead = tableElement.createTHead();
+      const headRow = document.createElement('tr');
+      columns.forEach((label) => {
+        const th = document.createElement('th');
+        th.scope = 'col';
+        th.textContent = typeof label === 'string' ? label : '';
+        headRow.appendChild(th);
+      });
+      thead.appendChild(headRow);
+
+      const tbody = tableElement.createTBody();
+      if (!rows.length) {
+        const emptyRow = document.createElement('tr');
+        const emptyCell = document.createElement('td');
+        emptyCell.colSpan = columns.length;
+        emptyCell.className = 'dashboard-table__message';
+        emptyCell.textContent = 'No data available';
+        emptyRow.appendChild(emptyCell);
+        tbody.appendChild(emptyRow);
+      } else {
+        rows.forEach((row) => {
+          const tr = document.createElement('tr');
+          row.forEach((value, index) => {
+            const cellTag = index === 0 ? 'th' : 'td';
+            const cell = document.createElement(cellTag);
+            if (index === 0) {
+              cell.scope = 'row';
+            } else if (typeof value === 'string' && value.trim().startsWith('#')) {
+              cell.classList.add('dashboard-table__value--error');
+            }
+            cell.textContent = value === null || value === undefined ? '' : String(value);
+            tr.appendChild(cell);
+          });
+          tbody.appendChild(tr);
+        });
+      }
+
+      if (totalRow && totalRow.length === columns.length) {
+        const tfoot = tableElement.createTFoot();
+        const tr = document.createElement('tr');
+        tr.className = 'dashboard-table__total';
+        totalRow.forEach((value, index) => {
+          const cellTag = index === 0 ? 'th' : 'td';
+          const cell = document.createElement(cellTag);
+          if (index === 0) {
+            cell.scope = 'row';
+          } else if (typeof value === 'string' && value.trim().startsWith('#')) {
+            cell.classList.add('dashboard-table__value--error');
+          }
+          cell.textContent = value === null || value === undefined ? '' : String(value);
+          tr.appendChild(cell);
+        });
+        tfoot.appendChild(tr);
+      }
+    }
+
+    function buildDashboardPivot(dataset, config) {
+      if (!dataset || !Array.isArray(dataset.columns) || !Array.isArray(dataset.rows)) {
+        return { columns: [], rows: [], totalRow: [] };
+      }
+      const normalise = (value) => (typeof value === 'string' ? value.trim().toLowerCase() : '');
+      const columnLookup = new Map();
+      dataset.columns.forEach((column, index) => {
+        const key = normalise(column);
+        if (key && !columnLookup.has(key)) {
+          columnLookup.set(key, index);
+        }
+      });
+      const groupIndex = columnLookup.get(normalise(config.groupColumn));
+      if (groupIndex === undefined) {
+        throw new Error(`Column "${config.groupColumn}" not found in Main dataset`);
+      }
+      const valueIndexes = config.columns.map((column) => {
+        const index = columnLookup.get(normalise(column.source));
+        if (index === undefined) {
+          throw new Error(`Column "${column.source}" not found in Main dataset`);
+        }
+        return index;
+      });
+      const groups = [];
+      const groupLookup = new Map();
+      const normalizedTotal = TOTAL_ROW_LABEL.toLowerCase();
+
+      dataset.rows.forEach((row) => {
+        const rawLabel = row[groupIndex];
+        if (isPlaceholderValue(rawLabel)) {
+          return;
+        }
+        const label = String(rawLabel).trim();
+        if (!label || label.toLowerCase() === normalizedTotal) {
+          return;
+        }
+        const key = label.toLowerCase();
+        let entry = groupLookup.get(key);
+        if (!entry) {
+          entry = {
+            label,
+            metrics: config.columns.map(() => ({ sum: 0, hasValue: false, hasError: false, errorValue: '', textValue: '' })),
+          };
+          groupLookup.set(key, entry);
+          groups.push(entry);
+        }
+        config.columns.forEach((column, columnIndex) => {
+          const datasetColumnIndex = valueIndexes[columnIndex];
+          if (datasetColumnIndex === undefined || datasetColumnIndex >= row.length) {
+            return;
+          }
+          const rawValue = row[datasetColumnIndex];
+          if (isPlaceholderValue(rawValue)) {
+            return;
+          }
+          const numericValue = parseNumericValue(rawValue);
+          const metric = entry.metrics[columnIndex];
+          if (numericValue !== null) {
+            metric.sum += numericValue;
+            metric.hasValue = true;
+          } else if (typeof rawValue === 'string') {
+            const trimmed = rawValue.trim();
+            if (!trimmed) {
+              return;
+            }
+            if (trimmed.startsWith('#')) {
+              metric.hasError = true;
+              metric.errorValue = trimmed;
+            } else if (!metric.textValue) {
+              metric.textValue = trimmed;
+            }
+          }
+        });
+      });
+
+      const columns = ['Row Labels', ...config.columns.map((column) => column.header)];
+      const rows = groups.map((entry) => {
+        const values = [entry.label];
+        entry.metrics.forEach((metric, columnIndex) => {
+          if (metric.hasValue) {
+            values.push(formatCellValue(metric.sum, config.columns[columnIndex].source));
+          } else if (metric.hasError) {
+            values.push(metric.errorValue || '#DIV/0!');
+          } else if (metric.textValue) {
+            values.push(metric.textValue);
+          } else {
+            values.push('');
+          }
+        });
+        return values;
+      });
+
+      let totalRow = null;
+      if (rows.length) {
+        totalRow = ['Grand Total'];
+        config.columns.forEach((column, columnIndex) => {
+          let aggregate = 0;
+          let hasValue = false;
+          let errorValue = '';
+          let textValue = '';
+          groups.forEach((entry) => {
+            const metric = entry.metrics[columnIndex];
+            if (!metric) {
+              return;
+            }
+            if (metric.hasValue) {
+              aggregate += metric.sum;
+              hasValue = true;
+              return;
+            }
+            if (!errorValue && metric.hasError) {
+              errorValue = metric.errorValue || '#DIV/0!';
+            }
+            if (!textValue && metric.textValue) {
+              textValue = metric.textValue;
+            }
+          });
+          if (hasValue) {
+            totalRow.push(formatCellValue(aggregate, column.source));
+          } else if (errorValue) {
+            totalRow.push(errorValue);
+          } else if (textValue) {
+            totalRow.push(textValue);
+          } else {
+            totalRow.push('');
+          }
+        });
+      }
+
+      return { columns, rows, totalRow };
+    }
+
+    function renderMainDashboard(pivotMap) {
+      DASHBOARD_PIVOT_CONFIGS.forEach((config) => {
+        const pivot = pivotMap instanceof Map ? pivotMap.get(config.id) : null;
+        if (pivot && !pivot.error) {
+          renderDashboardPivotTable(config, pivot);
+        } else {
+          const message = pivot && pivot.error ? pivot.error : 'No data available';
+          setDashboardTableMessage(config.tableId, message, (config.columns?.length || 0) + 1);
+        }
+      });
+    }
+
+    function loadMainDashboard() {
+      if (mainDashboardInitialised && mainDashboardPivotCache instanceof Map) {
+        renderMainDashboard(mainDashboardPivotCache);
+        return;
+      }
+      DASHBOARD_PIVOT_CONFIGS.forEach((config) => {
+        setDashboardTableMessage(config.tableId, 'Loading data…', (config.columns?.length || 0) + 1);
+      });
+      const datasetSource = mainDatasetCache ? Promise.resolve(mainDatasetCache) : fetchMainDataset();
+      datasetSource
+        .then((dataset) => {
+          const results = new Map();
+          DASHBOARD_PIVOT_CONFIGS.forEach((config) => {
+            try {
+              results.set(config.id, buildDashboardPivot(dataset, config));
+            } catch (error) {
+              results.set(config.id, { error: error.message || 'Unable to build dashboard view' });
+            }
+          });
+          mainDashboardPivotCache = results;
+          mainDashboardInitialised = true;
+          renderMainDashboard(results);
+        })
+        .catch((error) => {
+          const message = error && error.message ? error.message : 'Unable to load data';
+          DASHBOARD_PIVOT_CONFIGS.forEach((config) => {
+            setDashboardTableMessage(config.tableId, message, (config.columns?.length || 0) + 1);
+          });
+        });
     }
 
     const skuSummaryPaginationElement = document.getElementById('sku-summary-pagination');
