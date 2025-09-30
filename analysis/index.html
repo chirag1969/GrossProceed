@@ -1706,6 +1706,7 @@
     let skuSummaryTotalRows = 0;
     let mainDashboardInitialised = false;
     let mainDashboardPivotCache = null;
+    let dashboardPivotPromise = null;
 
     const NUMERIC_COLUMN_EXCLUSIONS = new Set(['ORDER NO', 'PLAIN ORDER NO', 'ORDER #', 'ORDER NO.', 'CHECKOUT']);
     const ZERO_DECIMAL_COLUMNS = new Set(['qty', 'order no', 'plain order no', 'order no.', 'order #']);
@@ -1773,6 +1774,7 @@
     const EXCEL_WORKBOOK_PATH = '../09%20GROSS%20PROCEED%20SEP-25%20COMBINE.xlsx';
     const EXCEL_REGULAR_SHEET_CANDIDATES = ['REGULAR SEP-25', 'Regular Sep-25', 'REGULAR', 'Regular'];
     const EXCEL_MAIN_SHEET_CANDIDATES = ['Main', 'MAIN'];
+    const EXCEL_DASHBOARD_SHEET_CANDIDATES = ['DASHBOARD', 'Dashboard'];
     const EXCEL_KEY_COLUMN_NAMES = ['ORDER NO', 'Order No', 'ORDER NO.', 'ORDER #', 'Plain Order No'];
     const EXCEL_MAIN_KEY_COLUMN_NAMES = ['SKU', 'Sr. No.', 'NAME', 'DC LIST'];
     const DASHBOARD_PIVOT_CONFIGS = [
@@ -1780,60 +1782,66 @@
         id: 'name',
         tableId: 'dashboard-table-name',
         groupColumn: 'NAME',
+        sheetGroupColumn: 'Row Labels',
+        displayLabel: 'Name',
         columns: [
-          { source: 'TOTAL TARGET SALES', header: 'Sum of TOTAL TARGET SALES' },
-          { source: 'Desired Rev Till Date', header: 'Sum of Desired Rev Till Date' },
-          { source: 'ACHIVED REV', header: 'Sum of ACHIVED REV' },
-          { source: 'Diff in rev', header: 'Sum of Diff in rev' },
-          { source: 'Desired IP till Date', header: 'Sum of Desired IP till Date' },
-          { source: 'Achieved IP', header: 'Sum of Achieved IP' },
-          { source: 'Diff in IP', header: 'Sum of Diff in IP' },
-          { source: 'ADVT SPEND', header: 'Sum of ADVT SPEND' },
-          { source: 'A- Ad Spend %', header: 'Sum of A- Ad Spend %' },
-          { source: 'Storage Fees', header: 'Sum of Storage Fees' },
-          { source: '% of Ip Ach', header: 'Sum of % of Ip Ach' },
-          { source: 'REV ACH TILL DATE', header: 'Sum of REV ACH TILL DATE' },
-          { source: 'IP ACH TILL DATE', header: 'Sum of IP ACH TILL DATE' },
+          { source: 'TOTAL TARGET SALES', sheetHeader: 'Sum of TOTAL TARGET SALES', header: 'Sum of TOTAL TARGET SALES' },
+          { source: 'Desired Rev Till Date', sheetHeader: 'Sum of Desired Rev Till Date', header: 'Sum of Desired Rev Till Date' },
+          { source: 'ACHIVED REV', sheetHeader: 'Sum of ACHIVED REV', header: 'Sum of ACHIVED REV' },
+          { source: 'Diff in rev', sheetHeader: 'Sum of Diff in rev', header: 'Sum of Diff in rev' },
+          { source: 'Desired IP till Date', sheetHeader: 'Sum of Desired IP till Date', header: 'Sum of Desired IP till Date' },
+          { source: 'Achieved IP', sheetHeader: 'Sum of Achieved IP', header: 'Sum of Achieved IP' },
+          { source: 'Diff in IP', sheetHeader: 'Sum of Diff in IP', header: 'Sum of Diff in IP' },
+          { source: 'ADVT SPEND', sheetHeader: 'Sum of ADVT SPEND', header: 'Sum of ADVT SPEND' },
+          { source: 'A- Ad Spend %', sheetHeader: 'Sum of A- Ad Spend %', header: 'Sum of A- Ad Spend %' },
+          { source: 'Storage Fees', sheetHeader: 'Sum of Storage Fees', header: 'Sum of Storage Fees' },
+          { source: '% of Ip Ach', sheetHeader: 'Sum of % of Ip Ach', header: 'Sum of % of Ip Ach' },
+          { source: 'REV ACH TILL DATE', sheetHeader: 'Sum of REV ACH TILL DATE', header: 'Sum of REV ACH TILL DATE' },
+          { source: 'IP ACH TILL DATE', sheetHeader: 'Sum of IP ACH TILL DATE', header: 'Sum of IP ACH TILL DATE' },
         ],
       },
       {
         id: 'ebay',
         tableId: 'dashboard-table-ebay',
         groupColumn: 'EBAY',
+        sheetGroupColumn: 'Row Labels',
+        displayLabel: 'eBay',
         columns: [
-          { source: 'TOTAL TARGET SALES2', header: 'Sum of TOTAL TARGET SALES2' },
-          { source: 'Desired Rev Till Date2', header: 'Sum of Desired Rev Till Date2' },
-          { source: 'ACHIVED REV2', header: 'Sum of ACHIVED REV2' },
-          { source: 'Diff in rev2', header: 'Sum of Diff in rev2' },
-          { source: 'Desired IP till Date2', header: 'Sum of Desired IP till Date2' },
-          { source: 'Achieved IP2', header: 'Sum of Achieved IP2' },
-          { source: 'Diff in IP2', header: 'Sum of Diff in IP2' },
-          { source: 'ADVT SPEND2', header: 'Sum of ADVT SPEND2' },
-          { source: 'Ad Spend %', header: 'Sum of Ad Spend %' },
-          { source: 'Storage Fees2', header: 'Sum of Storage Fees2' },
-          { source: '% of Ip Ach(ebay)', header: 'Sum of % of Ip Ach(ebay)' },
-          { source: 'REV ACH TILL DATE(EBAY)', header: 'Sum of REV ACH TILL DATE(EBAY)' },
-          { source: 'IP ACH TILL DATE(EBAY)', header: 'Sum of IP ACH TILL DATE(EBAY)' },
+          { source: 'TOTAL TARGET SALES2', sheetHeader: 'Sum of TOTAL TARGET SALES2', header: 'Sum of TOTAL TARGET SALES2' },
+          { source: 'Desired Rev Till Date2', sheetHeader: 'Sum of Desired Rev Till Date2', header: 'Sum of Desired Rev Till Date2' },
+          { source: 'ACHIVED REV2', sheetHeader: 'Sum of ACHIVED REV2', header: 'Sum of ACHIVED REV2' },
+          { source: 'Diff in rev2', sheetHeader: 'Sum of Diff in rev2', header: 'Sum of Diff in rev2' },
+          { source: 'Desired IP till Date2', sheetHeader: 'Sum of Desired IP till Date2', header: 'Sum of Desired IP till Date2' },
+          { source: 'Achieved IP2', sheetHeader: 'Sum of Achieved IP2', header: 'Sum of Achieved IP2' },
+          { source: 'Diff in IP2', sheetHeader: 'Sum of Diff in IP2', header: 'Sum of Diff in IP2' },
+          { source: 'ADVT SPEND2', sheetHeader: 'Sum of ADVT SPEND2', header: 'Sum of ADVT SPEND2' },
+          { source: 'Ad Spend %', sheetHeader: 'Sum of Ad Spend %', header: 'Sum of Ad Spend %' },
+          { source: 'Storage Fees2', sheetHeader: 'Sum of Storage Fees2', header: 'Sum of Storage Fees2' },
+          { source: '% of Ip Ach(ebay)', sheetHeader: 'Sum of % of Ip Ach(ebay)', header: 'Sum of % of Ip Ach(ebay)' },
+          { source: 'REV ACH TILL DATE(EBAY)', sheetHeader: 'Sum of REV ACH TILL DATE(EBAY)', header: 'Sum of REV ACH TILL DATE(EBAY)' },
+          { source: 'IP ACH TILL DATE(EBAY)', sheetHeader: 'Sum of IP ACH TILL DATE(EBAY)', header: 'Sum of IP ACH TILL DATE(EBAY)' },
         ],
       },
       {
         id: 'website',
         tableId: 'dashboard-table-website',
         groupColumn: 'Website',
+        sheetGroupColumn: 'Row Labels',
+        displayLabel: 'Website',
         columns: [
-          { source: 'TOTAL TARGET SALES3', header: 'Sum of TOTAL TARGET SALES3' },
-          { source: 'Desired Rev Till Date3', header: 'Sum of Desired Rev Till Date3' },
-          { source: 'ACHIVED REV3', header: 'Sum of ACHIVED REV3' },
-          { source: 'Diff in rev3', header: 'Sum of Diff in rev3' },
-          { source: 'Desired IP till Date3', header: 'Sum of Desired IP till Date3' },
-          { source: 'Achieved IP3', header: 'Sum of Achieved IP3' },
-          { source: 'Diff in IP3', header: 'Sum of Diff in IP3' },
-          { source: 'ADVT SPEND3', header: 'Sum of ADVT SPEND3' },
-          { source: 'AD SPEND%(WEBSITE)', header: 'Sum of AD SPEND%(WEBSITE)' },
-          { source: 'Storage Fees3', header: 'Sum of Storage Fees3' },
-          { source: '% of IP ACH(WEBSITE)', header: 'Sum of % of IP ACH(WEBSITE)' },
-          { source: 'REV ACH TILL DATE(WEBSITE)', header: 'Sum of REV ACH TILL DATE(WEBSITE)' },
-          { source: 'ACH IP TILL DATE(WEBSITE)', header: 'Sum of ACH IP TILL DATE(WEBSITE)' },
+          { source: 'TOTAL TARGET SALES3', sheetHeader: 'Sum of TOTAL TARGET SALES3', header: 'Sum of TOTAL TARGET SALES3' },
+          { source: 'Desired Rev Till Date3', sheetHeader: 'Sum of Desired Rev Till Date3', header: 'Sum of Desired Rev Till Date3' },
+          { source: 'ACHIVED REV3', sheetHeader: 'Sum of ACHIVED REV3', header: 'Sum of ACHIVED REV3' },
+          { source: 'Diff in rev3', sheetHeader: 'Sum of Diff in rev3', header: 'Sum of Diff in rev3' },
+          { source: 'Desired IP till Date3', sheetHeader: 'Sum of Desired IP till Date3', header: 'Sum of Desired IP till Date3' },
+          { source: 'Achieved IP3', sheetHeader: 'Sum of Achieved IP3', header: 'Sum of Achieved IP3' },
+          { source: 'Diff in IP3', sheetHeader: 'Sum of Diff in IP3', header: 'Sum of Diff in IP3' },
+          { source: 'ADVT SPEND3', sheetHeader: 'Sum of ADVT SPEND3', header: 'Sum of ADVT SPEND3' },
+          { source: 'AD SPEND%(WEBSITE)', sheetHeader: 'Sum of AD SPEND%(WEBSITE)', header: 'Sum of AD SPEND%(WEBSITE)' },
+          { source: 'Storage Fees3', sheetHeader: 'Sum of Storage Fees3', header: 'Sum of Storage Fees3' },
+          { source: '% of IP ACH(WEBSITE)', sheetHeader: 'Sum of % of IP ACH(WEBSITE)', header: 'Sum of % of IP ACH(WEBSITE)' },
+          { source: 'REV ACH TILL DATE(WEBSITE)', sheetHeader: 'Sum of REV ACH TILL DATE(WEBSITE)', header: 'Sum of REV ACH TILL DATE(WEBSITE)' },
+          { source: 'ACH IP TILL DATE(WEBSITE)', sheetHeader: 'Sum of ACH IP TILL DATE(WEBSITE)', header: 'Sum of ACH IP TILL DATE(WEBSITE)' },
         ],
       },
     ];
@@ -2094,6 +2102,175 @@
             includeHeaderPreamble: options.includeHeaderPreamble,
           });
         });
+    }
+
+    function buildDashboardPivotRow(sourceRow, config) {
+      const rowValues = [];
+      const label = coerceCellValue(Array.isArray(sourceRow) ? sourceRow[0] : '');
+      rowValues.push(label);
+      const columns = Array.isArray(config?.columns) ? config.columns : [];
+      if (!columns.length) {
+        return rowValues;
+      }
+      columns.forEach((column, columnIndex) => {
+        const cell = Array.isArray(sourceRow) ? sourceRow[columnIndex + 1] : '';
+        const coerced = coerceCellValue(cell);
+        const columnKey = typeof column?.source === 'string' ? column.source : '';
+        rowValues.push(formatCellValue(coerced, columnKey));
+      });
+      return rowValues;
+    }
+
+    function extractDashboardPivotFromRows(rawRows, config) {
+      if (!Array.isArray(rawRows) || !config) {
+        return null;
+      }
+      const normalise = (value) => (typeof value === 'string' ? value.trim().toLowerCase() : '');
+      const configColumns = Array.isArray(config.columns) ? config.columns : [];
+      const sheetGroupColumn = typeof config.sheetGroupColumn === 'string' && config.sheetGroupColumn.trim()
+        ? config.sheetGroupColumn.trim()
+        : 'Row Labels';
+      const expectedHeaders = [sheetGroupColumn, ...configColumns.map((column) => {
+        if (typeof column?.sheetHeader === 'string' && column.sheetHeader.trim()) {
+          return column.sheetHeader;
+        }
+        if (typeof column?.header === 'string' && column.header.trim()) {
+          return column.header;
+        }
+        return typeof column?.source === 'string' ? column.source : '';
+      })];
+      const expectedNormalised = expectedHeaders.map((header) => normalise(header));
+
+      for (let rowIndex = 0; rowIndex < rawRows.length; rowIndex += 1) {
+        const candidateRow = Array.isArray(rawRows[rowIndex]) ? rawRows[rowIndex] : [];
+        if (!candidateRow.length) {
+          continue;
+        }
+        const normalisedRow = candidateRow.map((cell) => normalise(coerceCellValue(cell)));
+        let matches = true;
+        for (let columnIndex = 0; columnIndex < expectedNormalised.length; columnIndex += 1) {
+          const expectedValue = expectedNormalised[columnIndex];
+          if (!expectedValue) {
+            continue;
+          }
+          if (normalisedRow[columnIndex] !== expectedValue) {
+            matches = false;
+            break;
+          }
+        }
+        if (!matches) {
+          continue;
+        }
+
+        const displayLabel = typeof config.displayLabel === 'string' && config.displayLabel.trim()
+          ? config.displayLabel
+          : sheetGroupColumn;
+        const columns = [displayLabel, ...configColumns.map((column) => {
+          if (typeof column?.header === 'string') {
+            return column.header;
+          }
+          if (typeof column?.sheetHeader === 'string' && column.sheetHeader.trim()) {
+            return column.sheetHeader;
+          }
+          return typeof column?.source === 'string' ? column.source : '';
+        })];
+
+        const rows = [];
+        let totalRow = null;
+        for (let dataIndex = rowIndex + 1; dataIndex < rawRows.length; dataIndex += 1) {
+          const sourceRow = Array.isArray(rawRows[dataIndex]) ? rawRows[dataIndex] : [];
+          const label = coerceCellValue(sourceRow[0]);
+          const normalisedLabel = normalise(label);
+          const hasValues = configColumns.some((_, columnIndex) => {
+            const value = coerceCellValue(sourceRow[columnIndex + 1]);
+            return value !== '';
+          });
+          if (!label && !hasValues) {
+            break;
+          }
+          if (normalisedLabel === 'grand total') {
+            totalRow = buildDashboardPivotRow(sourceRow, { ...config, columns: configColumns });
+            break;
+          }
+          if (!label) {
+            continue;
+          }
+          rows.push(buildDashboardPivotRow(sourceRow, { ...config, columns: configColumns }));
+        }
+
+        return { columns, rows, totalRow };
+      }
+
+      return null;
+    }
+
+    function buildDashboardPivotsFromRows(rawRows) {
+      const results = new Map();
+      if (!Array.isArray(rawRows) || !rawRows.length) {
+        return results;
+      }
+      DASHBOARD_PIVOT_CONFIGS.forEach((config) => {
+        try {
+          const pivot = extractDashboardPivotFromRows(rawRows, config);
+          if (pivot) {
+            results.set(config.id, pivot);
+          } else {
+            results.set(config.id, { error: 'Unable to locate dashboard section in worksheet' });
+          }
+        } catch (error) {
+          results.set(config.id, { error: error && error.message ? error.message : 'Unable to build dashboard view' });
+        }
+      });
+      return results;
+    }
+
+    function loadDashboardPivotSectionsFromExcel() {
+      if (typeof XLSX === 'undefined') {
+        return Promise.reject(new Error('Excel parser library is not available'));
+      }
+      return fetch(EXCEL_WORKBOOK_PATH, { cache: 'no-store' })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error('Unable to load Excel workbook');
+          }
+          return response.arrayBuffer();
+        })
+        .then((buffer) => {
+          const workbook = XLSX.read(buffer, { type: 'array' });
+          const { worksheet } = findWorksheetFromWorkbook(workbook, {
+            candidates: EXCEL_DASHBOARD_SHEET_CANDIDATES,
+            fallbackPredicate: (name) => normaliseSheetName(name).includes('dashboard'),
+          });
+          if (!worksheet) {
+            throw new Error('DASHBOARD worksheet not found in workbook');
+          }
+          const rawRows = XLSX.utils.sheet_to_json(worksheet, {
+            header: 1,
+            blankrows: false,
+            defval: '',
+            raw: true,
+          });
+          return buildDashboardPivotsFromRows(rawRows);
+        });
+    }
+
+    function fetchDashboardPivotSections() {
+      if (mainDashboardPivotCache instanceof Map && mainDashboardInitialised) {
+        return Promise.resolve(mainDashboardPivotCache);
+      }
+      if (dashboardPivotPromise) {
+        return dashboardPivotPromise;
+      }
+      dashboardPivotPromise = loadDashboardPivotSectionsFromExcel()
+        .then((results) => {
+          dashboardPivotPromise = null;
+          return results;
+        })
+        .catch((error) => {
+          dashboardPivotPromise = null;
+          throw error;
+        });
+      return dashboardPivotPromise;
     }
 
     function fetchRegularDataset() {
@@ -5338,26 +5515,38 @@
       DASHBOARD_PIVOT_CONFIGS.forEach((config) => {
         setDashboardTableMessage(config.tableId, 'Loading data…', (config.columns?.length || 0) + 1);
       });
-      const datasetSource = mainDatasetCache ? Promise.resolve(mainDatasetCache) : fetchMainDataset();
-      datasetSource
-        .then((dataset) => {
-          const results = new Map();
-          DASHBOARD_PIVOT_CONFIGS.forEach((config) => {
-            try {
-              results.set(config.id, buildDashboardPivot(dataset, config));
-            } catch (error) {
-              results.set(config.id, { error: error.message || 'Unable to build dashboard view' });
-            }
-          });
+      fetchDashboardPivotSections()
+        .then((results) => {
+          if (!(results instanceof Map)) {
+            throw new Error('Dashboard data is unavailable');
+          }
           mainDashboardPivotCache = results;
           mainDashboardInitialised = true;
           renderMainDashboard(results);
         })
-        .catch((error) => {
-          const message = error && error.message ? error.message : 'Unable to load data';
-          DASHBOARD_PIVOT_CONFIGS.forEach((config) => {
-            setDashboardTableMessage(config.tableId, message, (config.columns?.length || 0) + 1);
-          });
+        .catch((dashboardError) => {
+          console.error('Failed to load dashboard pivots from DASHBOARD worksheet:', dashboardError);
+          const datasetSource = mainDatasetCache ? Promise.resolve(mainDatasetCache) : fetchMainDataset();
+          datasetSource
+            .then((dataset) => {
+              const results = new Map();
+              DASHBOARD_PIVOT_CONFIGS.forEach((config) => {
+                try {
+                  results.set(config.id, buildDashboardPivot(dataset, config));
+                } catch (error) {
+                  results.set(config.id, { error: error.message || 'Unable to build dashboard view' });
+                }
+              });
+              mainDashboardPivotCache = results;
+              mainDashboardInitialised = true;
+              renderMainDashboard(results);
+            })
+            .catch((error) => {
+              const message = error && error.message ? error.message : 'Unable to load data';
+              DASHBOARD_PIVOT_CONFIGS.forEach((config) => {
+                setDashboardTableMessage(config.tableId, message, (config.columns?.length || 0) + 1);
+              });
+            });
         });
     }
 
