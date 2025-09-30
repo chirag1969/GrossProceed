@@ -5325,36 +5325,57 @@
       if (groupIndex === undefined) {
         throw new Error(`Column "${config.groupColumn}" not found in Main dataset`);
       }
-      const columnDescriptors = config.columns.map((column) => {
-        if (column && column.computed && column.computed.type === 'ratio') {
+      const missingColumns = [];
+      const includedColumns = [];
+      const columnDescriptors = [];
+      config.columns.forEach((column) => {
+        if (!column) {
+          return;
+        }
+        if (column.computed && column.computed.type === 'ratio') {
           const numeratorName = column.computed.numerator;
           const denominatorName = column.computed.denominator;
           const numeratorIndex = columnLookup.get(normalise(numeratorName));
           if (numeratorIndex === undefined) {
-            throw new Error(
+            missingColumns.push(
               `Column "${numeratorName}" not found in Main dataset (required for computed column "${column.source || column.header}")`
             );
+            return;
           }
           const denominatorIndex = columnLookup.get(normalise(denominatorName));
           if (denominatorIndex === undefined) {
-            throw new Error(
+            missingColumns.push(
               `Column "${denominatorName}" not found in Main dataset (required for computed column "${column.source || column.header}")`
             );
+            return;
           }
-          return {
+          includedColumns.push(column);
+          columnDescriptors.push({
             type: 'ratio',
             numeratorIndex,
             denominatorIndex,
             numeratorSource: numeratorName,
             denominatorSource: denominatorName,
-          };
+          });
+          return;
         }
         const index = columnLookup.get(normalise(column.source));
         if (index === undefined) {
-          throw new Error(`Column "${column.source}" not found in Main dataset`);
+          missingColumns.push(`Column "${column.source}" not found in Main dataset`);
+          return;
         }
-        return { type: 'direct', datasetIndex: index };
+        includedColumns.push(column);
+        columnDescriptors.push({ type: 'direct', datasetIndex: index });
       });
+      if (missingColumns.length) {
+        const label = config.displayLabel || config.id || 'pivot';
+        console.warn(
+          `Skipped ${missingColumns.length} column(s) while building ${label} pivot:\n${missingColumns.join('\n')}`
+        );
+      }
+      if (!includedColumns.length) {
+        return { columns: ['Row Labels'], rows: [], totalRow: [] };
+      }
       const groups = [];
       const groupLookup = new Map();
       const normalizedTotal = TOTAL_ROW_LABEL.toLowerCase();
@@ -5388,7 +5409,7 @@
           groupLookup.set(key, entry);
           groups.push(entry);
         }
-        config.columns.forEach((column, columnIndex) => {
+        includedColumns.forEach((column, columnIndex) => {
           const descriptor = columnDescriptors[columnIndex];
           if (!descriptor) {
             return;
@@ -5439,12 +5460,12 @@
         });
       });
 
-      const columns = ['Row Labels', ...config.columns.map((column) => column.header)];
+      const columns = ['Row Labels', ...includedColumns.map((column) => column.header)];
       const rows = groups.map((entry) => {
         const values = [entry.label];
         entry.metrics.forEach((metric, columnIndex) => {
           const descriptor = columnDescriptors[columnIndex];
-          const column = config.columns[columnIndex];
+          const column = includedColumns[columnIndex];
           if (descriptor && descriptor.type === 'ratio') {
             values.push(formatDashboardRatioValue(metric, column));
             return;
@@ -5465,7 +5486,7 @@
       let totalRow = null;
       if (rows.length) {
         totalRow = ['Grand Total'];
-        config.columns.forEach((column, columnIndex) => {
+        includedColumns.forEach((column, columnIndex) => {
           const descriptor = columnDescriptors[columnIndex];
           if (descriptor && descriptor.type === 'ratio') {
             let numeratorSum = 0;
