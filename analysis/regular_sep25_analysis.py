@@ -36,6 +36,7 @@ class ColumnSpec:
 
 
 BAD_VALUES = {None, "", "-", "#N/A", "#REF!", "#VALUE!", "#DIV/0!"}
+BLANK_ROW_LIMIT = 2000
 
 
 def clean_text(value) -> Optional[str]:
@@ -261,7 +262,7 @@ def parse_sheet(path: Path, sheet_rel_path: str = "xl/worksheets/sheet13.xml") -
                             blank_run += 1
                 else:
                     blank_run += 1
-                if header is not None and blank_run > 500:
+                if header is not None and blank_run > BLANK_ROW_LIMIT:
                     break
                 elem.clear()
 
