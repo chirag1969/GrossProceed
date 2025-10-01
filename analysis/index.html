@@ -1692,7 +1692,7 @@
         <header class="new-product-card__header">
           <div class="new-product-card__heading">
             <h2 class="new-product-card__title">New product targets vs performance</h2>
-            <p class="new-product-card__subtitle" id="new-product-target-subtitle">Pivot metrics from the NEW PRODUCT PERFORMANCE sheet</p>
+            <p class="new-product-card__subtitle" id="new-product-target-subtitle">Pivot metrics derived from the Main sheet dataset</p>
           </div>
           <button type="button" class="filter-button" id="new-product-target-filter-button" aria-haspopup="dialog" aria-expanded="false">Filter rows</button>
         </header>
@@ -1706,7 +1706,7 @@
         <header class="new-product-card__header">
           <div class="new-product-card__heading">
             <h2 class="new-product-card__title">New product targets vs performance (pivot 2)</h2>
-            <p class="new-product-card__subtitle" id="new-product-secondary-subtitle">Pivot metrics from the NEW PRODUCT PERFORMANCE sheet</p>
+            <p class="new-product-card__subtitle" id="new-product-secondary-subtitle">Pivot metrics derived from the Main sheet dataset</p>
           </div>
           <button type="button" class="filter-button" id="new-product-secondary-filter-button" aria-haspopup="dialog" aria-expanded="false">Filter rows</button>
         </header>
@@ -2034,11 +2034,6 @@
       'Regular',
     ];
     const EXCEL_MAIN_SHEET_CANDIDATES = ['Main', 'MAIN'];
-    const EXCEL_NEW_PRODUCT_SHEET_CANDIDATES = [
-      'NEW PRODUCT PERFORMANCE',
-      'NEW PRODUCT',
-      'New Product Performance',
-    ];
     const EXCEL_KEY_COLUMN_NAMES = ['ORDER NO', 'Order No', 'ORDER NO.', 'ORDER #', 'Plain Order No'];
     const EXCEL_MAIN_KEY_COLUMN_NAMES = ['SKU', 'Sr. No.', 'NAME', 'DC LIST'];
     const NEW_PRODUCT_FILTER_FIELDS = [
@@ -2075,6 +2070,42 @@
         filterTitleId: 'new-product-secondary-filter-title',
         subtitleId: 'new-product-secondary-subtitle',
         filterFieldDefinitions: NEW_PRODUCT_FILTER_FIELDS,
+      },
+    ];
+    const NEW_PRODUCT_DATASET_PIVOT_DEFINITIONS = [
+      {
+        groupColumn: 'AMZ',
+        columns: [
+          { source: 'TOTAL TARGET SALES', header: 'Sum of TOTAL TARGET SALES' },
+          { source: 'Desired Rev Till Date', header: 'Sum of Desired Rev Till Date' },
+          { source: 'ACHIVED REV', header: 'Sum of ACHIVED REV' },
+          { source: 'Diff in rev', header: 'Sum of Diff in rev' },
+          { source: 'Desired IP till Date', header: 'Sum of Desired IP till Date' },
+          { source: 'Achieved IP', header: 'Sum of Achieved IP' },
+          { source: 'Diff in IP', header: 'Sum of Diff in IP' },
+          { source: 'ADVT SPEND', header: 'Sum of ADVT SPEND' },
+        ],
+        metadata: {
+          segmentLabel: 'Channel',
+          segmentSelection: 'AMZ (Main sheet)',
+        },
+      },
+      {
+        groupColumn: 'EBAY2',
+        columns: [
+          { source: 'TOTAL TARGET SALES2', header: 'Sum of TOTAL TARGET SALES2' },
+          { source: 'Desired Rev Till Date2', header: 'Sum of Desired Rev Till Date2' },
+          { source: 'ACHIVED REV2', header: 'Sum of ACHIVED REV2' },
+          { source: 'Diff in rev2', header: 'Sum of Diff in rev2' },
+          { source: 'Desired IP till Date2', header: 'Sum of Desired IP till Date2' },
+          { source: 'Achieved IP2', header: 'Sum of Achieved IP2' },
+          { source: 'Diff in IP2', header: 'Sum of Diff in IP2' },
+          { source: 'ADVT SPEND2', header: 'Sum of ADVT SPEND2' },
+        ],
+        metadata: {
+          segmentLabel: 'Channel',
+          segmentSelection: 'EBAY2 (Main sheet)',
+        },
       },
     ];
     const newProductTableFilterRegistry = new Map();
@@ -2687,197 +2718,157 @@
       }
     }
 
-    function buildNewProductNewOldLookup(workbook) {
-      if (!workbook) {
-        return new Map();
-      }
-      const { worksheet } = findWorksheetFromWorkbook(workbook, {
-        candidates: EXCEL_MAIN_SHEET_CANDIDATES,
-        fallbackPredicate: (name) => normaliseSheetName(name).includes('main'),
-      });
-      if (!worksheet) {
-        return new Map();
-      }
-      const rawRows = XLSX.utils.sheet_to_json(worksheet, {
-        header: 1,
-        blankrows: false,
-        defval: null,
-        raw: true,
-      });
-      if (!Array.isArray(rawRows) || !rawRows.length) {
-        return new Map();
-      }
-      let headerRowIndex = -1;
-      for (let index = 0; index < rawRows.length; index += 1) {
-        const row = rawRows[index];
-        if (!Array.isArray(row)) {
-          continue;
-        }
-        const hasName = row.some((cell) => typeof cell === 'string' && cell.trim().toUpperCase() === 'NAME');
-        const hasNewOld = row.some((cell) => typeof cell === 'string' && cell.trim().toUpperCase() === 'NEW/OLD');
-        if (hasName && hasNewOld) {
-          headerRowIndex = index;
-          break;
-        }
-      }
-      if (headerRowIndex === -1) {
-        return new Map();
-      }
-      const headerRow = rawRows[headerRowIndex];
-      const nameIndex = headerRow.findIndex((cell) => typeof cell === 'string' && cell.trim().toUpperCase() === 'NAME');
-      const newOldIndex = headerRow.findIndex((cell) => typeof cell === 'string' && cell.trim().toUpperCase() === 'NEW/OLD');
-      if (nameIndex === -1 || newOldIndex === -1) {
-        return new Map();
-      }
+    function buildDatasetColumnLookup(columns) {
       const lookup = new Map();
-      for (let rowIndex = headerRowIndex + 1; rowIndex < rawRows.length; rowIndex += 1) {
-        const row = rawRows[rowIndex];
-        if (!Array.isArray(row)) {
-          continue;
-        }
-        const rawName = row[nameIndex];
-        const normalizedName = normaliseNewProductLabel(rawName);
-        if (!normalizedName) {
-          continue;
-        }
-        const rawNewOld = row[newOldIndex];
-        let textValue = '';
-        if (typeof rawNewOld === 'string') {
-          textValue = rawNewOld.trim();
-        } else if (rawNewOld !== null && rawNewOld !== undefined) {
-          textValue = String(rawNewOld).trim();
-        }
-        if (!lookup.has(normalizedName) || (textValue && !lookup.get(normalizedName))) {
-          lookup.set(normalizedName, textValue);
-        }
+      if (!Array.isArray(columns)) {
+        return lookup;
       }
+      columns.forEach((column, index) => {
+        if (typeof column !== 'string') {
+          return;
+        }
+        const key = column.trim().toLowerCase();
+        if (key && !lookup.has(key)) {
+          lookup.set(key, index);
+        }
+      });
       return lookup;
     }
 
-    function loadNewProductPivotSectionsFromExcel() {
-      if (typeof XLSX === 'undefined') {
-        return Promise.reject(new Error('Excel parser library is not available'));
+    function buildNewProductPivotFromDataset(dataset, definition) {
+      if (!dataset || !Array.isArray(dataset.columns) || !Array.isArray(dataset.rows)) {
+        return null;
       }
-      return fetch(EXCEL_WORKBOOK_PATH, { cache: 'no-store' })
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error('Unable to load Excel workbook');
+      if (!definition || !definition.groupColumn || !Array.isArray(definition.columns)) {
+        return null;
+      }
+      const columnLookup = buildDatasetColumnLookup(dataset.columns);
+      const normalise = (value) => (typeof value === 'string' ? value.trim().toLowerCase() : '');
+      const groupIndex = columnLookup.get(normalise(definition.groupColumn));
+      if (groupIndex === undefined) {
+        return null;
+      }
+      const metricDescriptors = [];
+      const headers = [];
+      definition.columns.forEach((column) => {
+        if (!column || !column.source || !column.header) {
+          return;
+        }
+        const datasetIndex = columnLookup.get(normalise(column.source));
+        if (datasetIndex === undefined) {
+          return;
+        }
+        metricDescriptors.push({ datasetIndex, header: column.header });
+        headers.push(column.header);
+      });
+      if (!metricDescriptors.length) {
+        return null;
+      }
+      const newOldIndex = columnLookup.get(normalise('NEW/OLD'));
+      const groups = [];
+      const groupLookup = new Map();
+      const normalizedTotal = TOTAL_ROW_LABEL.toLowerCase();
+
+      dataset.rows.forEach((row) => {
+        if (!Array.isArray(row)) {
+          return;
+        }
+        const rawLabel = groupIndex < row.length ? row[groupIndex] : null;
+        if (isPlaceholderValue(rawLabel)) {
+          return;
+        }
+        const label = typeof rawLabel === 'string'
+          ? rawLabel.trim()
+          : (rawLabel === null || rawLabel === undefined ? '' : String(rawLabel).trim());
+        if (!label || label.toLowerCase() === normalizedTotal) {
+          return;
+        }
+        const normalizedLabel = normaliseNewProductLabel(label);
+        if (!normalizedLabel) {
+          return;
+        }
+        let entry = groupLookup.get(normalizedLabel);
+        if (!entry) {
+          entry = {
+            label,
+            normalizedLabel,
+            totals: new Array(metricDescriptors.length).fill(0),
+            hasValue: new Array(metricDescriptors.length).fill(false),
+            newOldValues: new Set(),
+          };
+          groupLookup.set(normalizedLabel, entry);
+          groups.push(entry);
+        }
+        metricDescriptors.forEach((descriptor, descriptorIndex) => {
+          if (!descriptor) {
+            return;
           }
-          return response.arrayBuffer();
-        })
-        .then((buffer) => {
-          const workbook = XLSX.read(buffer, { type: 'array' });
-          const newOldLookup = buildNewProductNewOldLookup(workbook);
-          const { worksheet } = findWorksheetFromWorkbook(workbook, {
-            candidates: EXCEL_NEW_PRODUCT_SHEET_CANDIDATES,
-            fallbackPredicate: (name) => normaliseSheetName(name).includes('newproduct'),
-          });
-          if (!worksheet) {
-            throw new Error('NEW PRODUCT PERFORMANCE worksheet not found in workbook');
+          const value = descriptor.datasetIndex < row.length ? row[descriptor.datasetIndex] : null;
+          if (isPlaceholderValue(value)) {
+            return;
           }
-          const rawRows = XLSX.utils.sheet_to_json(worksheet, {
-            header: 1,
-            blankrows: false,
-            defval: null,
-            raw: true,
-          });
-          if (!Array.isArray(rawRows) || !rawRows.length) {
-            throw new Error('NEW PRODUCT PERFORMANCE worksheet is empty');
+          const numericValue = parseNumericValue(value);
+          if (numericValue !== null) {
+            entry.totals[descriptorIndex] += numericValue;
+            entry.hasValue[descriptorIndex] = true;
           }
-          const pivotSections = [];
-          for (let rowIndex = 0; rowIndex < rawRows.length; rowIndex += 1) {
-            const row = rawRows[rowIndex];
-            if (!Array.isArray(row)) {
-              continue;
-            }
-            if (row[1] !== 'Row Labels') {
-              continue;
-            }
-            const headerValues = row.slice(1);
-            let lastColumnIndex = headerValues.length - 1;
-            while (lastColumnIndex >= 0) {
-              const headerValue = headerValues[lastColumnIndex];
-              if (headerValue !== null && headerValue !== undefined && String(headerValue).trim() !== '') {
-                break;
-              }
-              lastColumnIndex -= 1;
-            }
-            if (lastColumnIndex < 1) {
-              continue;
-            }
-            const columns = headerValues.slice(0, lastColumnIndex + 1).map((value) => {
-              if (value === null || value === undefined) {
-                return '';
-              }
-              return typeof value === 'string' ? value : String(value);
-            });
-            const rows = [];
-            const rowAttributes = [];
-            for (let dataIndex = rowIndex + 1; dataIndex < rawRows.length; dataIndex += 1) {
-              const candidate = rawRows[dataIndex];
-              if (!Array.isArray(candidate)) {
-                break;
-              }
-              const label = candidate[1];
-              if (label === 'Row Labels' || label === 'NEW/OLD') {
-                break;
-              }
-              const values = candidate.slice(1, lastColumnIndex + 2);
-              const hasValue = values.some((value) => {
-                if (value === null || value === undefined) {
-                  return false;
-                }
-                if (typeof value === 'string') {
-                  return value.trim().length > 0;
-                }
-                return true;
-              });
-              if (!hasValue) {
-                break;
-              }
-              rows.push(values);
-              const rawLabel = values[0];
-              const normalizedLabel = normaliseNewProductLabel(rawLabel);
-              const displayLabel = typeof rawLabel === 'string'
-                ? rawLabel.trim()
-                : (rawLabel === null || rawLabel === undefined ? '' : String(rawLabel).trim());
-              const lookupValue = normalizedLabel ? newOldLookup.get(normalizedLabel) : '';
-              rowAttributes.push({
-                label: displayLabel,
-                normalizedLabel,
-                newOld: typeof lookupValue === 'string' ? lookupValue : '',
-              });
-            }
-            if (!rows.length) {
-              continue;
-            }
-            const segmentRow = rawRows[rowIndex - 2] || [];
-            const headingRow = rawRows[rowIndex - 3] || [];
-            const segmentLabel = Array.isArray(segmentRow) && typeof segmentRow[1] === 'string'
-              ? segmentRow[1].trim()
-              : '';
-            const segmentSelection = Array.isArray(segmentRow) && typeof segmentRow[2] === 'string'
-              ? segmentRow[2].trim()
-              : '';
-            const headingLabel = Array.isArray(headingRow) && typeof headingRow[1] === 'string'
-              ? headingRow[1].trim()
-              : '';
-            pivotSections.push({
-              columns,
-              rows,
-              metadata: {
-                segmentLabel,
-                segmentSelection,
-                headingLabel,
-              },
-              rowAttributes,
-            });
-          }
-          if (!pivotSections.length) {
-            throw new Error('No pivot tables found on NEW PRODUCT PERFORMANCE worksheet');
-          }
-          return pivotSections.slice(-NEW_PRODUCT_PIVOT_CONFIGS.length);
         });
+        if (newOldIndex !== undefined && newOldIndex < row.length) {
+          const rawNewOld = row[newOldIndex];
+          const trimmed = typeof rawNewOld === 'string'
+            ? rawNewOld.trim()
+            : (rawNewOld === null || rawNewOld === undefined ? '' : String(rawNewOld).trim());
+          if (trimmed) {
+            entry.newOldValues.add(trimmed);
+          }
+        }
+      });
+
+      const rows = [];
+      const rowAttributes = [];
+      groups.forEach((entry) => {
+        if (!entry.hasValue.some((value) => value)) {
+          return;
+        }
+        const values = [entry.label];
+        entry.totals.forEach((total, index) => {
+          values.push(entry.hasValue[index] ? total : '');
+        });
+        rows.push(values);
+        rowAttributes.push({
+          label: entry.label,
+          normalizedLabel: entry.normalizedLabel,
+          newOld: new Set(entry.newOldValues),
+        });
+      });
+
+      if (!rows.length) {
+        return null;
+      }
+
+      return {
+        columns: ['Row Labels', ...headers],
+        rows,
+        metadata: definition.metadata || null,
+        rowAttributes,
+      };
+    }
+
+    function buildNewProductPivotSectionsFromDataset(dataset) {
+      return NEW_PRODUCT_DATASET_PIVOT_DEFINITIONS.map((definition) => buildNewProductPivotFromDataset(dataset, definition));
+    }
+
+    function loadNewProductPivotSectionsFromDataset() {
+      const datasetSource = mainDatasetCache ? Promise.resolve(mainDatasetCache) : fetchMainDataset();
+      return datasetSource.then((dataset) => {
+        const sections = buildNewProductPivotSectionsFromDataset(dataset);
+        const hasData = Array.isArray(sections)
+          && sections.some((section) => Array.isArray(section?.rows) && section.rows.length);
+        if (!hasData) {
+          throw new Error('No new product pivot data available from the Main worksheet');
+        }
+        return sections;
+      });
     }
 
     function fetchNewProductPivotSections() {
@@ -2887,7 +2878,7 @@
       if (newProductPivotPromise) {
         return newProductPivotPromise;
       }
-      newProductPivotPromise = loadNewProductPivotSectionsFromExcel()
+      newProductPivotPromise = loadNewProductPivotSectionsFromDataset()
         .then((sections) => {
           newProductPivotCache = sections;
           newProductPivotPromise = null;
@@ -3377,22 +3368,36 @@
       const rowAttributes = Array.isArray(pivot?.rowAttributes) ? pivot.rowAttributes : [];
       const rowLabelNewOldMap = new Map();
       const newOldValues = new Set();
+      const appendNewOldValue = (valueSet, rawValue) => {
+        if (typeof rawValue !== 'string') {
+          return;
+        }
+        const trimmed = rawValue.trim();
+        if (!trimmed) {
+          return;
+        }
+        valueSet.add(trimmed);
+        newOldValues.add(trimmed);
+      };
       formattedRows.forEach((row, index) => {
         const label = row[0];
         const normalizedLabel = normaliseNewProductLabel(label);
         if (!normalizedLabel) {
           return;
         }
-        const attribute = rowAttributes[index];
-        const rawValue = attribute && typeof attribute.newOld === 'string' ? attribute.newOld.trim() : '';
         let valueSet = rowLabelNewOldMap.get(normalizedLabel);
         if (!valueSet) {
           valueSet = new Set();
           rowLabelNewOldMap.set(normalizedLabel, valueSet);
         }
-        if (rawValue) {
-          valueSet.add(rawValue);
-          newOldValues.add(rawValue);
+        const attribute = rowAttributes[index];
+        const rawNewOld = attribute ? attribute.newOld : null;
+        if (rawNewOld instanceof Set) {
+          rawNewOld.forEach((value) => appendNewOldValue(valueSet, value));
+        } else if (Array.isArray(rawNewOld)) {
+          rawNewOld.forEach((value) => appendNewOldValue(valueSet, value));
+        } else if (typeof rawNewOld === 'string') {
+          appendNewOldValue(valueSet, rawNewOld);
         }
       });
       config.rowLabelNewOldMap = rowLabelNewOldMap;
@@ -3428,7 +3433,7 @@
         }
         subtitleElement.textContent = parts.length
           ? `Segment: ${parts.join(' • ')}`
-          : 'Pivot metrics from the NEW PRODUCT PERFORMANCE sheet';
+          : 'Pivot metrics derived from the Main sheet dataset';
       }
     }
 
@@ -7130,6 +7135,7 @@
             scrollCollapse: true,
             deferRender: true,
             autoWidth: true,
+            aaSorting: [],
             order: [],
             ordering: false,
             paging: true,
