@@ -564,6 +564,85 @@
       border-color: rgba(27, 30, 40, 0.08);
       color: var(--muted);
     }
+    .new-product-card {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+    .new-product-card__header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .new-product-card__heading {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      min-width: 0;
+    }
+    .new-product-card__title {
+      margin: 0;
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .new-product-card__subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+    .new-product-grid {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 1.25rem;
+      grid-auto-rows: auto;
+    }
+    .new-product-table-container {
+      border-radius: 0.85rem;
+      border: 1px solid rgba(64, 80, 120, 0.18);
+      box-shadow: 0 12px 30px rgba(21, 32, 56, 0.12);
+      background: #fff;
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .new-product-table-wrapper {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .new-product-table-wrapper .dataTables_wrapper {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+    .new-product-table-wrapper .dataTables_scroll {
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+    }
+    .new-product-table-wrapper .dataTables_scrollBody {
+      flex: 1 1 auto !important;
+    }
+    .new-product-table {
+      width: 100%;
+      min-width: 720px;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+    .new-product-status {
+      margin: 0 2rem 1rem;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+    .new-product-status[data-state='error'] {
+      color: #c0392b;
+    }
     .sku-table-container {
       border-radius: 0.85rem;
       border: 1px solid rgba(64, 80, 120, 0.18);
@@ -1568,10 +1647,35 @@
     </section>
   </div>
   <div class="tab-panel" id="tab-new-product" data-tab="new-product" role="tabpanel" aria-labelledby="tab-new-product-button" aria-hidden="true">
-    <section class="grid">
-      <article class="card placeholder-card">
-        <h2 class="placeholder-card__title">New Product Performance</h2>
-        <p class="placeholder-card__message">Insights from the NEW PRODUCT PERFORMANCE sheet will be added soon.</p>
+    <div class="new-product-status" id="new-product-status" role="status" hidden></div>
+    <section class="grid new-product-grid">
+      <article class="card new-product-card">
+        <header class="new-product-card__header">
+          <div class="new-product-card__heading">
+            <h2 class="new-product-card__title">New product targets vs performance</h2>
+            <p class="new-product-card__subtitle" id="new-product-target-subtitle">Pivot metrics from the NEW PRODUCT PERFORMANCE sheet</p>
+          </div>
+          <button type="button" class="filter-button" id="new-product-target-filter-button" aria-haspopup="dialog" aria-expanded="false">Filter rows</button>
+        </header>
+        <div class="new-product-table-container">
+          <div class="new-product-table-wrapper">
+            <table id="new-product-target-table" class="display new-product-table" style="width:100%"></table>
+          </div>
+        </div>
+      </article>
+      <article class="card new-product-card">
+        <header class="new-product-card__header">
+          <div class="new-product-card__heading">
+            <h2 class="new-product-card__title">New product targets vs performance (pivot 2)</h2>
+            <p class="new-product-card__subtitle" id="new-product-secondary-subtitle">Pivot metrics from the NEW PRODUCT PERFORMANCE sheet</p>
+          </div>
+          <button type="button" class="filter-button" id="new-product-secondary-filter-button" aria-haspopup="dialog" aria-expanded="false">Filter rows</button>
+        </header>
+        <div class="new-product-table-container">
+          <div class="new-product-table-wrapper">
+            <table id="new-product-secondary-table" class="display new-product-table" style="width:100%"></table>
+          </div>
+        </div>
       </article>
     </section>
   </div>
@@ -1685,6 +1789,36 @@
       </article>
     </section>
   </div>
+  <div class="regular-filter" id="new-product-target-filter" hidden aria-hidden="true">
+    <div class="regular-filter__backdrop"></div>
+    <div class="regular-filter__dialog" role="dialog" aria-modal="true" aria-labelledby="new-product-target-filter-title">
+      <div class="regular-filter__header">
+        <h3 class="regular-filter__title" id="new-product-target-filter-title">Filter pivot rows</h3>
+        <button type="button" class="regular-filter__close" aria-label="Close filters">&times;</button>
+      </div>
+      <div class="regular-filter__options" id="new-product-target-filter-options" role="group" aria-label="Filter values"></div>
+      <p class="regular-filter__empty" id="new-product-target-filter-empty" hidden>No filter values available</p>
+      <div class="regular-filter__footer">
+        <button type="button" class="regular-filter__reset" id="new-product-target-filter-reset">Reset</button>
+        <button type="button" class="regular-filter__apply" id="new-product-target-filter-apply">Apply</button>
+      </div>
+    </div>
+  </div>
+  <div class="regular-filter" id="new-product-secondary-filter" hidden aria-hidden="true">
+    <div class="regular-filter__backdrop"></div>
+    <div class="regular-filter__dialog" role="dialog" aria-modal="true" aria-labelledby="new-product-secondary-filter-title">
+      <div class="regular-filter__header">
+        <h3 class="regular-filter__title" id="new-product-secondary-filter-title">Filter pivot rows</h3>
+        <button type="button" class="regular-filter__close" aria-label="Close filters">&times;</button>
+      </div>
+      <div class="regular-filter__options" id="new-product-secondary-filter-options" role="group" aria-label="Filter values"></div>
+      <p class="regular-filter__empty" id="new-product-secondary-filter-empty" hidden>No filter values available</p>
+      <div class="regular-filter__footer">
+        <button type="button" class="regular-filter__reset" id="new-product-secondary-filter-reset">Reset</button>
+        <button type="button" class="regular-filter__apply" id="new-product-secondary-filter-apply">Apply</button>
+      </div>
+    </div>
+  </div>
   <div class="regular-filter main-filter" id="main-filter" hidden aria-hidden="true">
     <div class="regular-filter__backdrop"></div>
     <div class="regular-filter__dialog" role="dialog" aria-modal="true" aria-labelledby="main-filter-title">
@@ -1749,6 +1883,7 @@
     const loFilterButtonElement = document.getElementById('lo-filter-button');
     const platformFilterButtonElement = document.getElementById('platform-filter-button');
     const dashboardFilterButtonElement = document.getElementById('dashboard-filter-button');
+    const newProductStatusElement = document.getElementById('new-product-status');
 
     let regularTable;
     let regularTableInitialised = false;
@@ -1777,6 +1912,9 @@
     let mainDashboardInitialised = false;
     let mainDashboardPivotCache = null;
     let dashboardPivotPromise = null;
+    let newProductInitialised = false;
+    let newProductPivotCache = null;
+    let newProductPivotPromise = null;
 
     const NUMERIC_COLUMN_EXCLUSIONS = new Set(['ORDER NO', 'PLAIN ORDER NO', 'ORDER #', 'ORDER NO.', 'CHECKOUT']);
     const ZERO_DECIMAL_COLUMNS = new Set(['qty', 'order no', 'plain order no', 'order no.', 'order #']);
@@ -1849,8 +1987,39 @@
       'Regular',
     ];
     const EXCEL_MAIN_SHEET_CANDIDATES = ['Main', 'MAIN'];
+    const EXCEL_NEW_PRODUCT_SHEET_CANDIDATES = [
+      'NEW PRODUCT PERFORMANCE',
+      'NEW PRODUCT',
+      'New Product Performance',
+    ];
     const EXCEL_KEY_COLUMN_NAMES = ['ORDER NO', 'Order No', 'ORDER NO.', 'ORDER #', 'Plain Order No'];
     const EXCEL_MAIN_KEY_COLUMN_NAMES = ['SKU', 'Sr. No.', 'NAME', 'DC LIST'];
+    const NEW_PRODUCT_PIVOT_CONFIGS = [
+      {
+        id: 'new-product-target',
+        tableId: 'new-product-target-table',
+        filterButtonId: 'new-product-target-filter-button',
+        filterContainerId: 'new-product-target-filter',
+        filterOptionsId: 'new-product-target-filter-options',
+        filterApplyId: 'new-product-target-filter-apply',
+        filterResetId: 'new-product-target-filter-reset',
+        filterEmptyId: 'new-product-target-filter-empty',
+        filterTitleId: 'new-product-target-filter-title',
+        subtitleId: 'new-product-target-subtitle',
+      },
+      {
+        id: 'new-product-secondary',
+        tableId: 'new-product-secondary-table',
+        filterButtonId: 'new-product-secondary-filter-button',
+        filterContainerId: 'new-product-secondary-filter',
+        filterOptionsId: 'new-product-secondary-filter-options',
+        filterApplyId: 'new-product-secondary-filter-apply',
+        filterResetId: 'new-product-secondary-filter-reset',
+        filterEmptyId: 'new-product-secondary-filter-empty',
+        filterTitleId: 'new-product-secondary-filter-title',
+        subtitleId: 'new-product-secondary-subtitle',
+      },
+    ];
     const DASHBOARD_PIVOT_CONFIGS = [
       {
         id: 'name',
@@ -2383,6 +2552,499 @@
           throw error;
         });
       return skuSummaryPivotPromise;
+    }
+
+    function showNewProductStatus(message, state = 'info') {
+      if (!newProductStatusElement) {
+        return;
+      }
+      if (!message) {
+        newProductStatusElement.textContent = '';
+        newProductStatusElement.hidden = true;
+        newProductStatusElement.removeAttribute('data-state');
+        return;
+      }
+      newProductStatusElement.textContent = message;
+      newProductStatusElement.hidden = false;
+      if (state && state !== 'info') {
+        newProductStatusElement.dataset.state = state;
+      } else {
+        newProductStatusElement.removeAttribute('data-state');
+      }
+    }
+
+    function loadNewProductPivotSectionsFromExcel() {
+      if (typeof XLSX === 'undefined') {
+        return Promise.reject(new Error('Excel parser library is not available'));
+      }
+      return fetch(EXCEL_WORKBOOK_PATH, { cache: 'no-store' })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error('Unable to load Excel workbook');
+          }
+          return response.arrayBuffer();
+        })
+        .then((buffer) => {
+          const workbook = XLSX.read(buffer, { type: 'array' });
+          const { worksheet } = findWorksheetFromWorkbook(workbook, {
+            candidates: EXCEL_NEW_PRODUCT_SHEET_CANDIDATES,
+            fallbackPredicate: (name) => normaliseSheetName(name).includes('newproduct'),
+          });
+          if (!worksheet) {
+            throw new Error('NEW PRODUCT PERFORMANCE worksheet not found in workbook');
+          }
+          const rawRows = XLSX.utils.sheet_to_json(worksheet, {
+            header: 1,
+            blankrows: false,
+            defval: null,
+            raw: true,
+          });
+          if (!Array.isArray(rawRows) || !rawRows.length) {
+            throw new Error('NEW PRODUCT PERFORMANCE worksheet is empty');
+          }
+          const pivotSections = [];
+          for (let rowIndex = 0; rowIndex < rawRows.length; rowIndex += 1) {
+            const row = rawRows[rowIndex];
+            if (!Array.isArray(row)) {
+              continue;
+            }
+            if (row[1] !== 'Row Labels') {
+              continue;
+            }
+            const headerValues = row.slice(1);
+            let lastColumnIndex = headerValues.length - 1;
+            while (lastColumnIndex >= 0) {
+              const headerValue = headerValues[lastColumnIndex];
+              if (headerValue !== null && headerValue !== undefined && String(headerValue).trim() !== '') {
+                break;
+              }
+              lastColumnIndex -= 1;
+            }
+            if (lastColumnIndex < 1) {
+              continue;
+            }
+            const columns = headerValues.slice(0, lastColumnIndex + 1).map((value) => {
+              if (value === null || value === undefined) {
+                return '';
+              }
+              return typeof value === 'string' ? value : String(value);
+            });
+            const rows = [];
+            for (let dataIndex = rowIndex + 1; dataIndex < rawRows.length; dataIndex += 1) {
+              const candidate = rawRows[dataIndex];
+              if (!Array.isArray(candidate)) {
+                break;
+              }
+              const label = candidate[1];
+              if (label === 'Row Labels' || label === 'NEW/OLD') {
+                break;
+              }
+              const values = candidate.slice(1, lastColumnIndex + 2);
+              const hasValue = values.some((value) => {
+                if (value === null || value === undefined) {
+                  return false;
+                }
+                if (typeof value === 'string') {
+                  return value.trim().length > 0;
+                }
+                return true;
+              });
+              if (!hasValue) {
+                break;
+              }
+              rows.push(values);
+            }
+            if (!rows.length) {
+              continue;
+            }
+            const segmentRow = rawRows[rowIndex - 2] || [];
+            const headingRow = rawRows[rowIndex - 3] || [];
+            const segmentLabel = Array.isArray(segmentRow) && typeof segmentRow[1] === 'string'
+              ? segmentRow[1].trim()
+              : '';
+            const segmentSelection = Array.isArray(segmentRow) && typeof segmentRow[2] === 'string'
+              ? segmentRow[2].trim()
+              : '';
+            const headingLabel = Array.isArray(headingRow) && typeof headingRow[1] === 'string'
+              ? headingRow[1].trim()
+              : '';
+            pivotSections.push({
+              columns,
+              rows,
+              metadata: {
+                segmentLabel,
+                segmentSelection,
+                headingLabel,
+              },
+            });
+          }
+          if (!pivotSections.length) {
+            throw new Error('No pivot tables found on NEW PRODUCT PERFORMANCE worksheet');
+          }
+          return pivotSections.slice(-NEW_PRODUCT_PIVOT_CONFIGS.length);
+        });
+    }
+
+    function fetchNewProductPivotSections() {
+      if (Array.isArray(newProductPivotCache) && newProductPivotCache.length) {
+        return Promise.resolve(newProductPivotCache);
+      }
+      if (newProductPivotPromise) {
+        return newProductPivotPromise;
+      }
+      newProductPivotPromise = loadNewProductPivotSectionsFromExcel()
+        .then((sections) => {
+          newProductPivotCache = sections;
+          newProductPivotPromise = null;
+          return sections;
+        })
+        .catch((error) => {
+          newProductPivotPromise = null;
+          throw error;
+        });
+      return newProductPivotPromise;
+    }
+
+    function updateNewProductFilterButtonState(config) {
+      if (!config) {
+        return;
+      }
+      const button = config.filterButton || document.getElementById(config.filterButtonId);
+      if (!button) {
+        return;
+      }
+      const values = Array.isArray(config.availableValues) ? config.availableValues : [];
+      if (!values.length) {
+        button.setAttribute('aria-disabled', 'true');
+        button.disabled = true;
+        button.setAttribute('data-active', 'false');
+        return;
+      }
+      button.disabled = false;
+      button.removeAttribute('aria-disabled');
+      const isActive = config.activeSelection instanceof Set;
+      button.setAttribute('data-active', isActive ? 'true' : 'false');
+    }
+
+    function updateNewProductTableSearch(config) {
+      if (!config || !config.table) {
+        return;
+      }
+      const column = config.table.column(0);
+      const selection = config.activeSelection;
+      if (selection === null || selection === undefined) {
+        column.search('', false, false);
+      } else if (selection instanceof Set) {
+        const values = Array.from(selection);
+        if (!values.length) {
+          column.search('^(?!)', true, false);
+        } else {
+          const safeValues = values.map((value) => escapeRegex(value));
+          column.search(`^(${safeValues.join('|')})$`, true, false);
+        }
+      }
+    }
+
+    function renderNewProductFilterOptions(config) {
+      if (!config || !config.filterOptionsElement) {
+        return;
+      }
+      const values = Array.isArray(config.availableValues) ? config.availableValues : [];
+      if (!values.length) {
+        config.filterOptionsElement.innerHTML = '';
+        if (config.filterEmptyElement) {
+          config.filterEmptyElement.hidden = false;
+        }
+        if (config.filterApplyButton) {
+          config.filterApplyButton.disabled = true;
+        }
+        if (config.filterResetButton) {
+          config.filterResetButton.disabled = true;
+        }
+        return;
+      }
+      if (config.filterEmptyElement) {
+        config.filterEmptyElement.hidden = true;
+      }
+      if (config.filterApplyButton) {
+        config.filterApplyButton.disabled = false;
+      }
+      if (config.filterResetButton) {
+        config.filterResetButton.disabled = false;
+      }
+      const selection = config.pendingSelection instanceof Set || config.pendingSelection === null
+        ? config.pendingSelection
+        : (config.activeSelection instanceof Set ? new Set(config.activeSelection) : null);
+      config.pendingSelection = selection instanceof Set ? new Set(selection) : selection;
+      const optionsMarkup = values
+        .map((value, index) => {
+          const checkboxId = `${config.id}-filter-option-${index}`;
+          const checked = selection === null || (selection instanceof Set && selection.has(value));
+          const checkedAttr = checked ? ' checked' : '';
+          const safeLabel = escapeHtml(value);
+          return `<label class="regular-filter__option" for="${checkboxId}"><input type="checkbox" id="${checkboxId}" value="${safeLabel}"${checkedAttr}><span>${safeLabel}</span></label>`;
+        })
+        .join('');
+      config.filterOptionsElement.innerHTML = optionsMarkup;
+      const checkboxes = config.filterOptionsElement.querySelectorAll('input[type="checkbox"]');
+      checkboxes.forEach((checkbox) => {
+        checkbox.addEventListener('change', (event) => {
+          const target = event.target;
+          const { checked } = target;
+          const value = target.value;
+          let selectionSet = config.pendingSelection;
+          if (selectionSet === null) {
+            selectionSet = new Set(values);
+          } else if (selectionSet instanceof Set) {
+            selectionSet = new Set(selectionSet);
+          } else {
+            selectionSet = new Set(values);
+          }
+          if (checked) {
+            selectionSet.add(value);
+          } else {
+            selectionSet.delete(value);
+          }
+          if (selectionSet.size === values.length) {
+            selectionSet = null;
+          }
+          config.pendingSelection = selectionSet;
+        });
+      });
+    }
+
+    function openNewProductFilter(config) {
+      if (!config || !config.filterContainer) {
+        return;
+      }
+      config.pendingSelection = config.activeSelection instanceof Set
+        ? new Set(config.activeSelection)
+        : null;
+      renderNewProductFilterOptions(config);
+      config.filterContainer.removeAttribute('hidden');
+      config.filterContainer.classList.add('is-visible');
+      config.filterContainer.setAttribute('aria-hidden', 'false');
+      if (config.filterButton) {
+        config.filterButton.setAttribute('aria-expanded', 'true');
+      }
+      const firstCheckbox = config.filterOptionsElement
+        ? config.filterOptionsElement.querySelector('input[type="checkbox"]')
+        : null;
+      if (firstCheckbox) {
+        firstCheckbox.focus();
+      } else if (config.filterApplyButton) {
+        config.filterApplyButton.focus();
+      }
+    }
+
+    function closeNewProductFilter(config, options = {}) {
+      if (!config || !config.filterContainer) {
+        return;
+      }
+      config.filterContainer.classList.remove('is-visible');
+      config.filterContainer.setAttribute('aria-hidden', 'true');
+      config.filterContainer.setAttribute('hidden', '');
+      if (config.filterButton) {
+        config.filterButton.setAttribute('aria-expanded', 'false');
+      }
+      config.pendingSelection = config.activeSelection instanceof Set
+        ? new Set(config.activeSelection)
+        : null;
+      if (options.returnFocus !== false && config.filterButton && typeof config.filterButton.focus === 'function') {
+        config.filterButton.focus();
+      }
+    }
+
+    function applyNewProductFilter(config) {
+      if (!config) {
+        return;
+      }
+      const pendingSelection = config.pendingSelection;
+      if (pendingSelection === null) {
+        config.activeSelection = null;
+      } else if (pendingSelection instanceof Set) {
+        config.activeSelection = new Set(pendingSelection);
+      } else {
+        config.activeSelection = null;
+      }
+      updateNewProductTableSearch(config);
+      if (config.table) {
+        config.table.draw();
+      }
+      updateNewProductFilterButtonState(config);
+      closeNewProductFilter(config);
+    }
+
+    function setupNewProductFilter(config) {
+      if (!config) {
+        return;
+      }
+      config.filterButton = document.getElementById(config.filterButtonId);
+      config.filterContainer = document.getElementById(config.filterContainerId);
+      config.filterOptionsElement = document.getElementById(config.filterOptionsId);
+      config.filterApplyButton = document.getElementById(config.filterApplyId);
+      config.filterResetButton = document.getElementById(config.filterResetId);
+      config.filterEmptyElement = document.getElementById(config.filterEmptyId);
+      config.filterCloseButton = config.filterContainer
+        ? config.filterContainer.querySelector('.regular-filter__close')
+        : null;
+      if (!config.filterButton || !config.filterContainer) {
+        return;
+      }
+      config.filterContainer.setAttribute('hidden', '');
+      config.filterButton.addEventListener('click', () => {
+        if (config.filterContainer.classList.contains('is-visible')) {
+          closeNewProductFilter(config);
+        } else {
+          openNewProductFilter(config);
+        }
+      });
+      if (config.filterCloseButton) {
+        config.filterCloseButton.addEventListener('click', () => closeNewProductFilter(config));
+      }
+      config.filterContainer.addEventListener('click', (event) => {
+        const target = event.target;
+        if (target === config.filterContainer || (target instanceof HTMLElement && target.classList.contains('regular-filter__backdrop'))) {
+          closeNewProductFilter(config);
+        }
+      });
+      config.filterContainer.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          closeNewProductFilter(config);
+        }
+      });
+      if (config.filterApplyButton) {
+        config.filterApplyButton.addEventListener('click', () => applyNewProductFilter(config));
+      }
+      if (config.filterResetButton) {
+        config.filterResetButton.addEventListener('click', () => {
+          config.pendingSelection = null;
+          applyNewProductFilter(config);
+        });
+      }
+    }
+
+    function renderNewProductPivotTable(config, pivot) {
+      const tableElement = document.getElementById(config.tableId);
+      if (!tableElement) {
+        return;
+      }
+      if ($.fn.DataTable.isDataTable(tableElement)) {
+        $(tableElement).DataTable().destroy();
+      }
+      tableElement.innerHTML = '';
+      const columns = Array.isArray(pivot?.columns) ? pivot.columns.slice() : [];
+      const rows = Array.isArray(pivot?.rows) ? pivot.rows.slice() : [];
+      if (!columns.length || !rows.length) {
+        tableElement.innerHTML = '<tbody><tr><td>No data available</td></tr></tbody>';
+        config.availableValues = [];
+        config.table = null;
+        updateNewProductFilterButtonState(config);
+        return;
+      }
+      const dataColumns = columns.map((title) => ({ title }));
+      const formattedRows = rows.map((row) => {
+        return columns.map((columnName, columnIndex) => formatCellValue(row[columnIndex], columnName));
+      });
+      const columnDefs = columns.map((_, index) => ({
+        targets: index,
+        className: index === 0 ? 'cell-label' : 'cell-numeric',
+      }));
+      const table = $(tableElement).DataTable({
+        data: formattedRows,
+        columns: dataColumns,
+        columnDefs,
+        scrollX: true,
+        deferRender: true,
+        paging: false,
+        ordering: false,
+        info: false,
+        searching: false,
+        autoWidth: false,
+      });
+      config.table = table;
+      const labelValues = formattedRows.map((row) => row[0]).filter((value) => typeof value === 'string' && value.length);
+      config.availableValues = Array.from(new Set(labelValues));
+      if (!(config.activeSelection instanceof Set) && config.activeSelection !== null) {
+        config.activeSelection = null;
+      }
+      if (config.activeSelection instanceof Set) {
+        const validValues = Array.from(config.activeSelection).filter((value) => config.availableValues.includes(value));
+        config.activeSelection = validValues.length ? new Set(validValues) : null;
+      }
+      updateNewProductTableSearch(config);
+      if (config.table) {
+        config.table.draw();
+      }
+      if (!config.filterInitialised) {
+        setupNewProductFilter(config);
+        config.filterInitialised = true;
+      }
+      updateNewProductFilterButtonState(config);
+      const subtitleElement = document.getElementById(config.subtitleId);
+      if (subtitleElement) {
+        const parts = [];
+        const meta = pivot?.metadata || {};
+        if (typeof meta.segmentLabel === 'string' && meta.segmentLabel.trim().length) {
+          parts.push(meta.segmentLabel.trim());
+        }
+        if (typeof meta.segmentSelection === 'string' && meta.segmentSelection.trim().length) {
+          parts.push(meta.segmentSelection.trim());
+        }
+        subtitleElement.textContent = parts.length
+          ? `Segment: ${parts.join(' • ')}`
+          : 'Pivot metrics from the NEW PRODUCT PERFORMANCE sheet';
+      }
+    }
+
+    function renderNewProductPivots(sections) {
+      if (!Array.isArray(sections) || !sections.length) {
+        NEW_PRODUCT_PIVOT_CONFIGS.forEach((config) => {
+          const tableElement = document.getElementById(config.tableId);
+          if (tableElement) {
+            tableElement.innerHTML = '<tbody><tr><td>No data available</td></tr></tbody>';
+          }
+          config.availableValues = [];
+          config.table = null;
+          updateNewProductFilterButtonState(config);
+        });
+        showNewProductStatus('No new product pivot data available', 'error');
+        return;
+      }
+      NEW_PRODUCT_PIVOT_CONFIGS.forEach((config, index) => {
+        const pivot = sections[index];
+        if (pivot) {
+          renderNewProductPivotTable(config, pivot);
+        } else {
+          const tableElement = document.getElementById(config.tableId);
+          if (tableElement) {
+            tableElement.innerHTML = '<tbody><tr><td>No data available</td></tr></tbody>';
+          }
+          config.availableValues = [];
+          config.table = null;
+          updateNewProductFilterButtonState(config);
+        }
+      });
+      showNewProductStatus('');
+    }
+
+    function loadNewProductPivots() {
+      if (newProductInitialised && Array.isArray(newProductPivotCache) && newProductPivotCache.length) {
+        renderNewProductPivots(newProductPivotCache);
+        return;
+      }
+      showNewProductStatus('Loading new product pivots…');
+      fetchNewProductPivotSections()
+        .then((sections) => {
+          newProductInitialised = true;
+          newProductPivotCache = sections;
+          renderNewProductPivots(sections);
+        })
+        .catch((error) => {
+          console.error('Failed to load new product pivots:', error);
+          showNewProductStatus(error.message || 'Unable to load new product pivots', 'error');
+        });
     }
 
     function getStickyOffsetValue() {
@@ -3017,6 +3679,9 @@
       } else if (targetTab === 'sku-summary') {
         closeHeaderMenu();
         loadSkuSummaryTable();
+      } else if (targetTab === 'new-product') {
+        closeHeaderMenu();
+        loadNewProductPivots();
       } else {
         closeHeaderMenu();
         if (targetTab === 'lo') {
@@ -3112,6 +3777,7 @@
     }
 
     setActiveTab('regular');
+    NEW_PRODUCT_PIVOT_CONFIGS.forEach((config) => updateNewProductFilterButtonState(config));
     updateStickyOffset();
     window.addEventListener('resize', () => {
       updateStickyOffset();
