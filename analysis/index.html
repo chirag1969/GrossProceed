@@ -1907,7 +1907,7 @@
       },
     ];
     const EXCEL_DEFAULT_HEADER_SEARCH_VALUES = EXCEL_KEY_COLUMN_NAMES;
-    const EXCEL_MAX_BLANK_ROWS = 250;
+    const EXCEL_MAX_BLANK_ROWS = 2000;
 
     let loSalesOrderCache = [];
     let loDisplayNameOverridesCache = new Map();
@@ -4056,6 +4056,7 @@
       const onChange = typeof options.onChange === 'function' ? options.onChange : handleFilterChange;
       const optionsForColumn = Array.isArray(valueOptions) ? valueOptions[activeColumnIndex] || [] : [];
       const selectedValues = filters[activeColumnIndex] ? [...filters[activeColumnIndex]] : [];
+      const sortingEnabled = options.allowSorting !== false;
 
       const optionsMarkup = optionsForColumn.map((value) => {
         const checked = selectedValues.includes(value) ? 'checked' : '';
@@ -4067,17 +4068,22 @@
       }).join('');
       const hasOptions = optionsForColumn.length > 0;
 
-      headerMenuElement.innerHTML = `
-        <div class="header-menu__header">
-          <h3 class="header-menu__title">${columnTitle}</h3>
-          <button type="button" class="header-menu__close" aria-label="Close menu">&times;</button>
-        </div>
+      const sortControlsMarkup = sortingEnabled
+        ? `
         <div class="header-menu__section">
           <div class="header-menu__buttons">
             <button type="button" class="header-menu__button" data-sort="asc">Sort ascending</button>
             <button type="button" class="header-menu__button" data-sort="desc">Sort descending</button>
           </div>
+        </div>`
+        : '';
+
+      headerMenuElement.innerHTML = `
+        <div class="header-menu__header">
+          <h3 class="header-menu__title">${columnTitle}</h3>
+          <button type="button" class="header-menu__close" aria-label="Close menu">&times;</button>
         </div>
+        ${sortControlsMarkup}
         <div class="header-menu__section">
           <label for="header-menu-search" class="sr-only">Search values</label>
           <input id="header-menu-search" class="header-menu__search" type="search" placeholder="Search values" autocomplete="off">
@@ -5950,6 +5956,7 @@
             deferRender: true,
             autoWidth: true,
             order: [],
+            ordering: false,
             paging: true,
             pageLength: REGULAR_TABLE_PAGE_LENGTH,
             lengthChange: false,
@@ -5960,13 +5967,13 @@
           moveRegularTablePagination();
           columnValueOptions = buildColumnOptions(augmentedDataset);
           initializeRegularFilterControls(augmentedDataset);
-          wireHeaderEvents(regularTable);
+          wireHeaderEvents(regularTable, { allowSorting: false });
           applyTableHeight(regularTable);
           if (SHOW_REGULAR_TOTAL_ROW) {
             updateRegularTableFooter(regularTable);
           }
           regularTable.on('draw.dt', () => {
-            wireHeaderEvents(regularTable);
+            wireHeaderEvents(regularTable, { allowSorting: false });
             applyTableHeight(regularTable);
             if (SHOW_REGULAR_TOTAL_ROW) {
               updateRegularTableFooter(regularTable);
