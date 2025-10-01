@@ -1414,6 +1414,45 @@
       flex-direction: column;
       gap: 0.35rem;
     }
+    .regular-filter__field-options {
+      display: inline-flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+    }
+    .regular-filter__field-button {
+      border-radius: 999px;
+      border: 1px solid rgba(27, 30, 40, 0.2);
+      padding: 0.35rem 0.85rem;
+      background: #fff;
+      color: var(--muted);
+      font: inherit;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .regular-filter__field-button:hover {
+      border-color: rgba(20, 90, 252, 0.65);
+      color: var(--text);
+      box-shadow: 0 2px 6px rgba(20, 90, 252, 0.15);
+    }
+    .regular-filter__field-button:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+    .regular-filter__field-button[aria-pressed='true'] {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 4px 12px rgba(20, 90, 252, 0.35);
+    }
+    .regular-filter__field-button:disabled,
+    .regular-filter__field-button[aria-disabled='true'] {
+      opacity: 0.55;
+      cursor: default;
+      box-shadow: none;
+    }
     .regular-filter__label {
       font-size: 0.8rem;
       font-weight: 600;
@@ -1796,6 +1835,10 @@
         <h3 class="regular-filter__title" id="new-product-target-filter-title">Filter pivot rows</h3>
         <button type="button" class="regular-filter__close" aria-label="Close filters">&times;</button>
       </div>
+      <div class="regular-filter__field">
+        <span class="regular-filter__label" id="new-product-target-filter-field-label">Field</span>
+        <div class="regular-filter__field-options" id="new-product-target-filter-field-options" role="group" aria-labelledby="new-product-target-filter-field-label"></div>
+      </div>
       <div class="regular-filter__options" id="new-product-target-filter-options" role="group" aria-label="Filter values"></div>
       <p class="regular-filter__empty" id="new-product-target-filter-empty" hidden>No filter values available</p>
       <div class="regular-filter__footer">
@@ -1810,6 +1853,10 @@
       <div class="regular-filter__header">
         <h3 class="regular-filter__title" id="new-product-secondary-filter-title">Filter pivot rows</h3>
         <button type="button" class="regular-filter__close" aria-label="Close filters">&times;</button>
+      </div>
+      <div class="regular-filter__field">
+        <span class="regular-filter__label" id="new-product-secondary-filter-field-label">Field</span>
+        <div class="regular-filter__field-options" id="new-product-secondary-filter-field-options" role="group" aria-labelledby="new-product-secondary-filter-field-label"></div>
       </div>
       <div class="regular-filter__options" id="new-product-secondary-filter-options" role="group" aria-label="Filter values"></div>
       <p class="regular-filter__empty" id="new-product-secondary-filter-empty" hidden>No filter values available</p>
@@ -1994,6 +2041,10 @@
     ];
     const EXCEL_KEY_COLUMN_NAMES = ['ORDER NO', 'Order No', 'ORDER NO.', 'ORDER #', 'Plain Order No'];
     const EXCEL_MAIN_KEY_COLUMN_NAMES = ['SKU', 'Sr. No.', 'NAME', 'DC LIST'];
+    const NEW_PRODUCT_FILTER_FIELDS = [
+      { id: 'row', label: 'Row labels', type: 'row', columnIndex: 0 },
+      { id: 'new-old', label: 'NEW/OLD', type: 'attribute' },
+    ];
     const NEW_PRODUCT_PIVOT_CONFIGS = [
       {
         id: 'new-product-target',
@@ -2001,11 +2052,14 @@
         filterButtonId: 'new-product-target-filter-button',
         filterContainerId: 'new-product-target-filter',
         filterOptionsId: 'new-product-target-filter-options',
+        filterFieldOptionsId: 'new-product-target-filter-field-options',
+        filterFieldLabelId: 'new-product-target-filter-field-label',
         filterApplyId: 'new-product-target-filter-apply',
         filterResetId: 'new-product-target-filter-reset',
         filterEmptyId: 'new-product-target-filter-empty',
         filterTitleId: 'new-product-target-filter-title',
         subtitleId: 'new-product-target-subtitle',
+        filterFieldDefinitions: NEW_PRODUCT_FILTER_FIELDS,
       },
       {
         id: 'new-product-secondary',
@@ -2013,13 +2067,18 @@
         filterButtonId: 'new-product-secondary-filter-button',
         filterContainerId: 'new-product-secondary-filter',
         filterOptionsId: 'new-product-secondary-filter-options',
+        filterFieldOptionsId: 'new-product-secondary-filter-field-options',
+        filterFieldLabelId: 'new-product-secondary-filter-field-label',
         filterApplyId: 'new-product-secondary-filter-apply',
         filterResetId: 'new-product-secondary-filter-reset',
         filterEmptyId: 'new-product-secondary-filter-empty',
         filterTitleId: 'new-product-secondary-filter-title',
         subtitleId: 'new-product-secondary-subtitle',
+        filterFieldDefinitions: NEW_PRODUCT_FILTER_FIELDS,
       },
     ];
+    const newProductTableFilterRegistry = new Map();
+    let newProductFilterHookRegistered = false;
     const DASHBOARD_PIVOT_CONFIGS = [
       {
         id: 'name',
@@ -2132,6 +2191,61 @@
         return '';
       }
       return value.replace(/[^0-9a-z]+/gi, '').toLowerCase();
+    }
+
+    function normaliseNewProductLabel(value) {
+      if (value === null || value === undefined) {
+        return '';
+      }
+      if (typeof value === 'string') {
+        return value.trim().toUpperCase();
+      }
+      return String(value).trim().toUpperCase();
+    }
+
+    function sortNewProductNewOldValues(values) {
+      if (!Array.isArray(values) || !values.length) {
+        return [];
+      }
+      const priorityOrder = new Map([
+        ['NEW', -2],
+        ['OLD', -1],
+      ]);
+      const normalise = (value) => {
+        if (typeof value === 'string') {
+          return value.trim().toUpperCase();
+        }
+        if (value === null || value === undefined) {
+          return '';
+        }
+        return String(value).trim().toUpperCase();
+      };
+      return values
+        .slice()
+        .filter((value, index, source) => source.indexOf(value) === index)
+        .sort((a, b) => {
+          const normalisedA = normalise(a);
+          const normalisedB = normalise(b);
+          const priorityA = priorityOrder.has(normalisedA)
+            ? priorityOrder.get(normalisedA)
+            : Number.POSITIVE_INFINITY;
+          const priorityB = priorityOrder.has(normalisedB)
+            ? priorityOrder.get(normalisedB)
+            : Number.POSITIVE_INFINITY;
+          if (priorityA !== priorityB) {
+            return priorityA - priorityB;
+          }
+          if (!normalisedA && !normalisedB) {
+            return 0;
+          }
+          if (!normalisedA) {
+            return 1;
+          }
+          if (!normalisedB) {
+            return -1;
+          }
+          return normalisedA.localeCompare(normalisedB);
+        });
     }
 
     function coerceCellValue(cell) {
@@ -2573,6 +2687,73 @@
       }
     }
 
+    function buildNewProductNewOldLookup(workbook) {
+      if (!workbook) {
+        return new Map();
+      }
+      const { worksheet } = findWorksheetFromWorkbook(workbook, {
+        candidates: EXCEL_MAIN_SHEET_CANDIDATES,
+        fallbackPredicate: (name) => normaliseSheetName(name).includes('main'),
+      });
+      if (!worksheet) {
+        return new Map();
+      }
+      const rawRows = XLSX.utils.sheet_to_json(worksheet, {
+        header: 1,
+        blankrows: false,
+        defval: null,
+        raw: true,
+      });
+      if (!Array.isArray(rawRows) || !rawRows.length) {
+        return new Map();
+      }
+      let headerRowIndex = -1;
+      for (let index = 0; index < rawRows.length; index += 1) {
+        const row = rawRows[index];
+        if (!Array.isArray(row)) {
+          continue;
+        }
+        const hasName = row.some((cell) => typeof cell === 'string' && cell.trim().toUpperCase() === 'NAME');
+        const hasNewOld = row.some((cell) => typeof cell === 'string' && cell.trim().toUpperCase() === 'NEW/OLD');
+        if (hasName && hasNewOld) {
+          headerRowIndex = index;
+          break;
+        }
+      }
+      if (headerRowIndex === -1) {
+        return new Map();
+      }
+      const headerRow = rawRows[headerRowIndex];
+      const nameIndex = headerRow.findIndex((cell) => typeof cell === 'string' && cell.trim().toUpperCase() === 'NAME');
+      const newOldIndex = headerRow.findIndex((cell) => typeof cell === 'string' && cell.trim().toUpperCase() === 'NEW/OLD');
+      if (nameIndex === -1 || newOldIndex === -1) {
+        return new Map();
+      }
+      const lookup = new Map();
+      for (let rowIndex = headerRowIndex + 1; rowIndex < rawRows.length; rowIndex += 1) {
+        const row = rawRows[rowIndex];
+        if (!Array.isArray(row)) {
+          continue;
+        }
+        const rawName = row[nameIndex];
+        const normalizedName = normaliseNewProductLabel(rawName);
+        if (!normalizedName) {
+          continue;
+        }
+        const rawNewOld = row[newOldIndex];
+        let textValue = '';
+        if (typeof rawNewOld === 'string') {
+          textValue = rawNewOld.trim();
+        } else if (rawNewOld !== null && rawNewOld !== undefined) {
+          textValue = String(rawNewOld).trim();
+        }
+        if (!lookup.has(normalizedName) || (textValue && !lookup.get(normalizedName))) {
+          lookup.set(normalizedName, textValue);
+        }
+      }
+      return lookup;
+    }
+
     function loadNewProductPivotSectionsFromExcel() {
       if (typeof XLSX === 'undefined') {
         return Promise.reject(new Error('Excel parser library is not available'));
@@ -2586,6 +2767,7 @@
         })
         .then((buffer) => {
           const workbook = XLSX.read(buffer, { type: 'array' });
+          const newOldLookup = buildNewProductNewOldLookup(workbook);
           const { worksheet } = findWorksheetFromWorkbook(workbook, {
             candidates: EXCEL_NEW_PRODUCT_SHEET_CANDIDATES,
             fallbackPredicate: (name) => normaliseSheetName(name).includes('newproduct'),
@@ -2630,6 +2812,7 @@
               return typeof value === 'string' ? value : String(value);
             });
             const rows = [];
+            const rowAttributes = [];
             for (let dataIndex = rowIndex + 1; dataIndex < rawRows.length; dataIndex += 1) {
               const candidate = rawRows[dataIndex];
               if (!Array.isArray(candidate)) {
@@ -2653,6 +2836,17 @@
                 break;
               }
               rows.push(values);
+              const rawLabel = values[0];
+              const normalizedLabel = normaliseNewProductLabel(rawLabel);
+              const displayLabel = typeof rawLabel === 'string'
+                ? rawLabel.trim()
+                : (rawLabel === null || rawLabel === undefined ? '' : String(rawLabel).trim());
+              const lookupValue = normalizedLabel ? newOldLookup.get(normalizedLabel) : '';
+              rowAttributes.push({
+                label: displayLabel,
+                normalizedLabel,
+                newOld: typeof lookupValue === 'string' ? lookupValue : '',
+              });
             }
             if (!rows.length) {
               continue;
@@ -2676,6 +2870,7 @@
                 segmentSelection,
                 headingLabel,
               },
+              rowAttributes,
             });
           }
           if (!pivotSections.length) {
@@ -2705,6 +2900,145 @@
       return newProductPivotPromise;
     }
 
+
+    function ensureNewProductFilterHook() {
+      if (newProductFilterHookRegistered) {
+        return;
+      }
+      $.fn.dataTable.ext.search.push((settings, data) => {
+        if (!settings || !settings.sTableId) {
+          return true;
+        }
+        const config = newProductTableFilterRegistry.get(settings.sTableId);
+        if (!config) {
+          return true;
+        }
+        const filterState = config.filterState;
+        if (!filterState || !(filterState.fields instanceof Map)) {
+          return true;
+        }
+        const newOldField = filterState.fields.get('new-old');
+        if (newOldField && newOldField.activeSelection instanceof Set) {
+          if (!newOldField.activeSelection.size) {
+            return false;
+          }
+          const label = Array.isArray(data) ? data[0] : '';
+          const normalizedLabel = normaliseNewProductLabel(label);
+          const labelSet = config.rowLabelNewOldMap instanceof Map
+            ? config.rowLabelNewOldMap.get(normalizedLabel)
+            : null;
+          if (!(labelSet instanceof Set) || !labelSet.size) {
+            return false;
+          }
+          let matches = false;
+          newOldField.activeSelection.forEach((value) => {
+            if (labelSet.has(value)) {
+              matches = true;
+            }
+          });
+          return matches;
+        }
+        return true;
+      });
+      newProductFilterHookRegistered = true;
+    }
+
+    function ensureNewProductFilterState(config) {
+      if (!config) {
+        return null;
+      }
+      if (!config.filterState) {
+        const definitionsSource = Array.isArray(config.filterFieldDefinitions) && config.filterFieldDefinitions.length
+          ? config.filterFieldDefinitions
+          : NEW_PRODUCT_FILTER_FIELDS;
+        const definitions = definitionsSource.map((definition) => ({
+          id: definition.id,
+          label: definition.label || definition.id,
+          type: definition.type || 'attribute',
+          columnIndex: Number.isInteger(definition.columnIndex) ? definition.columnIndex : null,
+        }));
+        const fields = new Map();
+        definitions.forEach((definition) => {
+          fields.set(definition.id, {
+            id: definition.id,
+            label: definition.label,
+            type: definition.type,
+            columnIndex: definition.columnIndex,
+            availableValues: [],
+            activeSelection: null,
+            pendingSelection: null,
+          });
+        });
+        config.filterState = {
+          definitions,
+          fields,
+          activeFieldId: definitions[0]?.id || null,
+        };
+      }
+      return config.filterState;
+    }
+
+    function getActiveNewProductFilterField(config) {
+      const filterState = ensureNewProductFilterState(config);
+      if (!filterState) {
+        return null;
+      }
+      let field = filterState.fields.get(filterState.activeFieldId);
+      if (field && Array.isArray(field.availableValues) && field.availableValues.length) {
+        return field;
+      }
+      const fallback = filterState.definitions.find((definition) => {
+        const candidate = filterState.fields.get(definition.id);
+        return candidate && Array.isArray(candidate.availableValues) && candidate.availableValues.length;
+      });
+      if (fallback) {
+        filterState.activeFieldId = fallback.id;
+        field = filterState.fields.get(fallback.id);
+        return field;
+      }
+      return field || null;
+    }
+
+    function renderNewProductFilterFieldButtons(config) {
+      if (!config || !config.filterFieldOptionsElement) {
+        return;
+      }
+      const filterState = ensureNewProductFilterState(config);
+      if (!filterState) {
+        config.filterFieldOptionsElement.innerHTML = '';
+        return;
+      }
+      const buttonsMarkup = filterState.definitions
+        .map((definition) => {
+          const field = filterState.fields.get(definition.id);
+          const hasValues = field && Array.isArray(field.availableValues) && field.availableValues.length > 0;
+          const isActive = hasValues && filterState.activeFieldId === definition.id;
+          const pressedAttr = isActive ? ' aria-pressed="true"' : ' aria-pressed="false"';
+          const disabledAttr = hasValues ? '' : ' aria-disabled="true" disabled';
+          const safeLabel = escapeHtml(definition.label || definition.id);
+          return `<button type="button" class="regular-filter__field-button"${pressedAttr}${disabledAttr} data-field-id="${definition.id}">${safeLabel}</button>`;
+        })
+        .join('');
+      config.filterFieldOptionsElement.innerHTML = buttonsMarkup;
+      const buttons = config.filterFieldOptionsElement.querySelectorAll('button[data-field-id]');
+      buttons.forEach((button) => {
+        button.addEventListener('click', (event) => {
+          event.preventDefault();
+          const fieldId = button.getAttribute('data-field-id');
+          if (!fieldId) {
+            return;
+          }
+          const field = filterState.fields.get(fieldId);
+          if (!field || !Array.isArray(field.availableValues) || !field.availableValues.length) {
+            return;
+          }
+          filterState.activeFieldId = fieldId;
+          renderNewProductFilterFieldButtons(config);
+          renderNewProductFilterOptions(config);
+        });
+      });
+    }
+
     function updateNewProductFilterButtonState(config) {
       if (!config) {
         return;
@@ -2713,8 +3047,11 @@
       if (!button) {
         return;
       }
-      const values = Array.isArray(config.availableValues) ? config.availableValues : [];
-      if (!values.length) {
+      const filterState = ensureNewProductFilterState(config);
+      const hasValues = filterState
+        ? Array.from(filterState.fields.values()).some((field) => Array.isArray(field.availableValues) && field.availableValues.length)
+        : false;
+      if (!hasValues) {
         button.setAttribute('aria-disabled', 'true');
         button.disabled = true;
         button.setAttribute('data-active', 'false');
@@ -2722,26 +3059,32 @@
       }
       button.disabled = false;
       button.removeAttribute('aria-disabled');
-      const isActive = config.activeSelection instanceof Set;
+      const isActive = filterState
+        ? Array.from(filterState.fields.values()).some((field) => field.activeSelection instanceof Set && field.activeSelection.size > 0)
+        : false;
       button.setAttribute('data-active', isActive ? 'true' : 'false');
     }
 
-    function updateNewProductTableSearch(config) {
+    function updateNewProductTableFilters(config) {
       if (!config || !config.table) {
         return;
       }
+      const filterState = ensureNewProductFilterState(config);
+      const rowField = filterState ? filterState.fields.get('row') : null;
       const column = config.table.column(0);
-      const selection = config.activeSelection;
+      const selection = rowField ? rowField.activeSelection : null;
       if (selection === null || selection === undefined) {
         column.search('', false, false);
       } else if (selection instanceof Set) {
-        const values = Array.from(selection);
-        if (!values.length) {
+        if (!selection.size) {
           column.search('^(?!)', true, false);
         } else {
-          const safeValues = values.map((value) => escapeRegex(value));
+          const safeValues = Array.from(selection).map((value) => escapeRegex(value));
           column.search(`^(${safeValues.join('|')})$`, true, false);
         }
+      }
+      if (typeof config.tableId === 'string') {
+        newProductTableFilterRegistry.set(config.tableId, config);
       }
     }
 
@@ -2749,10 +3092,13 @@
       if (!config || !config.filterOptionsElement) {
         return;
       }
-      const values = Array.isArray(config.availableValues) ? config.availableValues : [];
-      if (!values.length) {
+      const filterState = ensureNewProductFilterState(config);
+      const field = getActiveNewProductFilterField(config);
+      if (!field || !Array.isArray(field.availableValues) || !field.availableValues.length) {
         config.filterOptionsElement.innerHTML = '';
         if (config.filterEmptyElement) {
+          const message = field && field.label ? `No values available for ${field.label}` : 'No filter values available';
+          config.filterEmptyElement.textContent = message;
           config.filterEmptyElement.hidden = false;
         }
         if (config.filterApplyButton) {
@@ -2772,15 +3118,16 @@
       if (config.filterResetButton) {
         config.filterResetButton.disabled = false;
       }
-      const selection = config.pendingSelection instanceof Set || config.pendingSelection === null
-        ? config.pendingSelection
-        : (config.activeSelection instanceof Set ? new Set(config.activeSelection) : null);
-      config.pendingSelection = selection instanceof Set ? new Set(selection) : selection;
-      const optionsMarkup = values
+      let selection = field.pendingSelection;
+      if (!(selection === null || selection instanceof Set)) {
+        selection = field.activeSelection instanceof Set ? new Set(field.activeSelection) : null;
+      }
+      field.pendingSelection = selection instanceof Set ? new Set(selection) : selection;
+      const optionsMarkup = field.availableValues
         .map((value, index) => {
-          const checkboxId = `${config.id}-filter-option-${index}`;
-          const checked = selection === null || (selection instanceof Set && selection.has(value));
-          const checkedAttr = checked ? ' checked' : '';
+          const checkboxId = `${config.id}-${field.id}-filter-option-${index}`;
+          const isSelected = selection === null || (selection instanceof Set && selection.has(value));
+          const checkedAttr = isSelected ? ' checked' : '';
           const safeLabel = escapeHtml(value);
           return `<label class="regular-filter__option" for="${checkboxId}"><input type="checkbox" id="${checkboxId}" value="${safeLabel}"${checkedAttr}><span>${safeLabel}</span></label>`;
         })
@@ -2792,23 +3139,23 @@
           const target = event.target;
           const { checked } = target;
           const value = target.value;
-          let selectionSet = config.pendingSelection;
+          let selectionSet = field.pendingSelection;
           if (selectionSet === null) {
-            selectionSet = new Set(values);
+            selectionSet = new Set(field.availableValues);
           } else if (selectionSet instanceof Set) {
             selectionSet = new Set(selectionSet);
           } else {
-            selectionSet = new Set(values);
+            selectionSet = new Set(field.availableValues);
           }
           if (checked) {
             selectionSet.add(value);
           } else {
             selectionSet.delete(value);
           }
-          if (selectionSet.size === values.length) {
+          if (selectionSet.size === field.availableValues.length) {
             selectionSet = null;
           }
-          config.pendingSelection = selectionSet;
+          field.pendingSelection = selectionSet;
         });
       });
     }
@@ -2817,10 +3164,20 @@
       if (!config || !config.filterContainer) {
         return;
       }
-      config.pendingSelection = config.activeSelection instanceof Set
-        ? new Set(config.activeSelection)
-        : null;
+      const filterState = ensureNewProductFilterState(config);
+      if (filterState) {
+        filterState.fields.forEach((field) => {
+          if (field.activeSelection instanceof Set) {
+            field.pendingSelection = new Set(field.activeSelection);
+          } else if (field.activeSelection === null) {
+            field.pendingSelection = null;
+          } else {
+            field.pendingSelection = null;
+          }
+        });
+      }
       renderNewProductFilterOptions(config);
+      renderNewProductFilterFieldButtons(config);
       config.filterContainer.removeAttribute('hidden');
       config.filterContainer.classList.add('is-visible');
       config.filterContainer.setAttribute('aria-hidden', 'false');
@@ -2841,15 +3198,21 @@
       if (!config || !config.filterContainer) {
         return;
       }
+      const { keepSelection } = options;
+      if (!keepSelection) {
+        const filterState = ensureNewProductFilterState(config);
+        if (filterState) {
+          filterState.fields.forEach((field) => {
+            field.pendingSelection = null;
+          });
+        }
+      }
       config.filterContainer.classList.remove('is-visible');
       config.filterContainer.setAttribute('aria-hidden', 'true');
       config.filterContainer.setAttribute('hidden', '');
       if (config.filterButton) {
         config.filterButton.setAttribute('aria-expanded', 'false');
       }
-      config.pendingSelection = config.activeSelection instanceof Set
-        ? new Set(config.activeSelection)
-        : null;
       if (options.returnFocus !== false && config.filterButton && typeof config.filterButton.focus === 'function') {
         config.filterButton.focus();
       }
@@ -2859,20 +3222,37 @@
       if (!config) {
         return;
       }
-      const pendingSelection = config.pendingSelection;
-      if (pendingSelection === null) {
-        config.activeSelection = null;
-      } else if (pendingSelection instanceof Set) {
-        config.activeSelection = new Set(pendingSelection);
-      } else {
-        config.activeSelection = null;
+      const filterState = ensureNewProductFilterState(config);
+      if (filterState) {
+        filterState.fields.forEach((field) => {
+          if (field.pendingSelection === null) {
+            field.activeSelection = null;
+          } else if (field.pendingSelection instanceof Set) {
+            field.activeSelection = new Set(field.pendingSelection);
+          } else {
+            field.activeSelection = null;
+          }
+          field.pendingSelection = null;
+        });
       }
-      updateNewProductTableSearch(config);
+      closeNewProductFilter(config, { keepSelection: true, returnFocus: true });
+      updateNewProductFilterButtonState(config);
       if (config.table) {
+        updateNewProductTableFilters(config);
         config.table.draw();
       }
-      updateNewProductFilterButtonState(config);
-      closeNewProductFilter(config);
+    }
+
+    function resetNewProductFilterState(config) {
+      const filterState = ensureNewProductFilterState(config);
+      if (filterState) {
+        filterState.fields.forEach((field) => {
+          field.availableValues = [];
+          field.activeSelection = null;
+          field.pendingSelection = null;
+        });
+      }
+      config.rowLabelNewOldMap = new Map();
     }
 
     function setupNewProductFilter(config) {
@@ -2882,19 +3262,21 @@
       config.filterButton = document.getElementById(config.filterButtonId);
       config.filterContainer = document.getElementById(config.filterContainerId);
       config.filterOptionsElement = document.getElementById(config.filterOptionsId);
+      config.filterFieldOptionsElement = document.getElementById(config.filterFieldOptionsId);
       config.filterApplyButton = document.getElementById(config.filterApplyId);
       config.filterResetButton = document.getElementById(config.filterResetId);
       config.filterEmptyElement = document.getElementById(config.filterEmptyId);
       config.filterCloseButton = config.filterContainer
         ? config.filterContainer.querySelector('.regular-filter__close')
         : null;
+      ensureNewProductFilterState(config);
       if (!config.filterButton || !config.filterContainer) {
         return;
       }
       config.filterContainer.setAttribute('hidden', '');
       config.filterButton.addEventListener('click', () => {
         if (config.filterContainer.classList.contains('is-visible')) {
-          closeNewProductFilter(config);
+          closeNewProductFilter(config, { returnFocus: false });
         } else {
           openNewProductFilter(config);
         }
@@ -2919,7 +3301,13 @@
       }
       if (config.filterResetButton) {
         config.filterResetButton.addEventListener('click', () => {
-          config.pendingSelection = null;
+          const filterState = ensureNewProductFilterState(config);
+          if (filterState) {
+            filterState.fields.forEach((field) => {
+              field.pendingSelection = null;
+              field.activeSelection = null;
+            });
+          }
           applyNewProductFilter(config);
         });
       }
@@ -2938,8 +3326,14 @@
       const rows = Array.isArray(pivot?.rows) ? pivot.rows.slice() : [];
       if (!columns.length || !rows.length) {
         tableElement.innerHTML = '<tbody><tr><td>No data available</td></tr></tbody>';
-        config.availableValues = [];
         config.table = null;
+        resetNewProductFilterState(config);
+        if (typeof config.tableId === 'string') {
+          newProductTableFilterRegistry.delete(config.tableId);
+        }
+        if (config.filterInitialised) {
+          renderNewProductFilterFieldButtons(config);
+        }
         updateNewProductFilterButtonState(config);
         return;
       }
@@ -2964,22 +3358,62 @@
         autoWidth: false,
       });
       config.table = table;
+      ensureNewProductFilterHook();
+      const filterState = ensureNewProductFilterState(config);
+      const rowField = filterState ? filterState.fields.get('row') : null;
+      const newOldField = filterState ? filterState.fields.get('new-old') : null;
       const labelValues = formattedRows.map((row) => row[0]).filter((value) => typeof value === 'string' && value.length);
-      config.availableValues = Array.from(new Set(labelValues));
-      if (!(config.activeSelection instanceof Set) && config.activeSelection !== null) {
-        config.activeSelection = null;
+      const uniqueLabels = Array.from(new Set(labelValues));
+      if (rowField) {
+        rowField.availableValues = uniqueLabels;
+        if (!(rowField.activeSelection instanceof Set) && rowField.activeSelection !== null) {
+          rowField.activeSelection = null;
+        }
+        if (rowField.activeSelection instanceof Set) {
+          const validValues = Array.from(rowField.activeSelection).filter((value) => rowField.availableValues.includes(value));
+          rowField.activeSelection = validValues.length ? new Set(validValues) : null;
+        }
       }
-      if (config.activeSelection instanceof Set) {
-        const validValues = Array.from(config.activeSelection).filter((value) => config.availableValues.includes(value));
-        config.activeSelection = validValues.length ? new Set(validValues) : null;
-      }
-      updateNewProductTableSearch(config);
-      if (config.table) {
-        config.table.draw();
+      const rowAttributes = Array.isArray(pivot?.rowAttributes) ? pivot.rowAttributes : [];
+      const rowLabelNewOldMap = new Map();
+      const newOldValues = new Set();
+      formattedRows.forEach((row, index) => {
+        const label = row[0];
+        const normalizedLabel = normaliseNewProductLabel(label);
+        if (!normalizedLabel) {
+          return;
+        }
+        const attribute = rowAttributes[index];
+        const rawValue = attribute && typeof attribute.newOld === 'string' ? attribute.newOld.trim() : '';
+        let valueSet = rowLabelNewOldMap.get(normalizedLabel);
+        if (!valueSet) {
+          valueSet = new Set();
+          rowLabelNewOldMap.set(normalizedLabel, valueSet);
+        }
+        if (rawValue) {
+          valueSet.add(rawValue);
+          newOldValues.add(rawValue);
+        }
+      });
+      config.rowLabelNewOldMap = rowLabelNewOldMap;
+      if (newOldField) {
+        newOldField.availableValues = sortNewProductNewOldValues(Array.from(newOldValues));
+        if (!(newOldField.activeSelection instanceof Set) && newOldField.activeSelection !== null) {
+          newOldField.activeSelection = null;
+        }
+        if (newOldField.activeSelection instanceof Set) {
+          const validValues = Array.from(newOldField.activeSelection).filter((value) => newOldField.availableValues.includes(value));
+          newOldField.activeSelection = validValues.length ? new Set(validValues) : null;
+        }
       }
       if (!config.filterInitialised) {
         setupNewProductFilter(config);
         config.filterInitialised = true;
+      }
+      renderNewProductFilterFieldButtons(config);
+      updateNewProductTableFilters(config);
+      if (config.table) {
+        config.table.draw();
       }
       updateNewProductFilterButtonState(config);
       const subtitleElement = document.getElementById(config.subtitleId);
@@ -3005,8 +3439,14 @@
           if (tableElement) {
             tableElement.innerHTML = '<tbody><tr><td>No data available</td></tr></tbody>';
           }
-          config.availableValues = [];
           config.table = null;
+          resetNewProductFilterState(config);
+          if (typeof config.tableId === 'string') {
+            newProductTableFilterRegistry.delete(config.tableId);
+          }
+          if (config.filterInitialised) {
+            renderNewProductFilterFieldButtons(config);
+          }
           updateNewProductFilterButtonState(config);
         });
         showNewProductStatus('No new product pivot data available', 'error');
@@ -3021,8 +3461,14 @@
           if (tableElement) {
             tableElement.innerHTML = '<tbody><tr><td>No data available</td></tr></tbody>';
           }
-          config.availableValues = [];
           config.table = null;
+          resetNewProductFilterState(config);
+          if (typeof config.tableId === 'string') {
+            newProductTableFilterRegistry.delete(config.tableId);
+          }
+          if (config.filterInitialised) {
+            renderNewProductFilterFieldButtons(config);
+          }
           updateNewProductFilterButtonState(config);
         }
       });
