@@ -4240,8 +4240,8 @@
         return null;
       }
       const fractional = numeric - serial;
-      const adjustedSerial = serial > 59 ? serial - 1 : serial;
-      const excelEpoch = Date.UTC(1899, 11, 30);
+      const adjustedSerial = serial >= 60 ? serial - 1 : serial;
+      const excelEpoch = Date.UTC(1899, 11, 31);
       const dayMilliseconds = 24 * 60 * 60 * 1000;
       const timestamp = excelEpoch + adjustedSerial * dayMilliseconds + Math.round(fractional * dayMilliseconds);
       const date = new Date(timestamp);
