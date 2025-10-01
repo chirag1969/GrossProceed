@@ -1842,7 +1842,12 @@
     const SHOW_REGULAR_TOTAL_ROW = true;
     const REGULAR_FILTER_MAX_UNIQUE_VALUES = 350;
     const EXCEL_WORKBOOK_PATH = '../09%20GROSS%20PROCEED%20SEP-25%20COMBINE.xlsx';
-    const EXCEL_REGULAR_SHEET_CANDIDATES = ['REGULAR SEP-25', 'Regular Sep-25', 'REGULAR', 'Regular'];
+    const EXCEL_REGULAR_SHEET_CANDIDATES = [
+      'REGULAR SEP-25',
+      'Regular Sep-25',
+      'REGULAR',
+      'Regular',
+    ];
     const EXCEL_MAIN_SHEET_CANDIDATES = ['Main', 'MAIN'];
     const EXCEL_KEY_COLUMN_NAMES = ['ORDER NO', 'Order No', 'ORDER NO.', 'ORDER #', 'Plain Order No'];
     const EXCEL_MAIN_KEY_COLUMN_NAMES = ['SKU', 'Sr. No.', 'NAME', 'DC LIST'];
@@ -1954,7 +1959,10 @@
     let loBaselineAdSpendPivot = null;
 
     function normaliseSheetName(value) {
-      return typeof value === 'string' ? value.trim().toLowerCase() : '';
+      if (typeof value !== 'string') {
+        return '';
+      }
+      return value.replace(/[^0-9a-z]+/gi, '').toLowerCase();
     }
 
     function coerceCellValue(cell) {
@@ -1976,31 +1984,35 @@
         return { worksheet: null, sheetName: null };
       }
       const sheetNames = workbook.SheetNames;
-      const lookup = new Map();
-      sheetNames.forEach((name) => {
-        lookup.set(normaliseSheetName(name), name);
-      });
+      const normalisedEntries = sheetNames.map((name) => ({
+        name,
+        normalised: normaliseSheetName(name),
+      }));
       const candidates = Array.isArray(options.candidates) && options.candidates.length
         ? options.candidates
         : EXCEL_REGULAR_SHEET_CANDIDATES;
       for (const candidate of candidates) {
         const normalised = normaliseSheetName(candidate);
-        if (lookup.has(normalised)) {
-          const resolvedName = lookup.get(normalised);
-          return { worksheet: workbook.Sheets[resolvedName], sheetName: resolvedName };
+        if (!normalised) {
+          continue;
+        }
+        const exactMatch = normalisedEntries.find((entry) => entry.normalised === normalised);
+        if (exactMatch) {
+          return { worksheet: workbook.Sheets[exactMatch.name], sheetName: exactMatch.name };
+        }
+        const prefixMatch = normalisedEntries.find((entry) => entry.normalised.startsWith(normalised));
+        if (prefixMatch) {
+          return { worksheet: workbook.Sheets[prefixMatch.name], sheetName: prefixMatch.name };
         }
       }
       const fallbackPredicate = typeof options.fallbackPredicate === 'function'
         ? options.fallbackPredicate
-        : (name) => {
-            const normalised = normaliseSheetName(name);
-            return normalised.includes('regular') && normalised.includes('sep');
-          };
+        : (name) => normaliseSheetName(name).includes('regular');
       const inferred = fallbackPredicate
-        ? sheetNames.find((name) => fallbackPredicate(name))
+        ? normalisedEntries.find((entry) => fallbackPredicate(entry.name))
         : undefined;
       if (inferred) {
-        return { worksheet: workbook.Sheets[inferred], sheetName: inferred };
+        return { worksheet: workbook.Sheets[inferred.name], sheetName: inferred.name };
       }
       const firstName = sheetNames[0];
       return { worksheet: workbook.Sheets[firstName], sheetName: firstName };
@@ -4989,6 +5001,7 @@
       const costIndex = findColumnIndex(dataset, 'P.COST');
       const netPerQtyIndex = findColumnIndex(dataset, 'NET/Q');
       const netIndex = findColumnIndex(dataset, 'NET');
+      const finalNetIndex = findColumnIndex(dataset, 'Final Net');
       const revenueIndex = findColumnIndex(dataset, 'Total Revenue');
       const qtyIndex = findColumnIndex(dataset, 'Qty');
       const requiredIndices = [
@@ -4999,6 +5012,7 @@
         costIndex,
         netPerQtyIndex,
         netIndex,
+        finalNetIndex,
         revenueIndex,
         qtyIndex,
       ];
@@ -5019,6 +5033,7 @@
         netPerQtySum: 0,
         netPerQtyCount: 0,
         netSum: 0,
+        finalNetSum: 0,
         revenueSum: 0,
         qtySum: 0,
       };
@@ -5043,6 +5058,7 @@
             netPerQtySum: 0,
             netPerQtyCount: 0,
             netSum: 0,
+            finalNetSum: 0,
             revenueSum: 0,
             qtySum: 0,
           });
@@ -5095,6 +5111,12 @@
           totalsAccumulator.netSum += netValue;
         }
 
+        const finalNetValue = parseNumericValue(row[finalNetIndex]);
+        if (finalNetValue !== null) {
+          entry.finalNetSum += finalNetValue;
+          totalsAccumulator.finalNetSum += finalNetValue;
+        }
+
         const revenueValue = parseNumericValue(row[revenueIndex]);
         if (revenueValue !== null) {
           entry.revenueSum += revenueValue;
@@ -5117,6 +5139,7 @@
           average_of_p_cost: entry.costCount ? entry.costSum / entry.costCount : null,
           average_of_net_q: entry.netPerQtyCount ? entry.netPerQtySum / entry.netPerQtyCount : null,
           sum_of_net: entry.netSum,
+          sum_of_final_net: entry.finalNetSum,
           sum_of_total_revenue: entry.revenueSum,
           sum_of_qty: entry.qtySum,
         }))
@@ -5140,6 +5163,7 @@
           ? totalsAccumulator.netPerQtySum / totalsAccumulator.netPerQtyCount
           : null,
         sum_of_net: totalsAccumulator.netSum,
+        sum_of_final_net: totalsAccumulator.finalNetSum,
         sum_of_total_revenue: totalsAccumulator.revenueSum,
         sum_of_qty: totalsAccumulator.qtySum,
       };
@@ -5154,6 +5178,7 @@
         { key: 'sum_of_net', label: 'Sum of NET', type: 'decimal' },
         { key: 'sum_of_total_revenue', label: 'Sum of Total Revenue', type: 'decimal' },
         { key: 'sum_of_qty', label: 'Sum of Qty', type: 'integer' },
+        { key: 'sum_of_final_net', label: 'Final Net (Sum)', type: 'decimal' },
       ];
 
       return { columns, rows, totals };

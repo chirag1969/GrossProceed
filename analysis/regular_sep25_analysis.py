@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import math
+import posixpath
 import re
 import sqlite3
 import zipfile
@@ -21,10 +22,12 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from io import BytesIO
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import Callable, Dict, Iterable, List, Optional, Sequence, Tuple
 from xml.etree import ElementTree as ET
 
 EXCEL_EPOCH = datetime(1899, 12, 30)
+REL_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+PACKAGE_REL_NS = "http://schemas.openxmlformats.org/package/2006/relationships"
 
 
 @dataclass
@@ -77,6 +80,83 @@ def column_letters_to_index(value: str) -> int:
     for char in value:
         result = result * 26 + (ord(char) - 64)
     return result - 1
+
+
+def normalise_sheet_name(value: Optional[str]) -> str:
+    if not value:
+        return ""
+    return re.sub(r"[^0-9a-z]+", "", value.lower())
+
+
+def resolve_sheet_rel_path(
+    archive: zipfile.ZipFile,
+    candidates: Optional[Sequence[str]] = None,
+    fallback: Optional[Callable[[str], bool]] = None,
+) -> Optional[str]:
+    try:
+        workbook_xml = archive.read("xl/workbook.xml")
+    except KeyError:
+        return None
+
+    workbook_root = ET.fromstring(workbook_xml)
+    ns = {"main": "http://schemas.openxmlformats.org/spreadsheetml/2006/main"}
+    sheets_parent = workbook_root.find("main:sheets", ns)
+    if sheets_parent is None:
+        return None
+
+    relationships: Dict[str, str] = {}
+    if "xl/_rels/workbook.xml.rels" in archive.namelist():
+        rel_root = ET.fromstring(archive.read("xl/_rels/workbook.xml.rels"))
+        rel_ns = {"rel": PACKAGE_REL_NS}
+        for rel in rel_root.findall("rel:Relationship", rel_ns):
+            rel_id = rel.attrib.get("Id")
+            target = rel.attrib.get("Target")
+            if not rel_id or not target:
+                continue
+            if target.startswith("/"):
+                resolved_target = target.lstrip("/")
+            elif target.startswith("xl/"):
+                resolved_target = target
+            else:
+                resolved_target = posixpath.normpath(posixpath.join("xl", target))
+            if not resolved_target.startswith("xl/"):
+                resolved_target = f"xl/{resolved_target}"
+            relationships[rel_id] = resolved_target
+
+    sheet_entries: List[Tuple[str, str, str]] = []
+    for sheet in sheets_parent.findall("main:sheet", ns):
+        name = sheet.attrib.get("name", "")
+        rel_id = sheet.attrib.get(f"{{{REL_NS}}}id")
+        if not rel_id:
+            continue
+        target = relationships.get(rel_id)
+        if not target:
+            continue
+        sheet_entries.append((normalise_sheet_name(name), name, target))
+
+    if not sheet_entries:
+        return None
+
+    if candidates:
+        normalised_candidates = [normalise_sheet_name(candidate) for candidate in candidates if candidate]
+        for candidate in normalised_candidates:
+            for normalised_name, _original_name, target in sheet_entries:
+                if candidate and normalised_name == candidate:
+                    return target
+            for normalised_name, _original_name, target in sheet_entries:
+                if candidate and normalised_name.startswith(candidate):
+                    return target
+
+    if fallback:
+        for _normalised_name, original_name, target in sheet_entries:
+            try:
+                if fallback(original_name):
+                    return target
+            except Exception:  # pylint: disable=broad-except
+                continue
+
+    # Fall back to the first worksheet if no criteria matched.
+    return sheet_entries[0][2]
 
 
 COLUMN_SPECS: Sequence[ColumnSpec] = [
@@ -144,7 +224,10 @@ COLUMN_SPECS: Sequence[ColumnSpec] = [
 ]
 
 
-def parse_sheet(path: Path, sheet_rel_path: str = "xl/worksheets/sheet13.xml") -> Tuple[List[str], List[Dict[str, object]]]:
+def parse_sheet(
+    path: Path,
+    sheet_name_candidates: Optional[Sequence[str]] = None,
+) -> Tuple[List[str], List[Dict[str, object]]]:
     with zipfile.ZipFile(path) as archive:
         shared_strings = []
         if "xl/sharedStrings.xml" in archive.namelist():
@@ -152,6 +235,15 @@ def parse_sheet(path: Path, sheet_rel_path: str = "xl/worksheets/sheet13.xml") -
             for si in root:
                 text = "".join(t.text or "" for t in si.iter() if t.tag.endswith("}t"))
                 shared_strings.append(text)
+
+        sheet_candidates = sheet_name_candidates or ["REGULAR SEP-25", "REGULAR"]
+        sheet_rel_path = resolve_sheet_rel_path(
+            archive,
+            sheet_candidates,
+            fallback=lambda name: "regular" in normalise_sheet_name(name),
+        )
+        if not sheet_rel_path:
+            raise ValueError("Failed to locate the regular sales worksheet in the workbook")
 
         sheet_stream = BytesIO(archive.read(sheet_rel_path))
 
@@ -272,7 +364,10 @@ def parse_sheet(path: Path, sheet_rel_path: str = "xl/worksheets/sheet13.xml") -
     return header_unique, rows
 
 
-def extract_lo_spend_pivot(path: Path, sheet_rel_path: str = "xl/worksheets/sheet9.xml") -> Dict[str, object]:
+def extract_lo_spend_pivot(
+    path: Path,
+    sheet_name_candidates: Optional[Sequence[str]] = None,
+) -> Dict[str, object]:
     with zipfile.ZipFile(path) as archive:
         shared_strings: List[str] = []
         if "xl/sharedStrings.xml" in archive.namelist():
@@ -280,6 +375,22 @@ def extract_lo_spend_pivot(path: Path, sheet_rel_path: str = "xl/worksheets/shee
             for si in root:
                 text = "".join(t.text or "" for t in si.iter() if t.tag.endswith("}t"))
                 shared_strings.append(text)
+
+        sheet_candidates = sheet_name_candidates or [
+            "L.O. wise Daily Sales & Spend",
+            "LO wise Daily Sales & Spend",
+        ]
+        sheet_rel_path = resolve_sheet_rel_path(
+            archive,
+            sheet_candidates,
+            fallback=lambda name: all(
+                keyword in normalise_sheet_name(name)
+                for keyword in ("lo", "daily", "sales")
+            ),
+        )
+        if not sheet_rel_path:
+            raise ValueError("Failed to locate the LO spend pivot worksheet in the workbook")
+
         sheet_root = ET.fromstring(archive.read(sheet_rel_path))
 
     ns = {"ns": "http://schemas.openxmlformats.org/spreadsheetml/2006/main"}
@@ -378,8 +489,61 @@ def infer_column_type(label: str) -> str:
     return "decimal"
 
 
+def compute_final_net_by_sku(records: Iterable[Dict[str, object]]) -> Tuple[Dict[str, float], float]:
+    totals: Dict[str, float] = {}
+    grand_total = 0.0
+    for record in records:
+        raw_sku = record.get("SKU_2")
+        sku = clean_text(raw_sku)
+        if not sku:
+            continue
+        value = clean_numeric(record.get("Final Net"))
+        if value is None:
+            continue
+        totals[sku] = totals.get(sku, 0.0) + value
+        grand_total += value
+    return totals, grand_total
+
+
+def append_final_net_to_pivot(
+    pivot: Dict[str, object],
+    sku_totals: Dict[str, float],
+    grand_total: float,
+) -> Dict[str, object]:
+    columns = pivot.get("columns") if isinstance(pivot, dict) else None
+    if isinstance(columns, list):
+        existing = {column.get("key") for column in columns if isinstance(column, dict)}
+        if "sum_of_final_net" not in existing:
+            columns.append(
+                {"key": "sum_of_final_net", "label": "Final Net (Sum)", "type": "decimal"}
+            )
+
+    rows = pivot.get("rows") if isinstance(pivot, dict) else None
+    if isinstance(rows, list):
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            raw_sku = row.get("sku")
+            if isinstance(raw_sku, str):
+                key = raw_sku.strip()
+            elif raw_sku is None:
+                key = ""
+            else:
+                key = str(raw_sku).strip()
+            row["sum_of_final_net"] = float(sku_totals.get(key, 0.0))
+
+    if isinstance(pivot.get("totals"), dict):
+        totals_section = pivot["totals"]
+        totals_section["sum_of_final_net"] = float(grand_total)
+    else:
+        pivot["totals"] = {"sku": "Grand Total", "sum_of_final_net": float(grand_total)}
+
+    return pivot
+
+
 def extract_sku_summary_pivot(
-    path: Path, sheet_rel_path: str = "xl/worksheets/sheet11.xml"
+    path: Path,
+    sheet_name_candidates: Optional[Sequence[str]] = None,
 ) -> Dict[str, object]:
     with zipfile.ZipFile(path) as archive:
         shared_strings: List[str] = []
@@ -388,6 +552,19 @@ def extract_sku_summary_pivot(
             for si in root:
                 text = "".join(t.text or "" for t in si.iter() if t.tag.endswith("}t"))
                 shared_strings.append(text)
+
+        sheet_candidates = sheet_name_candidates or ["SKUWISE SUMMARY", "SKU WISE SUMMARY"]
+        sheet_rel_path = resolve_sheet_rel_path(
+            archive,
+            sheet_candidates,
+            fallback=lambda name: all(
+                keyword in normalise_sheet_name(name)
+                for keyword in ("skuwise", "summary")
+            ),
+        )
+        if not sheet_rel_path:
+            raise ValueError("Failed to locate the SKU summary pivot worksheet in the workbook")
+
         sheet_root = ET.fromstring(archive.read(sheet_rel_path))
 
     ns = {"ns": "http://schemas.openxmlformats.org/spreadsheetml/2006/main"}
@@ -864,6 +1041,7 @@ def render_table(rows: List[Dict[str, object]], keys: Sequence[str]) -> str:
 def main() -> None:
     workbook_path = Path("09 GROSS PROCEED SEP-25 COMBINE.xlsx")
     _header, records = parse_sheet(workbook_path)
+    final_net_totals, final_net_grand_total = compute_final_net_by_sku(records)
     conn = build_sqlite(records)
     metrics = fetch_metrics(conn)
     series = fetch_series(conn)
@@ -884,6 +1062,7 @@ def main() -> None:
     sku_pivot_path = output_dir / "sku_summary_pivot.json"
     try:
         sku_pivot = extract_sku_summary_pivot(workbook_path)
+        sku_pivot = append_final_net_to_pivot(sku_pivot, final_net_totals, final_net_grand_total)
     except Exception as exc:  # pylint: disable=broad-except
         print(f"Failed to extract SKU summary pivot: {exc}")
     else:

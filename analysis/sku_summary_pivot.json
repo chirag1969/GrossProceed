@@ -44,6 +44,11 @@
       "key": "sum_of_qty",
       "label": "Sum of Qty",
       "type": "integer"
+    },
+    {
+      "key": "sum_of_final_net",
+      "label": "Final Net (Sum)",
+      "type": "decimal"
     }
   ],
   "rows": [
@@ -56,7 +61,8 @@
       "average_of_net_q": 11.180268847465882,
       "sum_of_net": 89.44215077972706,
       "sum_of_total_revenue": 658.5731578947368,
-      "sum_of_qty": 8.0
+      "sum_of_qty": 8.0,
+      "sum_of_final_net": 131.22505999999998
     },
     {
       "sku": "FAB-493",
@@ -67,7 +73,8 @@
       "average_of_net_q": 3.432665112994349,
       "sum_of_net": 24.028655790960443,
       "sum_of_total_revenue": 120.82870651204281,
-      "sum_of_qty": 7.0
+      "sum_of_qty": 7.0,
+      "sum_of_final_net": 31.941919000000002
     },
     {
       "sku": "FAB-180",
@@ -78,7 +85,8 @@
       "average_of_net_q": -8.262500000000012,
       "sum_of_net": -24.787500000000033,
       "sum_of_total_revenue": 270.01,
-      "sum_of_qty": 3.0
+      "sum_of_qty": 3.0,
+      "sum_of_final_net": -8.5869
     },
     {
       "sku": "FAB-552",
@@ -89,7 +97,8 @@
       "average_of_net_q": 9.58258565891474,
       "sum_of_net": 412.0511833333338,
       "sum_of_total_revenue": 7661.4400000000005,
-      "sum_of_qty": 43.0
+      "sum_of_qty": 43.0,
+      "sum_of_final_net": 879.9042509999998
     },
     {
       "sku": "FAB-560",
@@ -100,7 +109,8 @@
       "average_of_net_q": 27.018175000000014,
       "sum_of_net": 54.03635000000003,
       "sum_of_total_revenue": 288.42,
-      "sum_of_qty": 2.0
+      "sum_of_qty": 2.0,
+      "sum_of_final_net": 71.34155
     },
     {
       "sku": "FAB-209",
@@ -111,7 +121,8 @@
       "average_of_net_q": -10.367600000000005,
       "sum_of_net": -20.73520000000001,
       "sum_of_total_revenue": 58.919999999999995,
-      "sum_of_qty": 2.0
+      "sum_of_qty": 2.0,
+      "sum_of_final_net": -17.2
     },
     {
       "sku": "FAB-425",
@@ -122,7 +133,8 @@
       "average_of_net_q": -0.7016999999999941,
       "sum_of_net": -2.1050999999999824,
       "sum_of_total_revenue": 444.47,
-      "sum_of_qty": 3.0
+      "sum_of_qty": 3.0,
+      "sum_of_final_net": 24.5631
     },
     {
       "sku": "FAB-557",
@@ -133,7 +145,8 @@
       "average_of_net_q": 4.170740530925009,
       "sum_of_net": 52.39587955665019,
       "sum_of_total_revenue": 619.6920073891625,
-      "sum_of_qty": 9.0
+      "sum_of_qty": 9.0,
+      "sum_of_final_net": 89.57740000000001
     },
     {
       "sku": "FAB-311",
@@ -144,7 +157,8 @@
       "average_of_net_q": 42.71360000000001,
       "sum_of_net": 85.42720000000001,
       "sum_of_total_revenue": 285.88,
-      "sum_of_qty": 2.0
+      "sum_of_qty": 2.0,
+      "sum_of_final_net": 102.58000000000001
     },
     {
       "sku": "FAB-416",
@@ -155,7 +169,8 @@
       "average_of_net_q": -27.134463636363638,
       "sum_of_net": -298.4791,
       "sum_of_total_revenue": 1315.55,
-      "sum_of_qty": 11.0
+      "sum_of_qty": 11.0,
+      "sum_of_final_net": -182.79610000000002
     },
     {
       "sku": "FAB-573",
@@ -166,7 +181,8 @@
       "average_of_net_q": 4.706475000000004,
       "sum_of_net": 9.412950000000007,
       "sum_of_total_revenue": 88.81,
-      "sum_of_qty": 2.0
+      "sum_of_qty": 2.0,
+      "sum_of_final_net": 14.74155
     },
     {
       "sku": "FAB-288",
@@ -177,7 +193,8 @@
       "average_of_net_q": 0.6474999999999973,
       "sum_of_net": 3.884999999999984,
       "sum_of_total_revenue": 778.6700000000001,
-      "sum_of_qty": 6.0
+      "sum_of_qty": 6.0,
+      "sum_of_final_net": 50.6052
     },
     {
       "sku": "FAB-08B",
@@ -188,7 +205,8 @@
       "average_of_net_q": -15.149944166666666,
       "sum_of_net": -75.74972083333333,
       "sum_of_total_revenue": 406.01,
-      "sum_of_qty": 5.0
+      "sum_of_qty": 5.0,
+      "sum_of_final_net": -49.424017000000006
     },
     {
       "sku": "FAB-441",
@@ -199,7 +217,8 @@
       "average_of_net_q": 1.8491750000000007,
       "sum_of_net": 3.6983500000000014,
       "sum_of_total_revenue": 118.47,
-      "sum_of_qty": 2.0
+      "sum_of_qty": 2.0,
+      "sum_of_final_net": 10.80655
     },
     {
       "sku": "FAB-243",
@@ -210,7 +229,8 @@
       "average_of_net_q": 25.940975,
       "sum_of_net": 51.88195,
       "sum_of_total_revenue": 440.16,
-      "sum_of_qty": 2.0
+      "sum_of_qty": 2.0,
+      "sum_of_final_net": 78.29155
     },
     {
       "sku": "FAB-559",
@@ -221,7 +241,8 @@
       "average_of_net_q": 20.546974999999993,
       "sum_of_net": 41.093949999999985,
       "sum_of_total_revenue": 190.51,
-      "sum_of_qty": 2.0
+      "sum_of_qty": 2.0,
+      "sum_of_final_net": 52.52455
     },
     {
       "sku": "FAB-280",
@@ -232,7 +253,8 @@
       "average_of_net_q": 0.026562499999996714,
       "sum_of_net": 0.10624999999998685,
       "sum_of_total_revenue": 259.39,
-      "sum_of_qty": 4.0
+      "sum_of_qty": 4.0,
+      "sum_of_final_net": 15.66965
     },
     {
       "sku": "FAB-422",
@@ -243,7 +265,8 @@
       "average_of_net_q": 10.136274999999998,
       "sum_of_net": 40.54509999999999,
       "sum_of_total_revenue": 323.8,
-      "sum_of_qty": 4.0
+      "sum_of_qty": 4.0,
+      "sum_of_final_net": 59.973099999999995
     },
     {
       "sku": "FAB-427",
@@ -254,7 +277,8 @@
       "average_of_net_q": 6.124449999999997,
       "sum_of_net": 42.87114999999998,
       "sum_of_total_revenue": 710.98,
-      "sum_of_qty": 7.0
+      "sum_of_qty": 7.0,
+      "sum_of_final_net": 87.61245000000001
     },
     {
       "sku": "FAB-511",
@@ -265,7 +289,8 @@
       "average_of_net_q": 10.139166666666675,
       "sum_of_net": 60.83500000000005,
       "sum_of_total_revenue": 1227.76,
-      "sum_of_qty": 6.0
+      "sum_of_qty": 6.0,
+      "sum_of_final_net": 134.50060000000002
     },
     {
       "sku": "FAB-499",
@@ -276,7 +301,8 @@
       "average_of_net_q": 4.126599999999993,
       "sum_of_net": 4.126599999999993,
       "sum_of_total_revenue": 201.39000000000001,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": 16.21
     },
     {
       "sku": "FAB-564",
@@ -287,7 +313,8 @@
       "average_of_net_q": 42.8916324821337,
       "sum_of_net": 85.7832649642674,
       "sum_of_total_revenue": 405.88,
-      "sum_of_qty": 2.0
+      "sum_of_qty": 2.0,
+      "sum_of_final_net": 113.584213
     },
     {
       "sku": "FAB-558",
@@ -298,7 +325,8 @@
       "average_of_net_q": 10.716442748898045,
       "sum_of_net": 96.4479847400824,
       "sum_of_total_revenue": 708.55,
-      "sum_of_qty": 9.0
+      "sum_of_qty": 9.0,
+      "sum_of_final_net": 143.21445599999998
     },
     {
       "sku": "FAB-554",
@@ -309,7 +337,8 @@
       "average_of_net_q": 99.12708793103451,
       "sum_of_net": 2874.6855500000006,
       "sum_of_total_revenue": 9753.470000000001,
-      "sum_of_qty": 29.0
+      "sum_of_qty": 29.0,
+      "sum_of_final_net": 3459.8937499999997
     },
     {
       "sku": "FAB-440",
@@ -320,7 +349,8 @@
       "average_of_net_q": 2.3070512138188546,
       "sum_of_net": 6.921153641456564,
       "sum_of_total_revenue": 241.70999999999998,
-      "sum_of_qty": 3.0
+      "sum_of_qty": 3.0,
+      "sum_of_final_net": 23.202272
     },
     {
       "sku": "FAB-378",
@@ -331,7 +361,8 @@
       "average_of_net_q": 8.599814815725875,
       "sum_of_net": 171.9962963145175,
       "sum_of_total_revenue": 1705.021191995954,
-      "sum_of_qty": 20.0
+      "sum_of_qty": 20.0,
+      "sum_of_final_net": 276.90069000000005
     },
     {
       "sku": "ST-02",
@@ -342,7 +373,8 @@
       "average_of_net_q": 10.03568839393939,
       "sum_of_net": 110.39257233333329,
       "sum_of_total_revenue": 1117.4330999999997,
-      "sum_of_qty": 11.0
+      "sum_of_qty": 11.0,
+      "sum_of_final_net": 179.93959999999998
     },
     {
       "sku": "FAB-584",
@@ -353,7 +385,8 @@
       "average_of_net_q": 9.544499999999992,
       "sum_of_net": 57.26699999999995,
       "sum_of_total_revenue": 606.9699999999999,
-      "sum_of_qty": 6.0
+      "sum_of_qty": 6.0,
+      "sum_of_final_net": 93.68520000000001
     },
     {
       "sku": "FAB-515",
@@ -364,7 +397,8 @@
       "average_of_net_q": 3.0506000000000038,
       "sum_of_net": 3.0506000000000038,
       "sum_of_total_revenue": 108.99,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": 9.59
     },
     {
       "sku": "FAB-150",
@@ -375,7 +409,8 @@
       "average_of_net_q": 22.2654994797473,
       "sum_of_net": 142.30849531772574,
       "sum_of_total_revenue": 357.46,
-      "sum_of_qty": 6.0
+      "sum_of_qty": 6.0,
+      "sum_of_final_net": 163.75609500000002
     },
     {
       "sku": "FAB-173",
@@ -386,7 +421,8 @@
       "average_of_net_q": 19.115082154077395,
       "sum_of_net": 151.69908055856976,
       "sum_of_total_revenue": 540.1499999999999,
-      "sum_of_qty": 7.0
+      "sum_of_qty": 7.0,
+      "sum_of_final_net": 185.578081
     },
     {
       "sku": "PFB-01",
@@ -397,7 +433,8 @@
       "average_of_net_q": 7.0556,
       "sum_of_net": 14.1112,
       "sum_of_total_revenue": 168.48,
-      "sum_of_qty": 2.0
+      "sum_of_qty": 2.0,
+      "sum_of_final_net": 24.220000000000002
     },
     {
       "sku": "V4-1824",
@@ -408,7 +445,8 @@
       "average_of_net_q": 16.749365746107657,
       "sum_of_net": 1385.317375036782,
       "sum_of_total_revenue": 5511.760899999999,
-      "sum_of_qty": 82.0
+      "sum_of_qty": 82.0,
+      "sum_of_final_net": 1743.1545230000006
     },
     {
       "sku": "IB-F08",
@@ -419,7 +457,8 @@
       "average_of_net_q": 18.147963461538463,
       "sum_of_net": 385.5472000000001,
       "sum_of_total_revenue": 1840.6099999999997,
-      "sum_of_qty": 21.0
+      "sum_of_qty": 21.0,
+      "sum_of_final_net": 495.9838
     },
     {
       "sku": "PKG-05",
@@ -430,7 +469,8 @@
       "average_of_net_q": 0.9376000000000018,
       "sum_of_net": 1.8752000000000035,
       "sum_of_total_revenue": 75.58000000000001,
-      "sum_of_qty": 2.0
+      "sum_of_qty": 2.0,
+      "sum_of_final_net": 6.41
     },
     {
       "sku": "S9X",
@@ -441,7 +481,8 @@
       "average_of_net_q": 19.405720554895794,
       "sum_of_net": 1100.9097312394924,
       "sum_of_total_revenue": 3551.8902999999987,
-      "sum_of_qty": 53.0
+      "sum_of_qty": 53.0,
+      "sum_of_final_net": 1339.4305549999997
     },
     {
       "sku": "PFI-10",
@@ -452,7 +493,8 @@
       "average_of_net_q": 15.570455677655682,
       "sum_of_net": 108.99318974358977,
       "sum_of_total_revenue": 987.0900000000001,
-      "sum_of_qty": 7.0
+      "sum_of_qty": 7.0,
+      "sum_of_final_net": 173.08456
     },
     {
       "sku": "B12J",
@@ -463,7 +505,8 @@
       "average_of_net_q": 12.14706538038351,
       "sum_of_net": 97.17652304306807,
       "sum_of_total_revenue": 493.24,
-      "sum_of_qty": 8.0
+      "sum_of_qty": 8.0,
+      "sum_of_final_net": 128.188747
     },
     {
       "sku": "FAB-117",
@@ -474,7 +517,8 @@
       "average_of_net_q": 14.885460080211933,
       "sum_of_net": 267.9382814438148,
       "sum_of_total_revenue": 1601.831961354061,
-      "sum_of_qty": 18.0
+      "sum_of_qty": 18.0,
+      "sum_of_final_net": 365.1983379999999
     },
     {
       "sku": "FAB-151",
@@ -485,7 +529,8 @@
       "average_of_net_q": 15.298986666666668,
       "sum_of_net": 141.5422,
       "sum_of_total_revenue": 655.63,
-      "sum_of_qty": 8.0
+      "sum_of_qty": 8.0,
+      "sum_of_final_net": 180.88
     },
     {
       "sku": "B10",
@@ -496,7 +541,8 @@
       "average_of_net_q": 28.23540625,
       "sum_of_net": 677.64975,
       "sum_of_total_revenue": 3613.0299999999997,
-      "sum_of_qty": 24.0
+      "sum_of_qty": 24.0,
+      "sum_of_final_net": 894.43155
     },
     {
       "sku": "GEN-CN03",
@@ -507,7 +553,8 @@
       "average_of_net_q": 72.88548333333331,
       "sum_of_net": 297.98864999999995,
       "sum_of_total_revenue": 1136.6399999999999,
-      "sum_of_qty": 4.0
+      "sum_of_qty": 4.0,
+      "sum_of_final_net": 366.18705
     },
     {
       "sku": "CT-AM04",
@@ -518,7 +565,8 @@
       "average_of_net_q": 9.57532123063973,
       "sum_of_net": 86.17789107575757,
       "sum_of_total_revenue": 312.4693,
-      "sum_of_qty": 9.0
+      "sum_of_qty": 9.0,
+      "sum_of_final_net": 105.400006
     },
     {
       "sku": "WR-A224",
@@ -529,7 +577,8 @@
       "average_of_net_q": 9.871100000000002,
       "sum_of_net": 19.742200000000004,
       "sum_of_total_revenue": 97.63,
-      "sum_of_qty": 2.0
+      "sum_of_qty": 2.0,
+      "sum_of_final_net": 25.6
     },
     {
       "sku": "FAB-11",
@@ -540,7 +589,8 @@
       "average_of_net_q": -5.070279999999999,
       "sum_of_net": -25.351399999999995,
       "sum_of_total_revenue": 211.69,
-      "sum_of_qty": 5.0
+      "sum_of_qty": 5.0,
+      "sum_of_final_net": -12.65
     },
     {
       "sku": "B5",
@@ -551,7 +601,8 @@
       "average_of_net_q": 38.167641021537854,
       "sum_of_net": 3511.4229739814828,
       "sum_of_total_revenue": 13961.426499999996,
-      "sum_of_qty": 92.0
+      "sum_of_qty": 92.0,
+      "sum_of_final_net": 4375.723959999999
     },
     {
       "sku": "PFR-10",
@@ -562,7 +613,8 @@
       "average_of_net_q": -21.939466666666664,
       "sum_of_net": -65.8184,
       "sum_of_total_revenue": 267.14,
-      "sum_of_qty": 3.0
+      "sum_of_qty": 3.0,
+      "sum_of_final_net": -49.79
     },
     {
       "sku": "FAB-13B",
@@ -573,7 +625,8 @@
       "average_of_net_q": -22.6794,
       "sum_of_net": -22.6794,
       "sum_of_total_revenue": 42.49,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": -20.13
     },
     {
       "sku": "GEN-CN08",
@@ -584,7 +637,8 @@
       "average_of_net_q": 20.27832,
       "sum_of_net": 101.3916,
       "sum_of_total_revenue": 465.14,
-      "sum_of_qty": 5.0
+      "sum_of_qty": 5.0,
+      "sum_of_final_net": 129.3
     },
     {
       "sku": "V4-1224",
@@ -595,7 +649,8 @@
       "average_of_net_q": 11.560309388720974,
       "sum_of_net": 579.6649503591599,
       "sum_of_total_revenue": 2346.588,
-      "sum_of_qty": 46.0
+      "sum_of_qty": 46.0,
+      "sum_of_final_net": 727.4790239999998
     },
     {
       "sku": "CFB-21524",
@@ -606,7 +661,8 @@
       "average_of_net_q": 8.939566666666666,
       "sum_of_net": 119.5516,
       "sum_of_total_revenue": 418.08000000000004,
-      "sum_of_qty": 13.0
+      "sum_of_qty": 13.0,
+      "sum_of_final_net": 148.61765
     },
     {
       "sku": "FP-61",
@@ -617,7 +673,8 @@
       "average_of_net_q": 8.21565748028674,
       "sum_of_net": 873.3979210555557,
       "sum_of_total_revenue": 2460.5397000000003,
-      "sum_of_qty": 106.0
+      "sum_of_qty": 106.0,
+      "sum_of_final_net": 1023.5580559999989
     },
     {
       "sku": "FAB-06",
@@ -628,7 +685,8 @@
       "average_of_net_q": -2.570999999999999,
       "sum_of_net": -5.141999999999998,
       "sum_of_total_revenue": 113.12,
-      "sum_of_qty": 2.0
+      "sum_of_qty": 2.0,
+      "sum_of_final_net": 1.6452
     },
     {
       "sku": "Z4",
@@ -639,7 +697,8 @@
       "average_of_net_q": 47.40061875,
       "sum_of_net": 379.20495,
       "sum_of_total_revenue": 1437.55,
-      "sum_of_qty": 8.0
+      "sum_of_qty": 8.0,
+      "sum_of_final_net": 465.45795
     },
     {
       "sku": "FAB-12",
@@ -650,7 +709,8 @@
       "average_of_net_q": -5.174995853658534,
       "sum_of_net": -25.87497926829267,
       "sum_of_total_revenue": 227.74,
-      "sum_of_qty": 5.0
+      "sum_of_qty": 5.0,
+      "sum_of_final_net": -12.210579
     },
     {
       "sku": "V2E",
@@ -661,7 +721,8 @@
       "average_of_net_q": 19.632234807290896,
       "sum_of_net": 392.64469614581793,
       "sum_of_total_revenue": 1419.9326000000003,
-      "sum_of_qty": 20.0
+      "sum_of_qty": 20.0,
+      "sum_of_final_net": 487.05650699999995
     },
     {
       "sku": "FAB-336",
@@ -672,7 +733,8 @@
       "average_of_net_q": -30.868800000000004,
       "sum_of_net": -30.868800000000004,
       "sum_of_total_revenue": 44.480000000000004,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": -28.2
     },
     {
       "sku": "V2-1824",
@@ -683,7 +745,8 @@
       "average_of_net_q": 16.166771992948842,
       "sum_of_net": 1277.7954575487256,
       "sum_of_total_revenue": 4448.169099999998,
-      "sum_of_qty": 76.0
+      "sum_of_qty": 76.0,
+      "sum_of_final_net": 1572.4068829999992
     },
     {
       "sku": "HB-10P",
@@ -694,7 +757,8 @@
       "average_of_net_q": 36.155661489423366,
       "sum_of_net": 1048.5141831932776,
       "sum_of_total_revenue": 3737.2900000000004,
-      "sum_of_qty": 29.0
+      "sum_of_qty": 29.0,
+      "sum_of_final_net": 1288.2682529999995
     },
     {
       "sku": "B12F",
@@ -705,7 +769,8 @@
       "average_of_net_q": 4.123743833333332,
       "sum_of_net": 12.371231499999997,
       "sum_of_total_revenue": 81.2125,
-      "sum_of_qty": 3.0
+      "sum_of_qty": 3.0,
+      "sum_of_final_net": 18.381482
     },
     {
       "sku": "PO-AC3",
@@ -716,7 +781,8 @@
       "average_of_net_q": 22.943053846153838,
       "sum_of_net": 298.2596999999999,
       "sum_of_total_revenue": 1261.38,
-      "sum_of_qty": 13.0
+      "sum_of_qty": 13.0,
+      "sum_of_final_net": 378.87312499999996
     },
     {
       "sku": "PF-S1",
@@ -727,7 +793,8 @@
       "average_of_net_q": 21.64535428656448,
       "sum_of_net": 519.4885028775475,
       "sum_of_total_revenue": 3143.7776689132197,
-      "sum_of_qty": 24.0
+      "sum_of_qty": 24.0,
+      "sum_of_final_net": 735.682204
     },
     {
       "sku": "PFI-20",
@@ -738,7 +805,8 @@
       "average_of_net_q": 32.415041734583696,
       "sum_of_net": 791.512559895425,
       "sum_of_total_revenue": 4682.547699999998,
-      "sum_of_qty": 24.0
+      "sum_of_qty": 24.0,
+      "sum_of_final_net": 1097.237638
     },
     {
       "sku": "V2-1212",
@@ -749,7 +817,8 @@
       "average_of_net_q": 8.235042772779702,
       "sum_of_net": 168.10945867320262,
       "sum_of_total_revenue": 616.3033,
-      "sum_of_qty": 21.0
+      "sum_of_qty": 21.0,
+      "sum_of_final_net": 209.359603
     },
     {
       "sku": "PFI-05",
@@ -760,7 +829,8 @@
       "average_of_net_q": 36.05201706716959,
       "sum_of_net": 252.36411947018712,
       "sum_of_total_revenue": 1385.570365448505,
-      "sum_of_qty": 7.0
+      "sum_of_qty": 7.0,
+      "sum_of_final_net": 335.498342
     },
     {
       "sku": "PR-32",
@@ -771,7 +841,8 @@
       "average_of_net_q": 6.330417499999998,
       "sum_of_net": 136.11494999999996,
       "sum_of_total_revenue": 549.29,
-      "sum_of_qty": 21.0
+      "sum_of_qty": 21.0,
+      "sum_of_final_net": 169.07234999999997
     },
     {
       "sku": "V2F",
@@ -782,7 +853,8 @@
       "average_of_net_q": 30.49336473725021,
       "sum_of_net": 628.8260377254198,
       "sum_of_total_revenue": 1789.1813947990545,
-      "sum_of_qty": 20.0
+      "sum_of_qty": 20.0,
+      "sum_of_final_net": 743.521249
     },
     {
       "sku": "JMT-25",
@@ -793,7 +865,8 @@
       "average_of_net_q": 37.890734349399445,
       "sum_of_net": 719.9239526385894,
       "sum_of_total_revenue": 3280.1700000000005,
-      "sum_of_qty": 19.0
+      "sum_of_qty": 19.0,
+      "sum_of_final_net": 920.8174900000001
     },
     {
       "sku": "FAB-41",
@@ -804,7 +877,8 @@
       "average_of_net_q": -19.80508333333334,
       "sum_of_net": -59.415250000000015,
       "sum_of_total_revenue": 93.52999999999999,
-      "sum_of_qty": 3.0
+      "sum_of_qty": 3.0,
+      "sum_of_final_net": -53.80345
     },
     {
       "sku": "PO-AC2",
@@ -815,7 +889,8 @@
       "average_of_net_q": 19.71036666666668,
       "sum_of_net": 118.26220000000008,
       "sum_of_total_revenue": 917.63,
-      "sum_of_qty": 6.0
+      "sum_of_qty": 6.0,
+      "sum_of_final_net": 173.32
     },
     {
       "sku": "FAB-48",
@@ -826,7 +901,8 @@
       "average_of_net_q": 38.586599999999976,
       "sum_of_net": 38.586599999999976,
       "sum_of_total_revenue": 128.39,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": 46.29
     },
     {
       "sku": "CFB-11648",
@@ -837,7 +913,8 @@
       "average_of_net_q": 8.049183583333337,
       "sum_of_net": 96.59020300000003,
       "sum_of_total_revenue": 464.19849999999997,
-      "sum_of_qty": 12.0
+      "sum_of_qty": 12.0,
+      "sum_of_final_net": 131.835861
     },
     {
       "sku": "V2-1224",
@@ -848,7 +925,8 @@
       "average_of_net_q": 11.204160823271216,
       "sum_of_net": 579.2174695170185,
       "sum_of_total_revenue": 2521.460683333334,
-      "sum_of_qty": 51.0
+      "sum_of_qty": 51.0,
+      "sum_of_final_net": 744.0027900000002
     },
     {
       "sku": "RCB-07",
@@ -859,7 +937,8 @@
       "average_of_net_q": 15.399053821389318,
       "sum_of_net": 1018.5434983903057,
       "sum_of_total_revenue": 2688.4571,
-      "sum_of_qty": 66.0
+      "sum_of_qty": 66.0,
+      "sum_of_final_net": 1185.7912009999995
     },
     {
       "sku": "B9J",
@@ -870,7 +949,8 @@
       "average_of_net_q": 7.764342883460621,
       "sum_of_net": 304.19428668804295,
       "sum_of_total_revenue": 1453.1702000000007,
-      "sum_of_qty": 38.0
+      "sum_of_qty": 38.0,
+      "sum_of_final_net": 402.103255
     },
     {
       "sku": "GEN-CN07",
@@ -881,7 +961,8 @@
       "average_of_net_q": 11.564662499999999,
       "sum_of_net": 46.258649999999996,
       "sum_of_total_revenue": 327.93,
-      "sum_of_qty": 4.0
+      "sum_of_qty": 4.0,
+      "sum_of_final_net": 65.93445
     },
     {
       "sku": "IB-A16",
@@ -892,7 +973,8 @@
       "average_of_net_q": 11.371681160638172,
       "sum_of_net": 181.94689857021075,
       "sum_of_total_revenue": 1484.6649000000002,
-      "sum_of_qty": 16.0
+      "sum_of_qty": 16.0,
+      "sum_of_final_net": 292.49604999999997
     },
     {
       "sku": "GEN-CPB1022",
@@ -903,7 +985,8 @@
       "average_of_net_q": 11.559101923076925,
       "sum_of_net": 300.53665000000007,
       "sum_of_total_revenue": 1109.8000000000002,
-      "sum_of_qty": 26.0
+      "sum_of_qty": 26.0,
+      "sum_of_final_net": 367.124651
     },
     {
       "sku": "JMT-134",
@@ -914,7 +997,8 @@
       "average_of_net_q": -1.1561709722222226,
       "sum_of_net": -16.186393611111118,
       "sum_of_total_revenue": 462.5415,
-      "sum_of_qty": 14.0
+      "sum_of_qty": 14.0,
+      "sum_of_final_net": 12.927204999999999
     },
     {
       "sku": "HB-18",
@@ -925,7 +1009,8 @@
       "average_of_net_q": 19.519255905784558,
       "sum_of_net": 58.55776771735367,
       "sum_of_total_revenue": 268.6048008313128,
-      "sum_of_qty": 3.0
+      "sum_of_qty": 3.0,
+      "sum_of_final_net": 74.674055
     },
     {
       "sku": "B12",
@@ -936,7 +1021,8 @@
       "average_of_net_q": 58.99627637816764,
       "sum_of_net": 1120.9292511851852,
       "sum_of_total_revenue": 3688.7511999999997,
-      "sum_of_qty": 19.0
+      "sum_of_qty": 19.0,
+      "sum_of_final_net": 1352.4910119999997
     },
     {
       "sku": "JMT-96",
@@ -947,7 +1033,8 @@
       "average_of_net_q": 7.718037585363324,
       "sum_of_net": 46.308225512179945,
       "sum_of_total_revenue": 265.7857,
-      "sum_of_qty": 6.0
+      "sum_of_qty": 6.0,
+      "sum_of_final_net": 62.731756
     },
     {
       "sku": "IB-C12",
@@ -958,7 +1045,8 @@
       "average_of_net_q": 10.56667879259259,
       "sum_of_net": 123.41298792592589,
       "sum_of_total_revenue": 991.5244,
-      "sum_of_qty": 11.0
+      "sum_of_qty": 11.0,
+      "sum_of_final_net": 189.038526
     },
     {
       "sku": "JMT-103",
@@ -969,7 +1057,8 @@
       "average_of_net_q": 17.698745647222232,
       "sum_of_net": 707.9498258888892,
       "sum_of_total_revenue": 2059.5045999999993,
-      "sum_of_qty": 40.0
+      "sum_of_qty": 40.0,
+      "sum_of_final_net": 833.0999629999995
     },
     {
       "sku": "RCB-12",
@@ -980,7 +1069,8 @@
       "average_of_net_q": 7.575603108247418,
       "sum_of_net": 777.6309014999996,
       "sum_of_total_revenue": 2335.218900000001,
-      "sum_of_qty": 103.0
+      "sum_of_qty": 103.0,
+      "sum_of_final_net": 922.5215369999995
     },
     {
       "sku": "BS9",
@@ -991,7 +1081,8 @@
       "average_of_net_q": 17.882231592155104,
       "sum_of_net": 633.8228213960329,
       "sum_of_total_revenue": 2707.3998,
-      "sum_of_qty": 30.0
+      "sum_of_qty": 30.0,
+      "sum_of_final_net": 826.041113
     },
     {
       "sku": "RCB-09",
@@ -1002,7 +1093,8 @@
       "average_of_net_q": 7.885643166666667,
       "sum_of_net": 247.1236166666667,
       "sum_of_total_revenue": 971.15,
-      "sum_of_qty": 31.0
+      "sum_of_qty": 31.0,
+      "sum_of_final_net": 307.288448
     },
     {
       "sku": "IB-G08",
@@ -1013,7 +1105,8 @@
       "average_of_net_q": 7.594216666666665,
       "sum_of_net": 79.6832,
       "sum_of_total_revenue": 862.3699999999998,
-      "sum_of_qty": 9.0
+      "sum_of_qty": 9.0,
+      "sum_of_final_net": 131.4254
     },
     {
       "sku": "B4F",
@@ -1024,7 +1117,8 @@
       "average_of_net_q": 2.3542479343749996,
       "sum_of_net": 258.8100002499999,
       "sum_of_total_revenue": 1416.7671166666673,
-      "sum_of_qty": 97.0
+      "sum_of_qty": 97.0,
+      "sum_of_final_net": 357.3522859999996
     },
     {
       "sku": "GEN-SB02",
@@ -1035,7 +1129,8 @@
       "average_of_net_q": 16.723183730158727,
       "sum_of_net": 33.446367460317454,
       "sum_of_total_revenue": 126.95,
-      "sum_of_qty": 2.0
+      "sum_of_qty": 2.0,
+      "sum_of_final_net": 41.594201
     },
     {
       "sku": "S21",
@@ -1046,7 +1141,8 @@
       "average_of_net_q": 44.766110442249634,
       "sum_of_net": 645.5591839802466,
       "sum_of_total_revenue": 1748.3000000000002,
-      "sum_of_qty": 15.0
+      "sum_of_qty": 15.0,
+      "sum_of_final_net": 753.2928320000001
     },
     {
       "sku": "PKG-11",
@@ -1057,7 +1153,8 @@
       "average_of_net_q": 3.7467333333333315,
       "sum_of_net": 18.174249999999994,
       "sum_of_total_revenue": 105.41,
-      "sum_of_qty": 4.0
+      "sum_of_qty": 4.0,
+      "sum_of_final_net": 24.498849999999997
     },
     {
       "sku": "FAB-579",
@@ -1068,7 +1165,8 @@
       "average_of_net_q": 34.019996428571424,
       "sum_of_net": 346.22914999999995,
       "sum_of_total_revenue": 698.66,
-      "sum_of_qty": 10.0
+      "sum_of_qty": 10.0,
+      "sum_of_final_net": 388.14875000000006
     },
     {
       "sku": "JMT-168",
@@ -1079,7 +1177,8 @@
       "average_of_net_q": 13.632295555555562,
       "sum_of_net": 204.4844333333334,
       "sum_of_total_revenue": 938.4300000000001,
-      "sum_of_qty": 15.0
+      "sum_of_qty": 15.0,
+      "sum_of_final_net": 266.212313
     },
     {
       "sku": "CFB-12448",
@@ -1090,7 +1189,8 @@
       "average_of_net_q": 12.973407844225122,
       "sum_of_net": 141.33177059802608,
       "sum_of_total_revenue": 524.2153,
-      "sum_of_qty": 10.0
+      "sum_of_qty": 10.0,
+      "sum_of_final_net": 177.32172400000005
     },
     {
       "sku": "GEN-SB03",
@@ -1101,7 +1201,8 @@
       "average_of_net_q": 50.32340000000001,
       "sum_of_net": 352.26380000000006,
       "sum_of_total_revenue": 1273.52,
-      "sum_of_qty": 7.0
+      "sum_of_qty": 7.0,
+      "sum_of_final_net": 428.675
     },
     {
       "sku": "EH-03",
@@ -1112,7 +1213,8 @@
       "average_of_net_q": 6.906570128787879,
       "sum_of_net": 162.54214283333337,
       "sum_of_total_revenue": 775.8434000000001,
-      "sum_of_qty": 23.0
+      "sum_of_qty": 23.0,
+      "sum_of_final_net": 210.23972799999999
     },
     {
       "sku": "FAB-583",
@@ -1123,7 +1225,8 @@
       "average_of_net_q": 17.284474999999993,
       "sum_of_net": 34.56894999999999,
       "sum_of_total_revenue": 250.73999999999998,
-      "sum_of_qty": 2.0
+      "sum_of_qty": 2.0,
+      "sum_of_final_net": 49.61335
     },
     {
       "sku": "WR-A160",
@@ -1134,7 +1237,8 @@
       "average_of_net_q": 16.808649999999993,
       "sum_of_net": 16.808649999999993,
       "sum_of_total_revenue": 74.89,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": 21.30205
     },
     {
       "sku": "IB-A06",
@@ -1145,7 +1249,8 @@
       "average_of_net_q": 3.8110272833333334,
       "sum_of_net": 72.54799783333331,
       "sum_of_total_revenue": 640.8757,
-      "sum_of_qty": 14.0
+      "sum_of_qty": 14.0,
+      "sum_of_final_net": 116.05366599999999
     },
     {
       "sku": "FAB-252",
@@ -1156,7 +1261,8 @@
       "average_of_net_q": -2.227000000000001,
       "sum_of_net": -4.454000000000002,
       "sum_of_total_revenue": 47.599999999999994,
-      "sum_of_qty": 2.0
+      "sum_of_qty": 2.0,
+      "sum_of_final_net": -1.5980000000000003
     },
     {
       "sku": "WR-A212",
@@ -1167,7 +1273,8 @@
       "average_of_net_q": 5.8805531736269865,
       "sum_of_net": 706.7597575658435,
       "sum_of_total_revenue": 3118.5465999999997,
-      "sum_of_qty": 117.0
+      "sum_of_qty": 117.0,
+      "sum_of_final_net": 904.6124579999995
     },
     {
       "sku": "FAB-49",
@@ -1178,7 +1285,8 @@
       "average_of_net_q": 34.35521778164251,
       "sum_of_net": 213.16493890821258,
       "sum_of_total_revenue": 849.0600000000001,
-      "sum_of_qty": 6.0
+      "sum_of_qty": 6.0,
+      "sum_of_final_net": 265.442428
     },
     {
       "sku": "FAB-578",
@@ -1189,7 +1297,8 @@
       "average_of_net_q": 4.527299999999998,
       "sum_of_net": 31.69109999999998,
       "sum_of_total_revenue": 895.56,
-      "sum_of_qty": 7.0
+      "sum_of_qty": 7.0,
+      "sum_of_final_net": 85.4247
     },
     {
       "sku": "FAB-379",
@@ -1200,7 +1309,8 @@
       "average_of_net_q": -4.064212888463987,
       "sum_of_net": -77.22004488081575,
       "sum_of_total_revenue": 1768.1464073095206,
-      "sum_of_qty": 19.0
+      "sum_of_qty": 19.0,
+      "sum_of_final_net": 39.28124200000002
     },
     {
       "sku": "FAB-381",
@@ -1211,7 +1321,8 @@
       "average_of_net_q": 6.673253486090888,
       "sum_of_net": 106.77205577745421,
       "sum_of_total_revenue": 1092.8640556295495,
-      "sum_of_qty": 16.0
+      "sum_of_qty": 16.0,
+      "sum_of_final_net": 173.40556600000002
     },
     {
       "sku": "FAB-588",
@@ -1222,7 +1333,8 @@
       "average_of_net_q": 32.726033333333326,
       "sum_of_net": 225.73109999999994,
       "sum_of_total_revenue": 523.66,
-      "sum_of_qty": 6.0
+      "sum_of_qty": 6.0,
+      "sum_of_final_net": 257.15070000000003
     },
     {
       "sku": "PO-AC8",
@@ -1233,7 +1345,8 @@
       "average_of_net_q": 28.827079629629623,
       "sum_of_net": 86.48123888888887,
       "sum_of_total_revenue": 280.25,
-      "sum_of_qty": 3.0
+      "sum_of_qty": 3.0,
+      "sum_of_final_net": 104.391934
     },
     {
       "sku": "FAB-476",
@@ -1244,7 +1357,8 @@
       "average_of_net_q": 32.971083333333326,
       "sum_of_net": 98.91324999999998,
       "sum_of_total_revenue": 325.34999999999997,
-      "sum_of_qty": 3.0
+      "sum_of_qty": 3.0,
+      "sum_of_final_net": 118.43424999999999
     },
     {
       "sku": "FAB-586",
@@ -1255,7 +1369,8 @@
       "average_of_net_q": 26.49174000000001,
       "sum_of_net": 132.45870000000005,
       "sum_of_total_revenue": 1033.1200000000001,
-      "sum_of_qty": 5.0
+      "sum_of_qty": 5.0,
+      "sum_of_final_net": 194.4459
     },
     {
       "sku": "WR-A206(3)",
@@ -1266,7 +1381,8 @@
       "average_of_net_q": 2.062874999999995,
       "sum_of_net": 4.12574999999999,
       "sum_of_total_revenue": 50.94999999999999,
-      "sum_of_qty": 2.0
+      "sum_of_qty": 2.0,
+      "sum_of_final_net": 7.18275
     },
     {
       "sku": "FAB-430",
@@ -1277,7 +1393,8 @@
       "average_of_net_q": -36.42837000000001,
       "sum_of_net": -364.28370000000007,
       "sum_of_total_revenue": 858.23,
-      "sum_of_qty": 10.0
+      "sum_of_qty": 10.0,
+      "sum_of_final_net": -287.7999
     },
     {
       "sku": "GEN-CB1015",
@@ -1288,7 +1405,8 @@
       "average_of_net_q": 7.340200000000001,
       "sum_of_net": 14.680400000000002,
       "sum_of_total_revenue": 73.44,
-      "sum_of_qty": 2.0
+      "sum_of_qty": 2.0,
+      "sum_of_final_net": 19.0868
     },
     {
       "sku": "FAB-216",
@@ -1299,7 +1417,8 @@
       "average_of_net_q": -9.083196011396012,
       "sum_of_net": -54.49917606837607,
       "sum_of_total_revenue": 694.73,
-      "sum_of_qty": 6.0
+      "sum_of_qty": 6.0,
+      "sum_of_final_net": -6.336487999999996
     },
     {
       "sku": "ST-11",
@@ -1310,7 +1429,8 @@
       "average_of_net_q": 19.229855568522822,
       "sum_of_net": 38.459711137045645,
       "sum_of_total_revenue": 546.2516905635212,
-      "sum_of_qty": 2.0
+      "sum_of_qty": 2.0,
+      "sum_of_final_net": 71.234813
     },
     {
       "sku": "JMT-159",
@@ -1321,7 +1441,8 @@
       "average_of_net_q": 2.703775000000002,
       "sum_of_net": 3.1584500000000046,
       "sum_of_total_revenue": 135.17000000000002,
-      "sum_of_qty": 3.0
+      "sum_of_qty": 3.0,
+      "sum_of_final_net": 11.268650000000001
     },
     {
       "sku": "GEN-CB1021",
@@ -1332,7 +1453,8 @@
       "average_of_net_q": 15.98284,
       "sum_of_net": 159.8284,
       "sum_of_total_revenue": 426.24,
-      "sum_of_qty": 10.0
+      "sum_of_qty": 10.0,
+      "sum_of_final_net": 185.40279800000002
     },
     {
       "sku": "IB-E08",
@@ -1343,7 +1465,8 @@
       "average_of_net_q": 0.4937666666666762,
       "sum_of_net": 1.4813000000000285,
       "sum_of_total_revenue": 208.18,
-      "sum_of_qty": 3.0
+      "sum_of_qty": 3.0,
+      "sum_of_final_net": 13.972100000000001
     },
     {
       "sku": "FAB-489",
@@ -1354,7 +1477,8 @@
       "average_of_net_q": 16.680579166666675,
       "sum_of_net": 184.00265000000007,
       "sum_of_total_revenue": 917.47,
-      "sum_of_qty": 10.0
+      "sum_of_qty": 10.0,
+      "sum_of_final_net": 239.05085000000003
     },
     {
       "sku": "FAB-501",
@@ -1365,7 +1489,8 @@
       "average_of_net_q": 18.58908333333331,
       "sum_of_net": 55.76724999999993,
       "sum_of_total_revenue": 385.89,
-      "sum_of_qty": 3.0
+      "sum_of_qty": 3.0,
+      "sum_of_final_net": 78.92065
     },
     {
       "sku": "PF-POT",
@@ -1376,7 +1501,8 @@
       "average_of_net_q": 96.67220710505859,
       "sum_of_net": 386.68882842023436,
       "sum_of_total_revenue": 1187.3475219970646,
-      "sum_of_qty": 4.0
+      "sum_of_qty": 4.0,
+      "sum_of_final_net": 457.92967999999996
     },
     {
       "sku": "PF-POTS3",
@@ -1387,7 +1513,8 @@
       "average_of_net_q": 96.32080219647214,
       "sum_of_net": 385.2832087858886,
       "sum_of_total_revenue": 1202.12086062115,
-      "sum_of_qty": 4.0
+      "sum_of_qty": 4.0,
+      "sum_of_final_net": 457.410461
     },
     {
       "sku": "FAB-545",
@@ -1398,7 +1525,8 @@
       "average_of_net_q": 32.275147923008916,
       "sum_of_net": 355.0266271530981,
       "sum_of_total_revenue": 1832.9700000000003,
-      "sum_of_qty": 11.0
+      "sum_of_qty": 11.0,
+      "sum_of_final_net": 473.127257
     },
     {
       "sku": "CP-3-2415F",
@@ -1409,7 +1537,8 @@
       "average_of_net_q": 44.361389221055404,
       "sum_of_net": 487.97528143160946,
       "sum_of_total_revenue": 1157.71,
-      "sum_of_qty": 11.0
+      "sum_of_qty": 11.0,
+      "sum_of_final_net": 560.018318
     },
     {
       "sku": "S25X",
@@ -1420,7 +1549,8 @@
       "average_of_net_q": 25.498379327064548,
       "sum_of_net": 254.98379327064546,
       "sum_of_total_revenue": 903.0226999999998,
-      "sum_of_qty": 10.0
+      "sum_of_qty": 10.0,
+      "sum_of_final_net": 320.961451
     },
     {
       "sku": "Z4F",
@@ -1431,7 +1561,8 @@
       "average_of_net_q": 4.124077967418547,
       "sum_of_net": 576.6138696666668,
       "sum_of_total_revenue": 2993.2685000000006,
-      "sum_of_qty": 139.0
+      "sum_of_qty": 139.0,
+      "sum_of_final_net": 786.0125140000016
     },
     {
       "sku": "JMT-59",
@@ -1442,7 +1573,8 @@
       "average_of_net_q": 24.030192726415102,
       "sum_of_net": 1273.6002145000004,
       "sum_of_total_revenue": 7370.620699999999,
-      "sum_of_qty": 53.0
+      "sum_of_qty": 53.0,
+      "sum_of_final_net": 1740.8580609999992
     },
     {
       "sku": "WR-A230",
@@ -1453,7 +1585,8 @@
       "average_of_net_q": 24.91410651785714,
       "sum_of_net": 271.4954316964285,
       "sum_of_total_revenue": 763.0699999999999,
-      "sum_of_qty": 11.0
+      "sum_of_qty": 11.0,
+      "sum_of_final_net": 319.286841
     },
     {
       "sku": "FAB-473",
@@ -1464,7 +1597,8 @@
       "average_of_net_q": 35.08689037037037,
       "sum_of_net": 175.43445185185183,
       "sum_of_total_revenue": 1257.4699999999998,
-      "sum_of_qty": 5.0
+      "sum_of_qty": 5.0,
+      "sum_of_final_net": 258.141912
     },
     {
       "sku": "PO-AC7",
@@ -1475,7 +1609,8 @@
       "average_of_net_q": 26.529613494040543,
       "sum_of_net": 159.17768096424325,
       "sum_of_total_revenue": 761.0,
-      "sum_of_qty": 6.0
+      "sum_of_qty": 6.0,
+      "sum_of_final_net": 212.82286499999998
     },
     {
       "sku": "FAB-245",
@@ -1486,7 +1621,8 @@
       "average_of_net_q": 28.446293959764475,
       "sum_of_net": 469.6010214769381,
       "sum_of_total_revenue": 2498.9599999999996,
-      "sum_of_qty": 17.0
+      "sum_of_qty": 17.0,
+      "sum_of_final_net": 620.2055660000001
     },
     {
       "sku": "CT-TC22",
@@ -1497,7 +1633,8 @@
       "average_of_net_q": 10.77975357096326,
       "sum_of_net": 86.23802856770608,
       "sum_of_total_revenue": 905.3199999999999,
-      "sum_of_qty": 8.0
+      "sum_of_qty": 8.0,
+      "sum_of_final_net": 141.28315399999997
     },
     {
       "sku": "FAB-475",
@@ -1508,7 +1645,8 @@
       "average_of_net_q": -4.287353472222223,
       "sum_of_net": -17.14941388888889,
       "sum_of_total_revenue": 172.32999999999998,
-      "sum_of_qty": 4.0
+      "sum_of_qty": 4.0,
+      "sum_of_final_net": -5.363434000000001
     },
     {
       "sku": "V4E",
@@ -1519,7 +1657,8 @@
       "average_of_net_q": 26.217735103814643,
       "sum_of_net": 104.87094041525857,
       "sum_of_total_revenue": 379.88,
-      "sum_of_qty": 4.0
+      "sum_of_qty": 4.0,
+      "sum_of_final_net": 130.85384399999998
     },
     {
       "sku": "V4-1212",
@@ -1530,7 +1669,8 @@
       "average_of_net_q": 11.70337214506173,
       "sum_of_net": 117.59412777777779,
       "sum_of_total_revenue": 357.18999999999994,
-      "sum_of_qty": 10.0
+      "sum_of_qty": 10.0,
+      "sum_of_final_net": 141.1615
     },
     {
       "sku": "B10X",
@@ -1541,7 +1681,8 @@
       "average_of_net_q": 1.5756823877537955,
       "sum_of_net": 26.786600591814523,
       "sum_of_total_revenue": 1026.9682,
-      "sum_of_qty": 17.0
+      "sum_of_qty": 17.0,
+      "sum_of_final_net": 118.735922
     },
     {
       "sku": "FAB-433",
@@ -1552,7 +1693,8 @@
       "average_of_net_q": -19.399520336203217,
       "sum_of_net": -252.19376437064182,
       "sum_of_total_revenue": 502.97009714780995,
-      "sum_of_qty": 13.0
+      "sum_of_qty": 13.0,
+      "sum_of_final_net": -203.229959
     },
     {
       "sku": "FAB-435",
@@ -1563,7 +1705,8 @@
       "average_of_net_q": -0.8376155749881757,
       "sum_of_net": -9.213771324869933,
       "sum_of_total_revenue": 41.41143060964257,
-      "sum_of_qty": 11.0
+      "sum_of_qty": 11.0,
+      "sum_of_final_net": -6.65325
     },
     {
       "sku": "FAB-149",
@@ -1574,7 +1717,8 @@
       "average_of_net_q": 8.970875238095239,
       "sum_of_net": 44.854376190476195,
       "sum_of_total_revenue": 183.56000000000003,
-      "sum_of_qty": 5.0
+      "sum_of_qty": 5.0,
+      "sum_of_final_net": 58.52214500000001
     },
     {
       "sku": "Z4FK",
@@ -1585,7 +1729,8 @@
       "average_of_net_q": 3.8374013484848475,
       "sum_of_net": 42.21141483333332,
       "sum_of_total_revenue": 246.86209999999994,
-      "sum_of_qty": 11.0
+      "sum_of_qty": 11.0,
+      "sum_of_final_net": 59.29813799999998
     },
     {
       "sku": "JMT-118",
@@ -1596,7 +1741,8 @@
       "average_of_net_q": 3.681189710150282,
       "sum_of_net": 346.25888206060586,
       "sum_of_total_revenue": 2611.0523,
-      "sum_of_qty": 87.0
+      "sum_of_qty": 87.0,
+      "sum_of_final_net": 510.60011500000036
     },
     {
       "sku": "RCB-13",
@@ -1607,7 +1753,8 @@
       "average_of_net_q": 7.9463198048780495,
       "sum_of_net": 1051.0771859999998,
       "sum_of_total_revenue": 4369.356499999999,
-      "sum_of_qty": 133.0
+      "sum_of_qty": 133.0,
+      "sum_of_final_net": 1334.7373280000002
     },
     {
       "sku": "FAB-437",
@@ -1618,7 +1765,8 @@
       "average_of_net_q": -6.3224558825898605,
       "sum_of_net": -82.19192647366819,
       "sum_of_total_revenue": 116.19796835435514,
-      "sum_of_qty": 13.0
+      "sum_of_qty": 13.0,
+      "sum_of_final_net": -70.59895800000002
     },
     {
       "sku": "RCB-06",
@@ -1629,7 +1777,8 @@
       "average_of_net_q": 27.780780808080806,
       "sum_of_net": 340.38053888888885,
       "sum_of_total_revenue": 1012.0699999999999,
-      "sum_of_qty": 12.0
+      "sum_of_qty": 12.0,
+      "sum_of_final_net": 407.57585000000006
     },
     {
       "sku": "V4-1524",
@@ -1640,7 +1789,8 @@
       "average_of_net_q": 23.482728015100136,
       "sum_of_net": 751.4472964832044,
       "sum_of_total_revenue": 3458.094999999999,
-      "sum_of_qty": 32.0
+      "sum_of_qty": 32.0,
+      "sum_of_final_net": 988.010877
     },
     {
       "sku": "FAB-428",
@@ -1651,7 +1801,8 @@
       "average_of_net_q": -30.005690456030898,
       "sum_of_net": -270.0512141042781,
       "sum_of_total_revenue": 1191.29,
-      "sum_of_qty": 9.0
+      "sum_of_qty": 9.0,
+      "sum_of_final_net": -151.717561
     },
     {
       "sku": "FAB-377",
@@ -1662,7 +1813,8 @@
       "average_of_net_q": 7.601986362197026,
       "sum_of_net": 228.0595908659108,
       "sum_of_total_revenue": 3173.6250729872977,
-      "sum_of_qty": 30.0
+      "sum_of_qty": 30.0,
+      "sum_of_final_net": 427.15418400000004
     },
     {
       "sku": "FAB-421",
@@ -1673,7 +1825,8 @@
       "average_of_net_q": -2.262277777777781,
       "sum_of_net": -20.36050000000003,
       "sum_of_total_revenue": 596.54,
-      "sum_of_qty": 9.0
+      "sum_of_qty": 9.0,
+      "sum_of_final_net": 22.019678
     },
     {
       "sku": "V2",
@@ -1684,7 +1837,8 @@
       "average_of_net_q": 23.4970770748236,
       "sum_of_net": 1380.0689620404748,
       "sum_of_total_revenue": 4821.164853664301,
-      "sum_of_qty": 57.0
+      "sum_of_qty": 57.0,
+      "sum_of_final_net": 1713.3322500000002
     },
     {
       "sku": "B12X",
@@ -1695,7 +1849,8 @@
       "average_of_net_q": 27.574084639554275,
       "sum_of_net": 744.5002852679654,
       "sum_of_total_revenue": 3401.319999999999,
-      "sum_of_qty": 27.0
+      "sum_of_qty": 27.0,
+      "sum_of_final_net": 1004.1581899999998
     },
     {
       "sku": "FAB-402",
@@ -1706,7 +1861,8 @@
       "average_of_net_q": 2.904464184420459,
       "sum_of_net": 133.03199171171016,
       "sum_of_total_revenue": 418.50310477509413,
-      "sum_of_qty": 50.0
+      "sum_of_qty": 50.0,
+      "sum_of_final_net": 158.21801299999998
     },
     {
       "sku": "WR-A218",
@@ -1717,7 +1873,8 @@
       "average_of_net_q": 12.617717673076923,
       "sum_of_net": 198.6328589166667,
       "sum_of_total_revenue": 664.4840999999999,
-      "sum_of_qty": 15.0
+      "sum_of_qty": 15.0,
+      "sum_of_final_net": 240.32664300000002
     },
     {
       "sku": "HB-19P",
@@ -1728,7 +1885,8 @@
       "average_of_net_q": 47.33787980792291,
       "sum_of_net": 378.7030384633833,
       "sum_of_total_revenue": 1782.77,
-      "sum_of_qty": 8.0
+      "sum_of_qty": 8.0,
+      "sum_of_final_net": 497.436046
     },
     {
       "sku": "FAB-415",
@@ -1739,7 +1897,8 @@
       "average_of_net_q": 7.202017592592587,
       "sum_of_net": 21.606052777777762,
       "sum_of_total_revenue": 387.52,
-      "sum_of_qty": 3.0
+      "sum_of_qty": 3.0,
+      "sum_of_final_net": 48.127322
     },
     {
       "sku": "FAB-450",
@@ -1750,7 +1909,8 @@
       "average_of_net_q": 2.103003061868692,
       "sum_of_net": 25.236036742424307,
       "sum_of_total_revenue": 2076.55,
-      "sum_of_qty": 12.0
+      "sum_of_qty": 12.0,
+      "sum_of_final_net": 156.81664200000003
     },
     {
       "sku": "FAB-589",
@@ -1761,7 +1921,8 @@
       "average_of_net_q": 34.22693333333332,
       "sum_of_net": 102.68079999999996,
       "sum_of_total_revenue": 405.81999999999994,
-      "sum_of_qty": 3.0
+      "sum_of_qty": 3.0,
+      "sum_of_final_net": 127.03
     },
     {
       "sku": "CFB-11232",
@@ -1772,7 +1933,8 @@
       "average_of_net_q": 3.3817402899159648,
       "sum_of_net": 47.34436405882351,
       "sum_of_total_revenue": 313.1866,
-      "sum_of_qty": 14.0
+      "sum_of_qty": 14.0,
+      "sum_of_final_net": 72.505558
     },
     {
       "sku": "FP-71",
@@ -1783,7 +1945,8 @@
       "average_of_net_q": 12.752703409090907,
       "sum_of_net": 264.3257727272727,
       "sum_of_total_revenue": 870.97,
-      "sum_of_qty": 21.0
+      "sum_of_qty": 21.0,
+      "sum_of_final_net": 318.858978
     },
     {
       "sku": "GEN-SB01",
@@ -1794,7 +1957,8 @@
       "average_of_net_q": 48.972410606060606,
       "sum_of_net": 580.3829166666668,
       "sum_of_total_revenue": 1553.93,
-      "sum_of_qty": 12.0
+      "sum_of_qty": 12.0,
+      "sum_of_final_net": 677.5620499999999
     },
     {
       "sku": "ST-12",
@@ -1805,7 +1969,8 @@
       "average_of_net_q": 21.472259567901244,
       "sum_of_net": 128.83355740740745,
       "sum_of_total_revenue": 931.01,
-      "sum_of_qty": 6.0
+      "sum_of_qty": 6.0,
+      "sum_of_final_net": 190.252028
     },
     {
       "sku": "HB-31P",
@@ -1816,7 +1981,8 @@
       "average_of_net_q": 16.390494805194816,
       "sum_of_net": 49.17148441558445,
       "sum_of_total_revenue": 437.37,
-      "sum_of_qty": 3.0
+      "sum_of_qty": 3.0,
+      "sum_of_final_net": 77.618685
     },
     {
       "sku": "Z4F2",
@@ -1827,7 +1993,8 @@
       "average_of_net_q": 7.460797504081631,
       "sum_of_net": 287.3885126428572,
       "sum_of_total_revenue": 1139.5120999999997,
-      "sum_of_qty": 37.0
+      "sum_of_qty": 37.0,
+      "sum_of_final_net": 362.5842410000001
     },
     {
       "sku": "FAB-420",
@@ -1838,7 +2005,8 @@
       "average_of_net_q": -2.8755863773604275,
       "sum_of_net": -7.874844056650257,
       "sum_of_total_revenue": 440.8345926108374,
-      "sum_of_qty": 10.0
+      "sum_of_qty": 10.0,
+      "sum_of_final_net": 20.045230999999998
     },
     {
       "sku": "S25J",
@@ -1849,7 +2017,8 @@
       "average_of_net_q": 9.596903637170414,
       "sum_of_net": 38.387614548681654,
       "sum_of_total_revenue": 216.63439999999997,
-      "sum_of_qty": 4.0
+      "sum_of_qty": 4.0,
+      "sum_of_final_net": 54.1079
     },
     {
       "sku": "RCB-02",
@@ -1860,7 +2029,8 @@
       "average_of_net_q": 13.527091333333333,
       "sum_of_net": 164.37016508333335,
       "sum_of_total_revenue": 861.6174,
-      "sum_of_qty": 12.0
+      "sum_of_qty": 12.0,
+      "sum_of_final_net": 217.370596
     },
     {
       "sku": "IB-C05",
@@ -1871,7 +2041,8 @@
       "average_of_net_q": 6.662624444444442,
       "sum_of_net": 33.31312222222221,
       "sum_of_total_revenue": 296.02459999999996,
-      "sum_of_qty": 5.0
+      "sum_of_qty": 5.0,
+      "sum_of_final_net": 54.47737600000001
     },
     {
       "sku": "FAB-380",
@@ -1882,7 +2053,8 @@
       "average_of_net_q": -3.8341790320203586,
       "sum_of_net": -53.67850644828502,
       "sum_of_total_revenue": 789.0270720776778,
-      "sum_of_qty": 14.0
+      "sum_of_qty": 14.0,
+      "sum_of_final_net": 2.3402019999999997
     },
     {
       "sku": "FAB-406",
@@ -1893,7 +2065,8 @@
       "average_of_net_q": -22.820481944444442,
       "sum_of_net": -136.92289166666666,
       "sum_of_total_revenue": 569.29,
-      "sum_of_qty": 6.0
+      "sum_of_qty": 6.0,
+      "sum_of_final_net": -93.22070000000001
     },
     {
       "sku": "GEN-CN06",
@@ -1904,7 +2077,8 @@
       "average_of_net_q": 8.72649583333333,
       "sum_of_net": 86.15756666666664,
       "sum_of_total_revenue": 594.8599999999999,
-      "sum_of_qty": 9.0
+      "sum_of_qty": 9.0,
+      "sum_of_final_net": 125.565
     },
     {
       "sku": "FAB-429",
@@ -1915,7 +2089,8 @@
       "average_of_net_q": 30.22725833333335,
       "sum_of_net": 181.3635500000001,
       "sum_of_total_revenue": 860.2700000000001,
-      "sum_of_qty": 6.0
+      "sum_of_qty": 6.0,
+      "sum_of_final_net": 232.97974999999997
     },
     {
       "sku": "FAB-491",
@@ -1926,7 +2101,8 @@
       "average_of_net_q": 15.005274999999997,
       "sum_of_net": 30.010549999999995,
       "sum_of_total_revenue": 156.84999999999997,
-      "sum_of_qty": 2.0
+      "sum_of_qty": 2.0,
+      "sum_of_final_net": 39.421549999999996
     },
     {
       "sku": "FAB-561",
@@ -1937,7 +2113,8 @@
       "average_of_net_q": 14.488818402777788,
       "sum_of_net": 115.9105472222223,
       "sum_of_total_revenue": 1170.1200000000001,
-      "sum_of_qty": 8.0
+      "sum_of_qty": 8.0,
+      "sum_of_final_net": 190.77615
     },
     {
       "sku": "FAB-423",
@@ -1948,7 +2125,8 @@
       "average_of_net_q": 21.955757142857145,
       "sum_of_net": 153.6903,
       "sum_of_total_revenue": 724.97,
-      "sum_of_qty": 7.0
+      "sum_of_qty": 7.0,
+      "sum_of_final_net": 197.18849999999998
     },
     {
       "sku": "FAB-335",
@@ -1959,7 +2137,8 @@
       "average_of_net_q": 1.8674999999999988,
       "sum_of_net": 3.7349999999999977,
       "sum_of_total_revenue": 61.75,
-      "sum_of_qty": 2.0
+      "sum_of_qty": 2.0,
+      "sum_of_final_net": 7.44
     },
     {
       "sku": "PO-AC6",
@@ -1970,7 +2149,8 @@
       "average_of_net_q": 30.40989722222222,
       "sum_of_net": 304.0989722222222,
       "sum_of_total_revenue": 1142.36,
-      "sum_of_qty": 10.0
+      "sum_of_qty": 10.0,
+      "sum_of_final_net": 374.4984879999999
     },
     {
       "sku": "S21K",
@@ -1981,7 +2161,8 @@
       "average_of_net_q": 17.35986152729136,
       "sum_of_net": 104.15916916374817,
       "sum_of_total_revenue": 379.82529999999997,
-      "sum_of_qty": 6.0
+      "sum_of_qty": 6.0,
+      "sum_of_final_net": 131.66720400000003
     },
     {
       "sku": "B10J",
@@ -1992,7 +2173,8 @@
       "average_of_net_q": 3.9333178518518555,
       "sum_of_net": 15.733271407407422,
       "sum_of_total_revenue": 154.03539999999998,
-      "sum_of_qty": 4.0
+      "sum_of_qty": 4.0,
+      "sum_of_final_net": 26.364864
     },
     {
       "sku": "V4F",
@@ -2003,7 +2185,8 @@
       "average_of_net_q": 43.61999862808374,
       "sum_of_net": 1383.534589195352,
       "sum_of_total_revenue": 4172.384,
-      "sum_of_qty": 34.0
+      "sum_of_qty": 34.0,
+      "sum_of_final_net": 1652.7630510000001
     },
     {
       "sku": "S9J",
@@ -2014,7 +2197,8 @@
       "average_of_net_q": 11.761745207594757,
       "sum_of_net": 188.1879233215161,
       "sum_of_total_revenue": 778.0716,
-      "sum_of_qty": 16.0
+      "sum_of_qty": 16.0,
+      "sum_of_final_net": 239.97638300000003
     },
     {
       "sku": "CFB-12496",
@@ -2025,7 +2209,8 @@
       "average_of_net_q": 25.136348394387007,
       "sum_of_net": 510.35191949335314,
       "sum_of_total_revenue": 1866.8531,
-      "sum_of_qty": 20.0
+      "sum_of_qty": 20.0,
+      "sum_of_final_net": 637.9591730000001
     },
     {
       "sku": "WR-A118",
@@ -2036,7 +2221,8 @@
       "average_of_net_q": 6.710487499999998,
       "sum_of_net": 26.841949999999994,
       "sum_of_total_revenue": 126.93,
-      "sum_of_qty": 4.0
+      "sum_of_qty": 4.0,
+      "sum_of_final_net": 34.45775
     },
     {
       "sku": "V4",
@@ -2047,7 +2233,8 @@
       "average_of_net_q": 42.13846742767285,
       "sum_of_net": 1048.3606818867904,
       "sum_of_total_revenue": 2959.461951536643,
-      "sum_of_qty": 24.0
+      "sum_of_qty": 24.0,
+      "sum_of_final_net": 1238.624166
     },
     {
       "sku": "CT-AM125",
@@ -2058,7 +2245,8 @@
       "average_of_net_q": 1.4103874999999975,
       "sum_of_net": 5.64154999999999,
       "sum_of_total_revenue": 208.82999999999998,
-      "sum_of_qty": 4.0
+      "sum_of_qty": 4.0,
+      "sum_of_final_net": 18.17135
     },
     {
       "sku": "FAB-424",
@@ -2069,7 +2257,8 @@
       "average_of_net_q": -8.159087333333334,
       "sum_of_net": -73.431786,
       "sum_of_total_revenue": 1111.3002999999999,
-      "sum_of_qty": 9.0
+      "sum_of_qty": 9.0,
+      "sum_of_final_net": 2.5102960000000003
     },
     {
       "sku": "FP-64",
@@ -2080,7 +2269,8 @@
       "average_of_net_q": 5.9219,
       "sum_of_net": 36.986000000000004,
       "sum_of_total_revenue": 126.88,
-      "sum_of_qty": 6.0
+      "sum_of_qty": 6.0,
+      "sum_of_final_net": 44.598800000000004
     },
     {
       "sku": "FAB-546",
@@ -2091,7 +2281,8 @@
       "average_of_net_q": 39.17411565924753,
       "sum_of_net": 195.87057829623765,
       "sum_of_total_revenue": 923.7200000000001,
-      "sum_of_qty": 5.0
+      "sum_of_qty": 5.0,
+      "sum_of_final_net": 254.30183399999999
     },
     {
       "sku": "JMT-167",
@@ -2102,7 +2293,8 @@
       "average_of_net_q": -25.451600000000006,
       "sum_of_net": -25.451600000000006,
       "sum_of_total_revenue": 68.24,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": -21.3572
     },
     {
       "sku": "FAB-399",
@@ -2113,7 +2305,8 @@
       "average_of_net_q": 11.571540625000004,
       "sum_of_net": 46.28616250000002,
       "sum_of_total_revenue": 195.98000000000002,
-      "sum_of_qty": 4.0
+      "sum_of_qty": 4.0,
+      "sum_of_final_net": 58.39715
     },
     {
       "sku": "FAB-540",
@@ -2124,7 +2317,8 @@
       "average_of_net_q": 38.31952991440388,
       "sum_of_net": 191.5976495720194,
       "sum_of_total_revenue": 762.03,
-      "sum_of_qty": 5.0
+      "sum_of_qty": 5.0,
+      "sum_of_final_net": 244.7307
     },
     {
       "sku": "FAB-538",
@@ -2135,7 +2329,8 @@
       "average_of_net_q": 8.909693212804365,
       "sum_of_net": 26.729079638413097,
       "sum_of_total_revenue": 269.34,
-      "sum_of_qty": 3.0
+      "sum_of_qty": 3.0,
+      "sum_of_final_net": 44.667998
     },
     {
       "sku": "FAB-395",
@@ -2146,7 +2341,8 @@
       "average_of_net_q": 33.08856085518322,
       "sum_of_net": 198.5313651310993,
       "sum_of_total_revenue": 840.7700000000001,
-      "sum_of_qty": 6.0
+      "sum_of_qty": 6.0,
+      "sum_of_final_net": 255.17913
     },
     {
       "sku": "ST-04",
@@ -2157,7 +2353,8 @@
       "average_of_net_q": 12.709983154320996,
       "sum_of_net": 114.38984838888896,
       "sum_of_total_revenue": 1736.2837,
-      "sum_of_qty": 9.0
+      "sum_of_qty": 9.0,
+      "sum_of_final_net": 230.952982
     },
     {
       "sku": "V4-2020",
@@ -2168,7 +2365,8 @@
       "average_of_net_q": 41.07465510101011,
       "sum_of_net": 544.4075588888888,
       "sum_of_total_revenue": 1621.2252000000003,
-      "sum_of_qty": 13.0
+      "sum_of_qty": 13.0,
+      "sum_of_final_net": 651.435135
     },
     {
       "sku": "RCB-03",
@@ -2179,7 +2377,8 @@
       "average_of_net_q": 17.558921874999996,
       "sum_of_net": 280.94274999999993,
       "sum_of_total_revenue": 1272.3700000000001,
-      "sum_of_qty": 16.0
+      "sum_of_qty": 16.0,
+      "sum_of_final_net": 361.2049500000001
     },
     {
       "sku": "FAB-436",
@@ -2190,7 +2389,8 @@
       "average_of_net_q": -1.8882112596124176,
       "sum_of_net": -1.8882112596124176,
       "sum_of_total_revenue": 4.366338413442752,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": -1.610432
     },
     {
       "sku": "PF-S2",
@@ -2201,7 +2401,8 @@
       "average_of_net_q": 7.953779009211544,
       "sum_of_net": 174.98313820265398,
       "sum_of_total_revenue": 1036.5019656382754,
-      "sum_of_qty": 22.0
+      "sum_of_qty": 22.0,
+      "sum_of_final_net": 242.71856900000006
     },
     {
       "sku": "FPB-14",
@@ -2212,7 +2413,8 @@
       "average_of_net_q": -21.216629444444443,
       "sum_of_net": -106.08314722222221,
       "sum_of_total_revenue": 565.13,
-      "sum_of_qty": 5.0
+      "sum_of_qty": 5.0,
+      "sum_of_final_net": -67.003125
     },
     {
       "sku": "FPB-03",
@@ -2223,7 +2425,8 @@
       "average_of_net_q": -10.450385185185183,
       "sum_of_net": -31.35115555555555,
       "sum_of_total_revenue": 300.13,
-      "sum_of_qty": 3.0
+      "sum_of_qty": 3.0,
+      "sum_of_final_net": -12.308911
     },
     {
       "sku": "GEN-SB04",
@@ -2234,7 +2437,8 @@
       "average_of_net_q": 13.169280634920629,
       "sum_of_net": 65.84640317460314,
       "sum_of_total_revenue": 351.90000000000003,
-      "sum_of_qty": 5.0
+      "sum_of_qty": 5.0,
+      "sum_of_final_net": 88.76776600000001
     },
     {
       "sku": "FAB-360",
@@ -2245,7 +2449,8 @@
       "average_of_net_q": 5.064401851851858,
       "sum_of_net": 15.193205555555572,
       "sum_of_total_revenue": 550.99,
-      "sum_of_qty": 3.0
+      "sum_of_qty": 3.0,
+      "sum_of_final_net": 53.166216
     },
     {
       "sku": "FAB-438",
@@ -2256,7 +2461,8 @@
       "average_of_net_q": 1.7463165070242717,
       "sum_of_net": 3.4926330140485433,
       "sum_of_total_revenue": 57.62835249042147,
-      "sum_of_qty": 2.0
+      "sum_of_qty": 2.0,
+      "sum_of_final_net": 7.016121
     },
     {
       "sku": "FAB-439",
@@ -2267,7 +2473,8 @@
       "average_of_net_q": 0.8130430994572168,
       "sum_of_net": 1.6260861989144335,
       "sum_of_total_revenue": 26.871647509578544,
-      "sum_of_qty": 2.0
+      "sum_of_qty": 2.0,
+      "sum_of_final_net": 3.271562
     },
     {
       "sku": "CP-1-2425F",
@@ -2278,7 +2485,8 @@
       "average_of_net_q": 28.932421818181812,
       "sum_of_net": 318.25663999999995,
       "sum_of_total_revenue": 1089.7254999999998,
-      "sum_of_qty": 11.0
+      "sum_of_qty": 11.0,
+      "sum_of_final_net": 386.830272
     },
     {
       "sku": "FAB-449",
@@ -2289,7 +2497,8 @@
       "average_of_net_q": -9.589255793803423,
       "sum_of_net": -115.07106952564108,
       "sum_of_total_revenue": 1127.1358,
-      "sum_of_qty": 12.0
+      "sum_of_qty": 12.0,
+      "sum_of_final_net": -30.599172000000003
     },
     {
       "sku": "FAB-568",
@@ -2300,7 +2509,8 @@
       "average_of_net_q": -12.42363811241555,
       "sum_of_net": -24.8472762248311,
       "sum_of_total_revenue": 318.35,
-      "sum_of_qty": 2.0
+      "sum_of_qty": 2.0,
+      "sum_of_final_net": 2.2162240000000004
     },
     {
       "sku": "FAB-403",
@@ -2311,7 +2521,8 @@
       "average_of_net_q": 0.48941829141527576,
       "sum_of_net": 45.74701959844481,
       "sum_of_total_revenue": 274.127087835363,
-      "sum_of_qty": 70.0
+      "sum_of_qty": 70.0,
+      "sum_of_final_net": 62.573811
     },
     {
       "sku": "HT-27",
@@ -2322,7 +2533,8 @@
       "average_of_net_q": 3.6296924090116023,
       "sum_of_net": 45.85492709138274,
       "sum_of_total_revenue": 172.01361797835378,
-      "sum_of_qty": 12.0
+      "sum_of_qty": 12.0,
+      "sum_of_final_net": 56.22314
     },
     {
       "sku": "ST-15",
@@ -2333,7 +2545,8 @@
       "average_of_net_q": 66.27341000000001,
       "sum_of_net": 331.36705000000006,
       "sum_of_total_revenue": 1453.0300000000002,
-      "sum_of_qty": 5.0
+      "sum_of_qty": 5.0,
+      "sum_of_final_net": 421.20301699999993
     },
     {
       "sku": "CP-3-2425F",
@@ -2344,7 +2557,8 @@
       "average_of_net_q": 72.41164614197531,
       "sum_of_net": 830.232676851852,
       "sum_of_total_revenue": 2007.8300000000002,
-      "sum_of_qty": 11.0
+      "sum_of_qty": 11.0,
+      "sum_of_final_net": 951.4250000000001
     },
     {
       "sku": "CFB-12460",
@@ -2355,7 +2569,8 @@
       "average_of_net_q": 14.710738541666668,
       "sum_of_net": 82.43287916666668,
       "sum_of_total_revenue": 272.43,
-      "sum_of_qty": 5.0
+      "sum_of_qty": 5.0,
+      "sum_of_final_net": 99.92711700000001
     },
     {
       "sku": "PR-12",
@@ -2366,7 +2581,8 @@
       "average_of_net_q": 15.061266666666665,
       "sum_of_net": 67.8364,
       "sum_of_total_revenue": 201.56000000000003,
-      "sum_of_qty": 4.0
+      "sum_of_qty": 4.0,
+      "sum_of_final_net": 79.93
     },
     {
       "sku": "GEN-CPB1014",
@@ -2377,7 +2593,8 @@
       "average_of_net_q": 10.003583333333333,
       "sum_of_net": 30.01075,
       "sum_of_total_revenue": 149.96,
-      "sum_of_qty": 3.0
+      "sum_of_qty": 3.0,
+      "sum_of_final_net": 39.00835
     },
     {
       "sku": "S25",
@@ -2388,7 +2605,8 @@
       "average_of_net_q": 41.463493157407406,
       "sum_of_net": 82.92698631481481,
       "sum_of_total_revenue": 296.6435,
-      "sum_of_qty": 2.0
+      "sum_of_qty": 2.0,
+      "sum_of_final_net": 103.504531
     },
     {
       "sku": "PR-14",
@@ -2399,7 +2617,8 @@
       "average_of_net_q": 2.5351287037037027,
       "sum_of_net": 29.363683333333324,
       "sum_of_total_revenue": 322.37,
-      "sum_of_qty": 16.0
+      "sum_of_qty": 16.0,
+      "sum_of_final_net": 48.74380000000001
     },
     {
       "sku": "GEN-SB09",
@@ -2410,7 +2629,8 @@
       "average_of_net_q": 11.733066666666668,
       "sum_of_net": 35.199200000000005,
       "sum_of_total_revenue": 141.95000000000002,
-      "sum_of_qty": 3.0
+      "sum_of_qty": 3.0,
+      "sum_of_final_net": 43.7162
     },
     {
       "sku": "GEN-CPB1012",
@@ -2421,7 +2641,8 @@
       "average_of_net_q": 11.412150000000004,
       "sum_of_net": 22.824300000000008,
       "sum_of_total_revenue": 85.98,
-      "sum_of_qty": 2.0
+      "sum_of_qty": 2.0,
+      "sum_of_final_net": 27.9831
     },
     {
       "sku": "V2-1112",
@@ -2432,7 +2653,8 @@
       "average_of_net_q": 7.817335,
       "sum_of_net": 78.17335,
       "sum_of_total_revenue": 271.3,
-      "sum_of_qty": 10.0
+      "sum_of_qty": 10.0,
+      "sum_of_final_net": 94.45134999999999
     },
     {
       "sku": "B11",
@@ -2443,7 +2665,8 @@
       "average_of_net_q": 35.475200000000015,
       "sum_of_net": 141.90080000000006,
       "sum_of_total_revenue": 725.49,
-      "sum_of_qty": 4.0
+      "sum_of_qty": 4.0,
+      "sum_of_final_net": 203.80519999999999
     },
     {
       "sku": "FAB-532",
@@ -2454,7 +2677,8 @@
       "average_of_net_q": 5.058381686943937,
       "sum_of_net": 25.291908434719687,
       "sum_of_total_revenue": 320.47,
-      "sum_of_qty": 5.0
+      "sum_of_qty": 5.0,
+      "sum_of_final_net": 49.96455399999999
     },
     {
       "sku": "B12H",
@@ -2465,7 +2689,8 @@
       "average_of_net_q": 12.584588844046252,
       "sum_of_net": 12.584588844046252,
       "sum_of_total_revenue": 58.29,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": 17.230426
     },
     {
       "sku": "FAB-527",
@@ -2476,7 +2701,8 @@
       "average_of_net_q": 42.47738,
       "sum_of_net": 212.3869,
       "sum_of_total_revenue": 935.14,
-      "sum_of_qty": 5.0
+      "sum_of_qty": 5.0,
+      "sum_of_final_net": 268.4953
     },
     {
       "sku": "FAB-468",
@@ -2487,7 +2713,8 @@
       "average_of_net_q": 1.2850368145743158,
       "sum_of_net": 8.995257702020211,
       "sum_of_total_revenue": 447.23,
-      "sum_of_qty": 7.0
+      "sum_of_qty": 7.0,
+      "sum_of_final_net": 36.892426
     },
     {
       "sku": "FAB-526",
@@ -2498,7 +2725,8 @@
       "average_of_net_q": 40.249450000000024,
       "sum_of_net": 80.49890000000005,
       "sum_of_total_revenue": 335.57,
-      "sum_of_qty": 2.0
+      "sum_of_qty": 2.0,
+      "sum_of_final_net": 100.6331
     },
     {
       "sku": "JMT-97",
@@ -2509,7 +2737,8 @@
       "average_of_net_q": 9.752600000000003,
       "sum_of_net": 9.752600000000003,
       "sum_of_total_revenue": 42.79,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": 12.32
     },
     {
       "sku": "CT-TC44",
@@ -2520,7 +2749,8 @@
       "average_of_net_q": 69.57586666666668,
       "sum_of_net": 208.72760000000005,
       "sum_of_total_revenue": 816.54,
-      "sum_of_qty": 3.0
+      "sum_of_qty": 3.0,
+      "sum_of_final_net": 257.72
     },
     {
       "sku": "PR-44",
@@ -2531,7 +2761,8 @@
       "average_of_net_q": 9.125533333333335,
       "sum_of_net": 38.2588,
       "sum_of_total_revenue": 126.99,
-      "sum_of_qty": 4.0
+      "sum_of_qty": 4.0,
+      "sum_of_final_net": 45.87820000000001
     },
     {
       "sku": "MFI-12",
@@ -2542,7 +2773,8 @@
       "average_of_net_q": 3.42856666666667,
       "sum_of_net": 10.28570000000001,
       "sum_of_total_revenue": 455.05999999999995,
-      "sum_of_qty": 3.0
+      "sum_of_qty": 3.0,
+      "sum_of_final_net": 37.5893
     },
     {
       "sku": "HB-35",
@@ -2553,7 +2785,8 @@
       "average_of_net_q": 36.39682376913082,
       "sum_of_net": 145.58729507652328,
       "sum_of_total_revenue": 506.4368165504723,
-      "sum_of_qty": 4.0
+      "sum_of_qty": 4.0,
+      "sum_of_final_net": 175.973504
     },
     {
       "sku": "UEH-03",
@@ -2564,7 +2797,8 @@
       "average_of_net_q": 4.2132,
       "sum_of_net": 12.6396,
       "sum_of_total_revenue": 72.96,
-      "sum_of_qty": 3.0
+      "sum_of_qty": 3.0,
+      "sum_of_final_net": 17.0172
     },
     {
       "sku": "FAB-488",
@@ -2575,7 +2809,8 @@
       "average_of_net_q": 24.852912499999995,
       "sum_of_net": 99.41164999999998,
       "sum_of_total_revenue": 421.87999999999994,
-      "sum_of_qty": 4.0
+      "sum_of_qty": 4.0,
+      "sum_of_final_net": 124.72444999999999
     },
     {
       "sku": "WR-A242",
@@ -2586,7 +2821,8 @@
       "average_of_net_q": 26.58,
       "sum_of_net": 81.80839999999999,
       "sum_of_total_revenue": 241.48,
-      "sum_of_qty": 3.0
+      "sum_of_qty": 3.0,
+      "sum_of_final_net": 96.2972
     },
     {
       "sku": "CFB-050812",
@@ -2597,7 +2833,8 @@
       "average_of_net_q": -0.590816666666666,
       "sum_of_net": -0.590816666666666,
       "sum_of_total_revenue": 7.34,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": 0.00125
     },
     {
       "sku": "FAB-521",
@@ -2608,7 +2845,8 @@
       "average_of_net_q": 23.851344444444457,
       "sum_of_net": 23.851344444444457,
       "sum_of_total_revenue": 203.29000000000002,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": 38.50555
     },
     {
       "sku": "FAB-543",
@@ -2619,7 +2857,8 @@
       "average_of_net_q": 19.31906111111112,
       "sum_of_net": 77.27624444444449,
       "sum_of_total_revenue": 594.8900000000001,
-      "sum_of_qty": 4.0
+      "sum_of_qty": 4.0,
+      "sum_of_final_net": 118.06020000000001
     },
     {
       "sku": "FAB-401",
@@ -2630,7 +2869,8 @@
       "average_of_net_q": 17.496419370520645,
       "sum_of_net": 52.48925811156194,
       "sum_of_total_revenue": 171.3753,
-      "sum_of_qty": 3.0
+      "sum_of_qty": 3.0,
+      "sum_of_final_net": 63.26177700000001
     },
     {
       "sku": "FAB-405",
@@ -2641,7 +2881,8 @@
       "average_of_net_q": 2.2254102148502097,
       "sum_of_net": 62.282944357106345,
       "sum_of_total_revenue": 257.3792894111885,
-      "sum_of_qty": 32.0
+      "sum_of_qty": 32.0,
+      "sum_of_final_net": 77.72570099999999
     },
     {
       "sku": "FAB-537",
@@ -2652,7 +2893,8 @@
       "average_of_net_q": 21.043501926304533,
       "sum_of_net": 63.1305057789136,
       "sum_of_total_revenue": 259.28,
-      "sum_of_qty": 3.0
+      "sum_of_qty": 3.0,
+      "sum_of_final_net": 79.785269
     },
     {
       "sku": "GEN-SB05",
@@ -2663,7 +2905,8 @@
       "average_of_net_q": 12.365825000000005,
       "sum_of_net": 49.46330000000002,
       "sum_of_total_revenue": 157.54000000000002,
-      "sum_of_qty": 4.0
+      "sum_of_qty": 4.0,
+      "sum_of_final_net": 58.9157
     },
     {
       "sku": "FAB-110",
@@ -2674,7 +2917,8 @@
       "average_of_net_q": -4.757750000000009,
       "sum_of_net": -9.515500000000017,
       "sum_of_total_revenue": 155.7,
-      "sum_of_qty": 2.0
+      "sum_of_qty": 2.0,
+      "sum_of_final_net": -0.17350000000000065
     },
     {
       "sku": "HB-25",
@@ -2685,7 +2929,8 @@
       "average_of_net_q": 26.219659999999998,
       "sum_of_net": 131.0983,
       "sum_of_total_revenue": 509.63,
-      "sum_of_qty": 5.0
+      "sum_of_qty": 5.0,
+      "sum_of_final_net": 161.6761
     },
     {
       "sku": "FAB-548",
@@ -2696,7 +2941,8 @@
       "average_of_net_q": -18.071348313142703,
       "sum_of_net": -18.071348313142703,
       "sum_of_total_revenue": 207.25609874630229,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": -5.635982
     },
     {
       "sku": "FAB-549",
@@ -2707,7 +2953,8 @@
       "average_of_net_q": -17.87217573014979,
       "sum_of_net": -17.87217573014979,
       "sum_of_total_revenue": 229.48270812790528,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": -4.103213
     },
     {
       "sku": "FAB-550",
@@ -2718,7 +2965,8 @@
       "average_of_net_q": -12.956325956707534,
       "sum_of_net": -12.956325956707534,
       "sum_of_total_revenue": 162.45119312579237,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": -3.209254
     },
     {
       "sku": "BB-125185",
@@ -2729,7 +2977,8 @@
       "average_of_net_q": 28.345533333333332,
       "sum_of_net": 85.03659999999999,
       "sum_of_total_revenue": 205.89,
-      "sum_of_qty": 3.0
+      "sum_of_qty": 3.0,
+      "sum_of_final_net": 97.39
     },
     {
       "sku": "FAB-240",
@@ -2740,7 +2989,8 @@
       "average_of_net_q": -5.21932954545455,
       "sum_of_net": -119.95762500000002,
       "sum_of_total_revenue": 929.8499999999999,
-      "sum_of_qty": 12.0
+      "sum_of_qty": 12.0,
+      "sum_of_final_net": -62.665999999999976
     },
     {
       "sku": "V6",
@@ -2751,7 +3001,8 @@
       "average_of_net_q": 43.736103028898675,
       "sum_of_net": 1253.8332575490747,
       "sum_of_total_revenue": 4519.1287,
-      "sum_of_qty": 28.0
+      "sum_of_qty": 28.0,
+      "sum_of_final_net": 1538.7928570000001
     },
     {
       "sku": "FAB-522",
@@ -2762,7 +3013,8 @@
       "average_of_net_q": 37.76353888888892,
       "sum_of_net": 75.52707777777783,
       "sum_of_total_revenue": 444.83000000000004,
-      "sum_of_qty": 2.0
+      "sum_of_qty": 2.0,
+      "sum_of_final_net": 104.9391
     },
     {
       "sku": "FAB-361",
@@ -2773,7 +3025,8 @@
       "average_of_net_q": 31.419483333333336,
       "sum_of_net": 94.25845000000001,
       "sum_of_total_revenue": 642.77,
-      "sum_of_qty": 3.0
+      "sum_of_qty": 3.0,
+      "sum_of_final_net": 132.82465000000002
     },
     {
       "sku": "FAB-562",
@@ -2784,7 +3037,8 @@
       "average_of_net_q": 40.96761666666668,
       "sum_of_net": 81.93523333333336,
       "sum_of_total_revenue": 304.22,
-      "sum_of_qty": 2.0
+      "sum_of_qty": 2.0,
+      "sum_of_final_net": 103.046766
     },
     {
       "sku": "FAB-563",
@@ -2795,7 +3049,8 @@
       "average_of_net_q": 25.679816247938362,
       "sum_of_net": 102.71926499175345,
       "sum_of_total_revenue": 684.4000000000001,
-      "sum_of_qty": 4.0
+      "sum_of_qty": 4.0,
+      "sum_of_final_net": 153.991598
     },
     {
       "sku": "FPB-10",
@@ -2806,7 +3061,8 @@
       "average_of_net_q": -6.109946120627782,
       "sum_of_net": -12.219892241255565,
       "sum_of_total_revenue": 239.85,
-      "sum_of_qty": 2.0
+      "sum_of_qty": 2.0,
+      "sum_of_final_net": 3.9405520000000003
     },
     {
       "sku": "FAB-432",
@@ -2817,7 +3073,8 @@
       "average_of_net_q": -10.874951189270641,
       "sum_of_net": -130.4994142712477,
       "sum_of_total_revenue": 412.50416547474975,
-      "sum_of_qty": 12.0
+      "sum_of_qty": 12.0,
+      "sum_of_final_net": -98.05208499999999
     },
     {
       "sku": "FAB-587",
@@ -2828,7 +3085,8 @@
       "average_of_net_q": 30.13384999999999,
       "sum_of_net": 60.26769999999998,
       "sum_of_total_revenue": 156.58999999999997,
-      "sum_of_qty": 2.0
+      "sum_of_qty": 2.0,
+      "sum_of_final_net": 69.6631
     },
     {
       "sku": "FAB-490",
@@ -2839,7 +3097,8 @@
       "average_of_net_q": 6.339543220338971,
       "sum_of_net": 6.339543220338971,
       "sum_of_total_revenue": 59.65813559322033,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": 9.919031
     },
     {
       "sku": "FAB-246",
@@ -2850,7 +3109,8 @@
       "average_of_net_q": 16.080487409444,
       "sum_of_net": 179.34838929031216,
       "sum_of_total_revenue": 540.0080386459393,
-      "sum_of_qty": 11.0
+      "sum_of_qty": 11.0,
+      "sum_of_final_net": 211.804167
     },
     {
       "sku": "FAB-514",
@@ -2861,7 +3121,8 @@
       "average_of_net_q": 81.37265000000004,
       "sum_of_net": 162.74530000000007,
       "sum_of_total_revenue": 648.13,
-      "sum_of_qty": 2.0
+      "sum_of_qty": 2.0,
+      "sum_of_final_net": 201.6331
     },
     {
       "sku": "FAB-383",
@@ -2872,7 +3133,8 @@
       "average_of_net_q": 71.79354999999998,
       "sum_of_net": 143.58709999999996,
       "sum_of_total_revenue": 629.6,
-      "sum_of_qty": 2.0
+      "sum_of_qty": 2.0,
+      "sum_of_final_net": 181.3631
     },
     {
       "sku": "FAB-409",
@@ -2883,7 +3145,8 @@
       "average_of_net_q": 6.212713756613746,
       "sum_of_net": 18.63814126984124,
       "sum_of_total_revenue": 307.40999999999997,
-      "sum_of_qty": 3.0
+      "sum_of_qty": 3.0,
+      "sum_of_final_net": 40.077186000000005
     },
     {
       "sku": "FAB-569",
@@ -2894,7 +3157,8 @@
       "average_of_net_q": 2.509374999999993,
       "sum_of_net": 10.037499999999971,
       "sum_of_total_revenue": 275.06999999999994,
-      "sum_of_qty": 4.0
+      "sum_of_qty": 4.0,
+      "sum_of_final_net": 26.541700000000002
     },
     {
       "sku": "FAB-577",
@@ -2905,7 +3169,8 @@
       "average_of_net_q": 3.950683333333334,
       "sum_of_net": 11.852050000000002,
       "sum_of_total_revenue": 292.71,
-      "sum_of_qty": 3.0
+      "sum_of_qty": 3.0,
+      "sum_of_final_net": 29.41465
     },
     {
       "sku": "FAB-247",
@@ -2916,7 +3181,8 @@
       "average_of_net_q": 16.880855555555566,
       "sum_of_net": 50.642566666666696,
       "sum_of_total_revenue": 198.0,
-      "sum_of_qty": 3.0
+      "sum_of_qty": 3.0,
+      "sum_of_final_net": 62.693191999999996
     },
     {
       "sku": "ST-10",
@@ -2927,7 +3193,8 @@
       "average_of_net_q": 39.31995000000002,
       "sum_of_net": 39.31995000000002,
       "sum_of_total_revenue": 266.86,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": 55.33155
     },
     {
       "sku": "IB-D10",
@@ -2938,7 +3205,8 @@
       "average_of_net_q": 19.164199999999994,
       "sum_of_net": 19.164199999999994,
       "sum_of_total_revenue": 98.42999999999999,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": 25.07
     },
     {
       "sku": "SS-72",
@@ -2949,7 +3217,8 @@
       "average_of_net_q": -29.259400000000007,
       "sum_of_net": -29.259400000000007,
       "sum_of_total_revenue": 64.99,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": -25.36
     },
     {
       "sku": "WR-A260",
@@ -2960,7 +3229,8 @@
       "average_of_net_q": 26.0654,
       "sum_of_net": 26.0654,
       "sum_of_total_revenue": 97.41,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": 31.91
     },
     {
       "sku": "WR-A236",
@@ -2971,7 +3241,8 @@
       "average_of_net_q": 26.440599999999993,
       "sum_of_net": 52.881199999999986,
       "sum_of_total_revenue": 139.98,
-      "sum_of_qty": 2.0
+      "sum_of_qty": 2.0,
+      "sum_of_final_net": 61.28
     },
     {
       "sku": "FAB-242",
@@ -2982,7 +3253,8 @@
       "average_of_net_q": 14.493737500000009,
       "sum_of_net": 57.974950000000035,
       "sum_of_total_revenue": 686.36,
-      "sum_of_qty": 4.0
+      "sum_of_qty": 4.0,
+      "sum_of_final_net": 99.15655000000001
     },
     {
       "sku": "EPX-01",
@@ -2993,7 +3265,8 @@
       "average_of_net_q": -2.784600000000007,
       "sum_of_net": -2.784600000000007,
       "sum_of_total_revenue": 33.91,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": -0.75
     },
     {
       "sku": "GEN-CN02",
@@ -3004,7 +3277,8 @@
       "average_of_net_q": 36.81430000000001,
       "sum_of_net": 73.62860000000002,
       "sum_of_total_revenue": 352.19000000000005,
-      "sum_of_qty": 2.0
+      "sum_of_qty": 2.0,
+      "sum_of_final_net": 94.75999999999999
     },
     {
       "sku": "FAB-244",
@@ -3015,7 +3289,8 @@
       "average_of_net_q": 27.41594999999998,
       "sum_of_net": 27.41594999999998,
       "sum_of_total_revenue": 132.67,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": 35.37615
     },
     {
       "sku": "REP-10",
@@ -3026,7 +3301,8 @@
       "average_of_net_q": -2.755,
       "sum_of_net": -5.51,
       "sum_of_total_revenue": 0.0,
-      "sum_of_qty": 2.0
+      "sum_of_qty": 2.0,
+      "sum_of_final_net": -5.51
     },
     {
       "sku": "FAB-414",
@@ -3037,7 +3313,8 @@
       "average_of_net_q": 14.16140000000001,
       "sum_of_net": 14.16140000000001,
       "sum_of_total_revenue": 64.04,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": 18.0038
     },
     {
       "sku": "FPB-11",
@@ -3048,7 +3325,8 @@
       "average_of_net_q": -1.5093499999999818,
       "sum_of_net": -1.5093499999999818,
       "sum_of_total_revenue": 128.09,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": 6.17605
     },
     {
       "sku": "JMT-03",
@@ -3059,7 +3337,8 @@
       "average_of_net_q": 35.88739111111113,
       "sum_of_net": 179.43695555555564,
       "sum_of_total_revenue": 1518.6299999999999,
-      "sum_of_qty": 5.0
+      "sum_of_qty": 5.0,
+      "sum_of_final_net": 272.222117
     },
     {
       "sku": "GEN-CB1008",
@@ -3070,7 +3349,8 @@
       "average_of_net_q": 3.5245074074074108,
       "sum_of_net": 10.573522222222232,
       "sum_of_total_revenue": 122.77000000000001,
-      "sum_of_qty": 3.0
+      "sum_of_qty": 3.0,
+      "sum_of_final_net": 20.117499000000002
     },
     {
       "sku": "CFB-11524",
@@ -3081,7 +3361,8 @@
       "average_of_net_q": 3.9918723124999995,
       "sum_of_net": 45.925761833333326,
       "sum_of_total_revenue": 258.8786,
-      "sum_of_qty": 12.0
+      "sum_of_qty": 12.0,
+      "sum_of_final_net": 63.885144999999994
     },
     {
       "sku": "FAB-357",
@@ -3092,7 +3373,8 @@
       "average_of_net_q": -1.7536500000000208,
       "sum_of_net": -1.7536500000000208,
       "sum_of_total_revenue": 119.91999999999999,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": 5.44155
     },
     {
       "sku": "FAB-397",
@@ -3103,7 +3385,8 @@
       "average_of_net_q": 7.739932812500001,
       "sum_of_net": 30.959731250000004,
       "sum_of_total_revenue": 140.66,
-      "sum_of_qty": 4.0
+      "sum_of_qty": 4.0,
+      "sum_of_final_net": 39.5273
     },
     {
       "sku": "ST-16",
@@ -3114,7 +3397,8 @@
       "average_of_net_q": 24.62676666666667,
       "sum_of_net": 49.25353333333334,
       "sum_of_total_revenue": 293.34000000000003,
-      "sum_of_qty": 2.0
+      "sum_of_qty": 2.0,
+      "sum_of_final_net": 69.1406
     },
     {
       "sku": "CP-1-2418F",
@@ -3125,7 +3409,8 @@
       "average_of_net_q": 17.156550000000003,
       "sum_of_net": 68.62620000000001,
       "sum_of_total_revenue": 235.73000000000002,
-      "sum_of_qty": 4.0
+      "sum_of_qty": 4.0,
+      "sum_of_final_net": 82.77000000000001
     },
     {
       "sku": "TO-03",
@@ -3136,7 +3421,8 @@
       "average_of_net_q": 6.972000000000005,
       "sum_of_net": 6.972000000000005,
       "sum_of_total_revenue": 35.300000000000004,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": 9.09
     },
     {
       "sku": "CFB-10812",
@@ -3147,7 +3433,8 @@
       "average_of_net_q": -1.383816666666667,
       "sum_of_net": -4.1514500000000005,
       "sum_of_total_revenue": 61.04,
-      "sum_of_qty": 3.0
+      "sum_of_qty": 3.0,
+      "sum_of_final_net": -0.48904999999999976
     },
     {
       "sku": "PFO-10",
@@ -3158,7 +3445,8 @@
       "average_of_net_q": -25.464000000000002,
       "sum_of_net": -152.78400000000002,
       "sum_of_total_revenue": 431.9,
-      "sum_of_qty": 6.0
+      "sum_of_qty": 6.0,
+      "sum_of_final_net": -126.87000000000002
     },
     {
       "sku": "FAB-364",
@@ -3169,7 +3457,8 @@
       "average_of_net_q": 70.60815000000002,
       "sum_of_net": 70.60815000000002,
       "sum_of_total_revenue": 169.59,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": 80.78355
     },
     {
       "sku": "SS-71",
@@ -3180,7 +3469,8 @@
       "average_of_net_q": -6.664149999999992,
       "sum_of_net": -6.664149999999992,
       "sum_of_total_revenue": 84.81,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": -1.57555
     },
     {
       "sku": "FAB-31",
@@ -3191,7 +3481,8 @@
       "average_of_net_q": 4.433249999999999,
       "sum_of_net": 8.866499999999998,
       "sum_of_total_revenue": 36.9,
-      "sum_of_qty": 2.0
+      "sum_of_qty": 2.0,
+      "sum_of_final_net": 11.0805
     },
     {
       "sku": "FAB-334",
@@ -3202,7 +3493,8 @@
       "average_of_net_q": -10.0636,
       "sum_of_net": -10.0636,
       "sum_of_total_revenue": 15.040000000000001,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": -9.1612
     },
     {
       "sku": "IB-A32",
@@ -3213,7 +3505,8 @@
       "average_of_net_q": 33.753503298611136,
       "sum_of_net": 270.0280263888891,
       "sum_of_total_revenue": 1429.1399000000001,
-      "sum_of_qty": 8.0
+      "sum_of_qty": 8.0,
+      "sum_of_final_net": 371.347532
     },
     {
       "sku": "CNF-02",
@@ -3224,7 +3517,8 @@
       "average_of_net_q": -25.309356944444442,
       "sum_of_net": -25.309356944444442,
       "sum_of_total_revenue": 24.54,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": -23.09345
     },
     {
       "sku": "BS10",
@@ -3235,7 +3529,8 @@
       "average_of_net_q": 31.31689496164021,
       "sum_of_net": 438.43652946296294,
       "sum_of_total_revenue": 1779.144,
-      "sum_of_qty": 14.0
+      "sum_of_qty": 14.0,
+      "sum_of_final_net": 575.7534539999999
     },
     {
       "sku": "V7",
@@ -3246,7 +3541,8 @@
       "average_of_net_q": 29.952155717592603,
       "sum_of_net": 359.42586861111124,
       "sum_of_total_revenue": 2117.3754000000004,
-      "sum_of_qty": 12.0
+      "sum_of_qty": 12.0,
+      "sum_of_final_net": 488.65978199999995
     },
     {
       "sku": "V5",
@@ -3257,7 +3553,8 @@
       "average_of_net_q": 11.54145672222223,
       "sum_of_net": 11.54145672222223,
       "sum_of_total_revenue": 136.2837,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": 21.253132
     },
     {
       "sku": "FAB-470",
@@ -3268,7 +3565,8 @@
       "average_of_net_q": -5.854897166666677,
       "sum_of_net": -5.854897166666677,
       "sum_of_total_revenue": 111.13520000000001,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": 2.854881
     },
     {
       "sku": "FAB-585",
@@ -3279,7 +3577,8 @@
       "average_of_net_q": 36.589650000000006,
       "sum_of_net": 36.589650000000006,
       "sum_of_total_revenue": 185.49,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": 47.71905
     },
     {
       "sku": "HB-18P",
@@ -3290,7 +3589,8 @@
       "average_of_net_q": 44.60233819444445,
       "sum_of_net": 267.6140291666667,
       "sum_of_total_revenue": 1256.02,
-      "sum_of_qty": 6.0
+      "sum_of_qty": 6.0,
+      "sum_of_final_net": 347.28825000000006
     },
     {
       "sku": "UFAB-446",
@@ -3301,7 +3601,8 @@
       "average_of_net_q": -36.22510000000001,
       "sum_of_net": -36.22510000000001,
       "sum_of_total_revenue": 116.13999999999999,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": -29.2567
     },
     {
       "sku": "FAB-309",
@@ -3312,7 +3613,8 @@
       "average_of_net_q": 11.922149999999997,
       "sum_of_net": 11.922149999999997,
       "sum_of_total_revenue": 99.99,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": 17.92155
     },
     {
       "sku": "FAB-531",
@@ -3323,7 +3625,8 @@
       "average_of_net_q": 20.848750000000003,
       "sum_of_net": 20.848750000000003,
       "sum_of_total_revenue": 176.13,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": 31.41655
     },
     {
       "sku": "S21X",
@@ -3334,7 +3637,8 @@
       "average_of_net_q": 24.936244000680936,
       "sum_of_net": 258.6903960061284,
       "sum_of_total_revenue": 768.42,
-      "sum_of_qty": 10.0
+      "sum_of_qty": 10.0,
+      "sum_of_final_net": 309.332635
     },
     {
       "sku": "CFB-21648",
@@ -3345,7 +3649,8 @@
       "average_of_net_q": 45.185292611111116,
       "sum_of_net": 155.26078383333333,
       "sum_of_total_revenue": 354.3401,
-      "sum_of_qty": 3.0
+      "sum_of_qty": 3.0,
+      "sum_of_final_net": 180.339107
     },
     {
       "sku": "FP-68",
@@ -3356,7 +3661,8 @@
       "average_of_net_q": 7.953149999999999,
       "sum_of_net": 63.62519999999999,
       "sum_of_total_revenue": 158.85,
-      "sum_of_qty": 8.0
+      "sum_of_qty": 8.0,
+      "sum_of_final_net": 73.1562
     },
     {
       "sku": "FPB-02",
@@ -3367,7 +3673,8 @@
       "average_of_net_q": 3.4098993197278924,
       "sum_of_net": 6.819798639455785,
       "sum_of_total_revenue": 85.28,
-      "sum_of_qty": 2.0
+      "sum_of_qty": 2.0,
+      "sum_of_final_net": 11.936599000000001
     },
     {
       "sku": "FPB-07",
@@ -3378,7 +3685,8 @@
       "average_of_net_q": 1.4703337868480668,
       "sum_of_net": 4.4110013605442004,
       "sum_of_total_revenue": 287.03999999999996,
-      "sum_of_qty": 3.0
+      "sum_of_qty": 3.0,
+      "sum_of_final_net": 21.633401
     },
     {
       "sku": "FAB-512",
@@ -3389,7 +3697,8 @@
       "average_of_net_q": 0.5461500000000044,
       "sum_of_net": 0.5461500000000044,
       "sum_of_total_revenue": 140.39000000000001,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": 8.96955
     },
     {
       "sku": "PKG-12",
@@ -3400,7 +3709,8 @@
       "average_of_net_q": 11.297600000000005,
       "sum_of_net": 35.837800000000016,
       "sum_of_total_revenue": 128.37,
-      "sum_of_qty": 3.0
+      "sum_of_qty": 3.0,
+      "sum_of_final_net": 43.54
     },
     {
       "sku": "FAB-447",
@@ -3411,7 +3721,8 @@
       "average_of_net_q": -8.329115078494842,
       "sum_of_net": -33.31646031397937,
       "sum_of_total_revenue": 566.36,
-      "sum_of_qty": 4.0
+      "sum_of_qty": 4.0,
+      "sum_of_final_net": 2.517952000000001
     },
     {
       "sku": "FAB-556",
@@ -3422,7 +3733,8 @@
       "average_of_net_q": 0.5905500000000146,
       "sum_of_net": 0.5905500000000146,
       "sum_of_total_revenue": 178.60000000000002,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": 11.30655
     },
     {
       "sku": "FAB-571",
@@ -3433,7 +3745,8 @@
       "average_of_net_q": 35.33095000000002,
       "sum_of_net": 35.33095000000002,
       "sum_of_total_revenue": 218.51000000000002,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": 48.44155
     },
     {
       "sku": "CFB-116100",
@@ -3444,7 +3757,8 @@
       "average_of_net_q": 18.68519074074074,
       "sum_of_net": 56.055572222222224,
       "sum_of_total_revenue": 225.47,
-      "sum_of_qty": 3.0
+      "sum_of_qty": 3.0,
+      "sum_of_final_net": 72.12904999999999
     },
     {
       "sku": "FAB-544",
@@ -3455,7 +3769,8 @@
       "average_of_net_q": 37.76006666666668,
       "sum_of_net": 113.28020000000004,
       "sum_of_total_revenue": 539.72,
-      "sum_of_qty": 3.0
+      "sum_of_qty": 3.0,
+      "sum_of_final_net": 145.6634
     },
     {
       "sku": "FAB-417",
@@ -3466,7 +3781,8 @@
       "average_of_net_q": -102.49550925925926,
       "sum_of_net": -102.49550925925926,
       "sum_of_total_revenue": 0.0,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": -97.849583
     },
     {
       "sku": "FAB-393",
@@ -3477,7 +3793,8 @@
       "average_of_net_q": -1.8794999999999948,
       "sum_of_net": -1.8794999999999948,
       "sum_of_total_revenue": 35.300000000000004,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": 0.2385
     },
     {
       "sku": "FPB-05",
@@ -3488,7 +3805,8 @@
       "average_of_net_q": 20.820400000000014,
       "sum_of_net": 20.820400000000014,
       "sum_of_total_revenue": 149.44,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": 29.7868
     },
     {
       "sku": "GEN-CB1019",
@@ -3499,7 +3817,8 @@
       "average_of_net_q": 16.039775000000002,
       "sum_of_net": 64.15910000000001,
       "sum_of_total_revenue": 211.5,
-      "sum_of_qty": 4.0
+      "sum_of_qty": 4.0,
+      "sum_of_final_net": 76.8491
     },
     {
       "sku": "JMT-163",
@@ -3510,7 +3829,8 @@
       "average_of_net_q": 3.2806000000000006,
       "sum_of_net": 3.2806000000000006,
       "sum_of_total_revenue": 76.49000000000001,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": 7.87
     },
     {
       "sku": "REP-21",
@@ -3521,7 +3841,8 @@
       "average_of_net_q": -4.69,
       "sum_of_net": -4.69,
       "sum_of_total_revenue": 0.0,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": -4.69
     },
     {
       "sku": "FAB-317",
@@ -3532,7 +3853,8 @@
       "average_of_net_q": -5.006450000000001,
       "sum_of_net": -10.012900000000002,
       "sum_of_total_revenue": 54.099999999999994,
-      "sum_of_qty": 2.0
+      "sum_of_qty": 2.0,
+      "sum_of_final_net": -6.7669
     },
     {
       "sku": "FAB-279",
@@ -3543,7 +3865,8 @@
       "average_of_net_q": -11.324449999999983,
       "sum_of_net": -11.324449999999983,
       "sum_of_total_revenue": 138.60000000000002,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": -3.00845
     },
     {
       "sku": "FAB-426",
@@ -3554,7 +3877,8 @@
       "average_of_net_q": 10.805749999999986,
       "sum_of_net": 10.805749999999986,
       "sum_of_total_revenue": 90.67999999999999,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": 16.24655
     },
     {
       "sku": "FAB-228",
@@ -3565,7 +3889,8 @@
       "average_of_net_q": -18.950550000000007,
       "sum_of_net": -37.901100000000014,
       "sum_of_total_revenue": 91.57,
-      "sum_of_qty": 2.0
+      "sum_of_qty": 2.0,
+      "sum_of_final_net": -32.4069
     },
     {
       "sku": "FAB-542",
@@ -3576,7 +3901,8 @@
       "average_of_net_q": 27.41833123163512,
       "sum_of_net": 137.0916561581756,
       "sum_of_total_revenue": 613.35,
-      "sum_of_qty": 5.0
+      "sum_of_qty": 5.0,
+      "sum_of_final_net": 175.7018
     },
     {
       "sku": "FAB-333",
@@ -3587,7 +3913,8 @@
       "average_of_net_q": -0.4887833333333346,
       "sum_of_net": 5.749799999999993,
       "sum_of_total_revenue": 108.09,
-      "sum_of_qty": 4.0
+      "sum_of_qty": 4.0,
+      "sum_of_final_net": 12.235200000000003
     },
     {
       "sku": "WR-A124",
@@ -3598,7 +3925,8 @@
       "average_of_net_q": 6.251300000000002,
       "sum_of_net": 12.502600000000005,
       "sum_of_total_revenue": 69.79,
-      "sum_of_qty": 2.0
+      "sum_of_qty": 2.0,
+      "sum_of_final_net": 16.689999999999998
     },
     {
       "sku": "WR-A136",
@@ -3609,7 +3937,8 @@
       "average_of_net_q": 9.921750000000003,
       "sum_of_net": 19.843500000000006,
       "sum_of_total_revenue": 99.1,
-      "sum_of_qty": 2.0
+      "sum_of_qty": 2.0,
+      "sum_of_final_net": 25.7895
     },
     {
       "sku": "FAB-539",
@@ -3620,7 +3949,8 @@
       "average_of_net_q": -15.736283313800081,
       "sum_of_net": -78.6814165690004,
       "sum_of_total_revenue": 366.65999999999997,
-      "sum_of_qty": 5.0
+      "sum_of_qty": 5.0,
+      "sum_of_final_net": -48.515147999999996
     },
     {
       "sku": "GEN-SB08",
@@ -3631,7 +3961,8 @@
       "average_of_net_q": 20.85094027777778,
       "sum_of_net": 20.85094027777778,
       "sum_of_total_revenue": 45.99,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": 23.689333
     },
     {
       "sku": "ST-13",
@@ -3642,7 +3973,8 @@
       "average_of_net_q": -1.5046084166666662,
       "sum_of_net": -3.0092168333333325,
       "sum_of_total_revenue": 131.42690000000002,
-      "sum_of_qty": 2.0
+      "sum_of_qty": 2.0,
+      "sum_of_final_net": 5.856397
     },
     {
       "sku": "FAB-398",
@@ -3653,7 +3985,8 @@
       "average_of_net_q": 17.14655,
       "sum_of_net": 17.14655,
       "sum_of_total_revenue": 48.75,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": 20.07155
     },
     {
       "sku": "FAB-390",
@@ -3664,7 +3997,8 @@
       "average_of_net_q": -4.872299999999997,
       "sum_of_net": -9.744599999999995,
       "sum_of_total_revenue": 50.44,
-      "sum_of_qty": 2.0
+      "sum_of_qty": 2.0,
+      "sum_of_final_net": -6.7182
     },
     {
       "sku": "FAB-302",
@@ -3675,7 +4009,8 @@
       "average_of_net_q": -13.265149999999998,
       "sum_of_net": -13.265149999999998,
       "sum_of_total_revenue": 46.21,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": -10.49255
     },
     {
       "sku": "FAB-590",
@@ -3686,7 +4021,8 @@
       "average_of_net_q": 10.467149999999993,
       "sum_of_net": 10.467149999999993,
       "sum_of_total_revenue": 70.99,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": 14.72655
     },
     {
       "sku": "FAB-524",
@@ -3697,7 +4033,8 @@
       "average_of_net_q": 36.20035000000001,
       "sum_of_net": 72.40070000000001,
       "sum_of_total_revenue": 250.54,
-      "sum_of_qty": 2.0
+      "sum_of_qty": 2.0,
+      "sum_of_final_net": 87.4331
     },
     {
       "sku": "GEN-CN05",
@@ -3708,7 +4045,8 @@
       "average_of_net_q": 21.056266666666662,
       "sum_of_net": 88.73295,
       "sum_of_total_revenue": 313.12,
-      "sum_of_qty": 4.0
+      "sum_of_qty": 4.0,
+      "sum_of_final_net": 107.52015
     },
     {
       "sku": "GEN-CPB1011",
@@ -3719,7 +4057,8 @@
       "average_of_net_q": 18.181649999999994,
       "sum_of_net": 18.181649999999994,
       "sum_of_total_revenue": 100.69,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": 24.22305
     },
     {
       "sku": "FAB-535",
@@ -3730,7 +4069,8 @@
       "average_of_net_q": 9.281437037037058,
       "sum_of_net": 18.562874074074116,
       "sum_of_total_revenue": 408.98,
-      "sum_of_qty": 2.0
+      "sum_of_qty": 2.0,
+      "sum_of_final_net": 47.747600000000006
     },
     {
       "sku": "FAB-400",
@@ -3741,7 +4081,8 @@
       "average_of_net_q": 24.476450000000003,
       "sum_of_net": 293.71740000000005,
       "sum_of_total_revenue": 651.1200000000001,
-      "sum_of_qty": 12.0
+      "sum_of_qty": 12.0,
+      "sum_of_final_net": 332.7846
     },
     {
       "sku": "FAB-152",
@@ -3752,7 +4093,8 @@
       "average_of_net_q": 9.403000000000002,
       "sum_of_net": 9.403000000000002,
       "sum_of_total_revenue": 36.45,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": 11.59
     },
     {
       "sku": "PFB-09",
@@ -3763,7 +4105,8 @@
       "average_of_net_q": 18.188599999999997,
       "sum_of_net": 18.188599999999997,
       "sum_of_total_revenue": 128.69,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": 25.91
     },
     {
       "sku": "CP-2-2425F",
@@ -3774,7 +4117,8 @@
       "average_of_net_q": 69.3901,
       "sum_of_net": 138.7802,
       "sum_of_total_revenue": 322.33000000000004,
-      "sum_of_qty": 2.0
+      "sum_of_qty": 2.0,
+      "sum_of_final_net": 158.12
     },
     {
       "sku": "ST-07",
@@ -3785,7 +4129,8 @@
       "average_of_net_q": 14.435450000000007,
       "sum_of_net": 14.435450000000007,
       "sum_of_total_revenue": 83.36999999999999,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": 19.43765
     },
     {
       "sku": "FAB-525",
@@ -3796,7 +4141,8 @@
       "average_of_net_q": 52.029350000000015,
       "sum_of_net": 52.029350000000015,
       "sum_of_total_revenue": 156.87,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": 61.44155
     },
     {
       "sku": "JMT-153",
@@ -3807,7 +4153,8 @@
       "average_of_net_q": -0.32620000000000116,
       "sum_of_net": -0.32620000000000116,
       "sum_of_total_revenue": 20.27,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": 0.89
     },
     {
       "sku": "WR-B215",
@@ -3818,7 +4165,8 @@
       "average_of_net_q": 11.7963,
       "sum_of_net": 11.7963,
       "sum_of_total_revenue": 47.18,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": 14.6271
     },
     {
       "sku": "FAB-442",
@@ -3829,7 +4177,8 @@
       "average_of_net_q": -31.095889012580088,
       "sum_of_net": -31.095889012580088,
       "sum_of_total_revenue": 145.4702050795158,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": -22.367677
     },
     {
       "sku": "FAB-443",
@@ -3840,7 +4189,8 @@
       "average_of_net_q": -24.30196098741986,
       "sum_of_net": -24.30196098741986,
       "sum_of_total_revenue": 194.51979492048423,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": -12.630773
     },
     {
       "sku": "FAB-396",
@@ -3851,7 +4201,8 @@
       "average_of_net_q": -85.47430000000001,
       "sum_of_net": -170.94860000000003,
       "sum_of_total_revenue": 206.08,
-      "sum_of_qty": 2.0
+      "sum_of_qty": 2.0,
+      "sum_of_final_net": -158.5838
     },
     {
       "sku": "ST-03",
@@ -3862,7 +4213,8 @@
       "average_of_net_q": 30.398950000000006,
       "sum_of_net": 30.398950000000006,
       "sum_of_total_revenue": 140.71,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": 38.84155
     },
     {
       "sku": "PF-30",
@@ -3873,7 +4225,8 @@
       "average_of_net_q": 31.855600000000024,
       "sum_of_net": 31.855600000000024,
       "sum_of_total_revenue": 321.74,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": 51.16
     },
     {
       "sku": "WR-A130",
@@ -3884,7 +4237,8 @@
       "average_of_net_q": 10.5578,
       "sum_of_net": 10.5578,
       "sum_of_total_revenue": 38.370000000000005,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": 12.86
     },
     {
       "sku": "FAB-392",
@@ -3895,7 +4249,8 @@
       "average_of_net_q": 5.979850000000003,
       "sum_of_net": 5.979850000000003,
       "sum_of_total_revenue": 39.21,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": 8.33245
     },
     {
       "sku": "FAB-199",
@@ -3906,7 +4261,8 @@
       "average_of_net_q": -67.16760000000001,
       "sum_of_net": -67.16760000000001,
       "sum_of_total_revenue": 64.64,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": -63.2892
     },
     {
       "sku": "GEN-SP01",
@@ -3917,7 +4273,8 @@
       "average_of_net_q": 49.04060000000001,
       "sum_of_net": 49.04060000000001,
       "sum_of_total_revenue": 161.99,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": 58.76
     },
     {
       "sku": "BB-105210",
@@ -3928,7 +4285,8 @@
       "average_of_net_q": 13.124399999999998,
       "sum_of_net": 26.248799999999996,
       "sum_of_total_revenue": 98.52000000000001,
-      "sum_of_qty": 2.0
+      "sum_of_qty": 2.0,
+      "sum_of_final_net": 32.16
     },
     {
       "sku": "GEN-SP04",
@@ -3939,7 +4297,8 @@
       "average_of_net_q": 69.3526,
       "sum_of_net": 69.3526,
       "sum_of_total_revenue": 243.79000000000002,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": 83.98
     },
     {
       "sku": "BB-140226",
@@ -3950,7 +4309,8 @@
       "average_of_net_q": 2.3372000000000046,
       "sum_of_net": 5.615000000000016,
       "sum_of_total_revenue": 131.25,
-      "sum_of_qty": 3.0
+      "sum_of_qty": 3.0,
+      "sum_of_final_net": 13.49
     },
     {
       "sku": "V9",
@@ -3961,7 +4321,8 @@
       "average_of_net_q": 42.56960000000001,
       "sum_of_net": 133.12260000000003,
       "sum_of_total_revenue": 401.29,
-      "sum_of_qty": 3.0
+      "sum_of_qty": 3.0,
+      "sum_of_final_net": 157.2
     },
     {
       "sku": "GEN-SP03",
@@ -3972,7 +4333,8 @@
       "average_of_net_q": 28.8087,
       "sum_of_net": 57.6174,
       "sum_of_total_revenue": 404.71000000000004,
-      "sum_of_qty": 2.0
+      "sum_of_qty": 2.0,
+      "sum_of_final_net": 81.9
     },
     {
       "sku": "MFI-13",
@@ -3983,7 +4345,8 @@
       "average_of_net_q": 85.06215000000002,
       "sum_of_net": 85.06215000000002,
       "sum_of_total_revenue": 449.99,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": 112.06155
     },
     {
       "sku": "PFI-O10",
@@ -3994,7 +4357,8 @@
       "average_of_net_q": -42.80960000000001,
       "sum_of_net": -42.80960000000001,
       "sum_of_total_revenue": 87.44,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": -37.5632
     },
     {
       "sku": "JMT-02",
@@ -4005,7 +4369,8 @@
       "average_of_net_q": 24.734550000000013,
       "sum_of_net": 24.734550000000013,
       "sum_of_total_revenue": 228.63,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": 38.45235
     },
     {
       "sku": "GEN-SP02",
@@ -4016,7 +4381,8 @@
       "average_of_net_q": 45.786474999999996,
       "sum_of_net": 91.57294999999999,
       "sum_of_total_revenue": 357.30000000000007,
-      "sum_of_qty": 2.0
+      "sum_of_qty": 2.0,
+      "sum_of_final_net": 113.01095000000001
     },
     {
       "sku": "FAB-310",
@@ -4027,7 +4393,8 @@
       "average_of_net_q": 3.390400000000004,
       "sum_of_net": 3.390400000000004,
       "sum_of_total_revenue": 37.440000000000005,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": 5.6368
     },
     {
       "sku": "FAB-307",
@@ -4038,7 +4405,8 @@
       "average_of_net_q": -8.451600000000006,
       "sum_of_net": -8.451600000000006,
       "sum_of_total_revenue": 108.24,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": -1.9572
     },
     {
       "sku": "UPO-AC3",
@@ -4049,7 +4417,8 @@
       "average_of_net_q": -17.304021794871804,
       "sum_of_net": -17.304021794871804,
       "sum_of_total_revenue": 51.31,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": -14.225422
     },
     {
       "sku": "FAB-308",
@@ -4060,7 +4429,8 @@
       "average_of_net_q": -16.639849999999996,
       "sum_of_net": -16.639849999999996,
       "sum_of_total_revenue": 42.79,
-      "sum_of_qty": 1.0
+      "sum_of_qty": 1.0,
+      "sum_of_final_net": -14.07245
     },
     {
       "sku": "STA-52",
@@ -4071,7 +4441,8 @@
       "average_of_net_q": -3.159905568522827,
       "sum_of_net": -6.319811137045654,
       "sum_of_total_revenue": 45.88830943647886,
-      "sum_of_qty": 2.0
+      "sum_of_qty": 2.0,
+      "sum_of_final_net": -3.566513
     }
   ],
   "totals": {
@@ -4083,6 +4454,7 @@
     "average_of_net_q": 15.044573391945876,
     "sum_of_net": 57270.263923013525,
     "sum_of_total_revenue": 294677.0466999994,
-    "sum_of_qty": 3856.0
+    "sum_of_qty": 3856.0,
+    "sum_of_final_net": 76271.426992
   }
 }
