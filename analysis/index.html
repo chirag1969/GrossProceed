@@ -292,6 +292,26 @@
       padding: 1.25rem;
       box-shadow: 0 8px 24px rgba(16, 24, 40, 0.06);
     }
+    .placeholder-card {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      flex: 1 1 auto;
+      justify-content: center;
+      min-height: 240px;
+    }
+    .placeholder-card__title {
+      margin: 0;
+      font-size: 1.35rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .placeholder-card__message {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+      max-width: 40ch;
+    }
     .table-card {
       display: flex;
       flex-direction: column;
@@ -1468,14 +1488,24 @@
 </head>
 <body>
   <nav class="tab-nav" aria-label="Dashboard views">
-    <button class="tab-button active" id="tab-lo-button" type="button" data-tab="lo" aria-controls="tab-lo" aria-selected="true">LO - Sales &amp; Spend</button>
-    <button class="tab-button" id="tab-platform-button" type="button" data-tab="platform" aria-controls="tab-platform" aria-selected="false">Platform Sales &amp; NET</button>
-    <button class="tab-button" id="tab-sku-summary-button" type="button" data-tab="sku-summary" aria-controls="tab-sku-summary" aria-selected="false">SKU wise summary</button>
+    <button class="tab-button" id="tab-sku-gap-button" type="button" data-tab="sku-gap" aria-controls="tab-sku-gap" aria-selected="false">SKU wise Gap</button>
     <button class="tab-button" id="tab-dashboard-button" type="button" data-tab="dashboard" aria-controls="tab-dashboard" aria-selected="false">Dashboard</button>
+    <button class="tab-button" id="tab-platform-button" type="button" data-tab="platform" aria-controls="tab-platform" aria-selected="false">Store wise Daily Sales</button>
+    <button class="tab-button" id="tab-new-product-button" type="button" data-tab="new-product" aria-controls="tab-new-product" aria-selected="false">New Product Performance</button>
+    <button class="tab-button" id="tab-lo-button" type="button" data-tab="lo" aria-controls="tab-lo" aria-selected="false">LO - Sales &amp; Spend</button>
     <button class="tab-button" id="tab-main-button" type="button" data-tab="main" aria-controls="tab-main" aria-selected="false">Main</button>
-    <button class="tab-button" id="tab-regular-button" type="button" data-tab="regular" aria-controls="tab-regular" aria-selected="false">Regular</button>
+    <button class="tab-button" id="tab-sku-summary-button" type="button" data-tab="sku-summary" aria-controls="tab-sku-summary" aria-selected="false">SKU wise summary</button>
+    <button class="tab-button active" id="tab-regular-button" type="button" data-tab="regular" aria-controls="tab-regular" aria-selected="true">Regular</button>
   </nav>
-  <div class="tab-panel active" id="tab-lo" data-tab="lo" role="tabpanel" aria-labelledby="tab-lo-button" aria-hidden="false">
+  <div class="tab-panel" id="tab-sku-gap" data-tab="sku-gap" role="tabpanel" aria-labelledby="tab-sku-gap-button" aria-hidden="true">
+    <section class="grid">
+      <article class="card placeholder-card">
+        <h2 class="placeholder-card__title">SKU wise Gap</h2>
+        <p class="placeholder-card__message">A web version of the SKUWISE GAP sheet is not yet available. Please refer to the Excel workbook for the latest details.</p>
+      </article>
+    </section>
+  </div>
+  <div class="tab-panel" id="tab-lo" data-tab="lo" role="tabpanel" aria-labelledby="tab-lo-button" aria-hidden="true">
     <section class="grid lo-grid">
       <article class="card lo-card">
         <header class="lo-card__header">
@@ -1511,12 +1541,12 @@
       <article class="card lo-card">
         <header class="lo-card__header">
           <div class="lo-card__heading">
-            <h2 class="lo-card__title">Platform performance</h2>
-            <p class="lo-card__subtitle">Daily sales and NET totals grouped by platform from regular data</p>
+            <h2 class="lo-card__title">Store wise Daily Sales</h2>
+            <p class="lo-card__subtitle">Daily sales and NET totals grouped by store from regular data</p>
           </div>
           <button type="button" class="filter-button lo-card__filter-button" id="platform-filter-button" aria-haspopup="dialog" aria-expanded="false">Filters</button>
         </header>
-        <nav class="sub-tab-nav" aria-label="Platform metrics">
+        <nav class="sub-tab-nav" aria-label="Store metrics">
           <button class="sub-tab-button platform-tab-button active" id="platform-sales-button" type="button" data-subtab="sales" aria-controls="platform-sales-panel" aria-selected="true">Sales</button>
           <button class="sub-tab-button platform-tab-button" id="platform-net-button" type="button" data-subtab="net" aria-controls="platform-net-panel" aria-selected="false">NET</button>
         </nav>
@@ -1534,6 +1564,14 @@
             </div>
           </div>
         </div>
+      </article>
+    </section>
+  </div>
+  <div class="tab-panel" id="tab-new-product" data-tab="new-product" role="tabpanel" aria-labelledby="tab-new-product-button" aria-hidden="true">
+    <section class="grid">
+      <article class="card placeholder-card">
+        <h2 class="placeholder-card__title">New Product Performance</h2>
+        <p class="placeholder-card__message">Insights from the NEW PRODUCT PERFORMANCE sheet will be added soon.</p>
       </article>
     </section>
   </div>
@@ -1628,7 +1666,7 @@
       </article>
     </section>
   </div>
-  <div class="tab-panel" id="tab-regular" data-tab="regular" role="tabpanel" aria-labelledby="tab-regular-button" aria-hidden="true">
+  <div class="tab-panel active" id="tab-regular" data-tab="regular" role="tabpanel" aria-labelledby="tab-regular-button" aria-hidden="false">
     <section class="grid">
       <article class="card regular-card">
         <header class="regular-card__header">
@@ -3061,7 +3099,7 @@
       document.documentElement.style.setProperty('--sticky-header-offset', `${offset}px`);
     }
 
-    setActiveTab('lo');
+    setActiveTab('regular');
     updateStickyOffset();
     window.addEventListener('resize', () => {
       updateStickyOffset();
