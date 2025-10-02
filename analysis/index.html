@@ -2181,6 +2181,7 @@
       { id: 'row', label: 'Row labels', type: 'row', columnIndex: 0 },
       { id: 'new-old', label: 'NEW/OLD', type: 'attribute' },
     ];
+    const NEW_PRODUCT_DEFAULT_NEW_OLD_SELECTION = ['NEW24', 'NEW25'];
     const NEW_PRODUCT_PIVOT_CONFIGS = [
       {
         id: 'new-product-target',
@@ -3163,6 +3164,9 @@
       if (!config) {
         return null;
       }
+      if (!Object.prototype.hasOwnProperty.call(config, 'defaultNewOldSelectionApplied')) {
+        config.defaultNewOldSelectionApplied = false;
+      }
       if (!config.filterState) {
         const definitionsSource = Array.isArray(config.filterFieldDefinitions) && config.filterFieldDefinitions.length
           ? config.filterFieldDefinitions
@@ -3191,7 +3195,20 @@
           activeFieldId: definitions[0]?.id || null,
         };
       }
-      return config.filterState;
+      const filterState = config.filterState;
+      if (!config.defaultNewOldSelectionApplied) {
+        const newOldField = filterState.fields.get('new-old');
+        if (newOldField && !(newOldField.activeSelection instanceof Set)) {
+          const initialSelection = NEW_PRODUCT_DEFAULT_NEW_OLD_SELECTION
+            .map((value) => (typeof value === 'string' ? value.trim() : ''))
+            .filter((value) => value.length > 0);
+          if (initialSelection.length) {
+            newOldField.activeSelection = new Set(initialSelection);
+            config.defaultNewOldSelectionApplied = true;
+          }
+        }
+      }
+      return filterState;
     }
 
     function getActiveNewProductFilterField(config) {
@@ -3606,6 +3623,7 @@
         });
       }
       config.rowLabelNewOldMap = new Map();
+      config.defaultNewOldSelectionApplied = false;
     }
 
     function setupNewProductFilter(config) {
