@@ -382,6 +382,36 @@
       cursor: not-allowed;
       box-shadow: none;
     }
+    .filter-clear-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 2.25rem;
+      height: 2.25rem;
+      border-radius: 999px;
+      border: none;
+      background: rgba(27, 30, 40, 0.1);
+      color: var(--muted);
+      font-size: 1.25rem;
+      line-height: 1;
+      cursor: pointer;
+      transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .filter-clear-button:hover,
+    .filter-clear-button:focus-visible {
+      background: rgba(27, 30, 40, 0.18);
+      color: var(--text);
+      box-shadow: 0 10px 22px rgba(27, 30, 40, 0.18);
+      outline: none;
+    }
+    .filter-clear-button[hidden] {
+      display: none !important;
+    }
+    .filter-clear-button:disabled {
+      cursor: not-allowed;
+      opacity: 0.45;
+      box-shadow: none;
+    }
     .regular-card__title {
       margin: 0;
       font-size: 1.3rem;
@@ -1634,6 +1664,16 @@
             <p class="lo-card__subtitle">Daily sales and spend totals derived from regular data</p>
           </div>
           <button type="button" class="filter-button lo-card__filter-button" id="lo-filter-button" aria-haspopup="dialog" aria-expanded="false">Filters</button>
+          <button
+            type="button"
+            class="filter-clear-button"
+            id="lo-filter-clear-button"
+            aria-label="Clear listing owner filters"
+            title="Clear filters"
+            hidden
+          >
+            <span aria-hidden="true">&times;</span>
+          </button>
         </header>
         <nav class="sub-tab-nav" aria-label="Listing owner metrics">
           <button class="sub-tab-button lo-sub-tab-button active" id="lo-sales-button" type="button" data-subtab="sales" aria-controls="lo-sales-panel" aria-selected="true">Sales</button>
@@ -1665,6 +1705,16 @@
             <p class="lo-card__subtitle">Daily sales and NET totals grouped by store from regular data</p>
           </div>
           <button type="button" class="filter-button lo-card__filter-button" id="platform-filter-button" aria-haspopup="dialog" aria-expanded="false">Filters</button>
+          <button
+            type="button"
+            class="filter-clear-button"
+            id="platform-filter-clear-button"
+            aria-label="Clear store filters"
+            title="Clear filters"
+            hidden
+          >
+            <span aria-hidden="true">&times;</span>
+          </button>
         </header>
         <nav class="sub-tab-nav" aria-label="Store metrics">
           <button class="sub-tab-button platform-tab-button active" id="platform-sales-button" type="button" data-subtab="sales" aria-controls="platform-sales-panel" aria-selected="true">Sales</button>
@@ -1697,6 +1747,16 @@
             <p class="new-product-card__subtitle" id="new-product-target-subtitle">Pivot metrics derived from the Main sheet dataset</p>
           </div>
           <button type="button" class="filter-button" id="new-product-target-filter-button" aria-haspopup="dialog" aria-expanded="false">Filter rows</button>
+          <button
+            type="button"
+            class="filter-clear-button"
+            id="new-product-target-filter-clear-button"
+            aria-label="Clear new product filters"
+            title="Clear filters"
+            hidden
+          >
+            <span aria-hidden="true">&times;</span>
+          </button>
         </header>
         <div class="new-product-table-container">
           <div class="new-product-table-wrapper">
@@ -1711,6 +1771,16 @@
             <p class="new-product-card__subtitle" id="new-product-secondary-subtitle">Pivot metrics derived from the Main sheet dataset</p>
           </div>
           <button type="button" class="filter-button" id="new-product-secondary-filter-button" aria-haspopup="dialog" aria-expanded="false">Filter rows</button>
+          <button
+            type="button"
+            class="filter-clear-button"
+            id="new-product-secondary-filter-clear-button"
+            aria-label="Clear new product filters"
+            title="Clear filters"
+            hidden
+          >
+            <span aria-hidden="true">&times;</span>
+          </button>
         </header>
         <div class="new-product-table-container">
           <div class="new-product-table-wrapper">
@@ -1728,6 +1798,16 @@
           <p class="sku-card__subtitle">Pivoted averages, fees, and totals by SKU directly from the workbook</p>
           <div class="sku-card__toolbar" data-active="false">
             <button type="button" class="filter-button sku-card__filter-button" id="sku-filter-button" aria-haspopup="dialog" aria-expanded="false">Filters</button>
+            <button
+              type="button"
+              class="filter-clear-button"
+              id="sku-filter-clear-button"
+              aria-label="Clear SKU summary filters"
+              title="Clear filters"
+              hidden
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
             <div class="sku-card__pagination" id="sku-summary-pagination" aria-label="SKU wise summary pagination" aria-hidden="true"></div>
           </div>
         </header>
@@ -1756,6 +1836,16 @@
             data-active="false"
           >
             Filters
+          </button>
+          <button
+            type="button"
+            class="filter-clear-button"
+            id="dashboard-filter-clear-button"
+            aria-label="Clear dashboard filters"
+            title="Clear filters"
+            hidden
+          >
+            <span aria-hidden="true">&times;</span>
           </button>
         </header>
         <div class="dashboard-table-container">
@@ -1802,6 +1892,16 @@
           </div>
           <div class="regular-card__controls">
             <button type="button" class="regular-card__filter-button filter-button" id="main-filter-button" aria-haspopup="dialog" aria-expanded="false" data-active="false">Filters</button>
+            <button
+              type="button"
+              class="filter-clear-button"
+              id="main-filter-clear-button"
+              aria-label="Clear main filters"
+              title="Clear filters"
+              hidden
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
             <div class="regular-card__pagination" id="main-table-pagination" aria-label="Main table pagination"></div>
           </div>
         </header>
@@ -1821,6 +1921,16 @@
           </div>
           <div class="regular-card__controls">
             <button type="button" class="regular-card__filter-button filter-button" id="regular-filter-button" aria-haspopup="dialog" aria-expanded="false" data-active="false">Filters</button>
+            <button
+              type="button"
+              class="filter-clear-button"
+              id="regular-filter-clear-button"
+              aria-label="Clear regular filters"
+              title="Clear filters"
+              hidden
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
             <div class="regular-card__pagination" id="regular-table-pagination" aria-label="Regular table pagination"></div>
           </div>
         </header>
@@ -1930,9 +2040,15 @@
     const platformSubTabButtons = document.querySelectorAll('.platform-tab-button');
     const platformSubTabPanels = document.querySelectorAll('.platform-tab-panel');
     const loFilterButtonElement = document.getElementById('lo-filter-button');
+    const loFilterClearButtonElement = document.getElementById('lo-filter-clear-button');
     const platformFilterButtonElement = document.getElementById('platform-filter-button');
+    const platformFilterClearButtonElement = document.getElementById('platform-filter-clear-button');
     const dashboardFilterButtonElement = document.getElementById('dashboard-filter-button');
+    const dashboardFilterClearButtonElement = document.getElementById('dashboard-filter-clear-button');
     const newProductStatusElement = document.getElementById('new-product-status');
+    const skuFilterClearButtonElement = document.getElementById('sku-filter-clear-button');
+    const mainFilterClearButtonElement = document.getElementById('main-filter-clear-button');
+    const regularFilterClearButtonElement = document.getElementById('regular-filter-clear-button');
 
     let regularTable;
     let regularTableInitialised = false;
@@ -2002,6 +2118,7 @@
     let regularFilterInitialised = false;
     let regularFilterEligibleColumns = [];
     let regularFilterButtons = [];
+    let regularFilterClearButtons = [];
     let activeRegularFilterTrigger = null;
     let mainFilterActiveColumnIndex = null;
     let mainFilterSelection = new Set();
@@ -2009,6 +2126,7 @@
     let mainFilterInitialised = false;
     let mainFilterEligibleColumns = [];
     let mainFilterButtons = [];
+    let mainFilterClearButtons = [];
     let activeMainFilterTrigger = null;
     let totalColumnIndex = -1;
     let mainTotalColumnIndex = -1;
@@ -2055,6 +2173,7 @@
         filterResetId: 'new-product-target-filter-reset',
         filterEmptyId: 'new-product-target-filter-empty',
         filterTitleId: 'new-product-target-filter-title',
+        filterClearButtonId: 'new-product-target-filter-clear-button',
         subtitleId: 'new-product-target-subtitle',
         filterFieldDefinitions: NEW_PRODUCT_FILTER_FIELDS,
       },
@@ -2070,6 +2189,7 @@
         filterResetId: 'new-product-secondary-filter-reset',
         filterEmptyId: 'new-product-secondary-filter-empty',
         filterTitleId: 'new-product-secondary-filter-title',
+        filterClearButtonId: 'new-product-secondary-filter-clear-button',
         subtitleId: 'new-product-secondary-subtitle',
         filterFieldDefinitions: NEW_PRODUCT_FILTER_FIELDS,
       },
@@ -3119,6 +3239,9 @@
         return;
       }
       const button = config.filterButton || document.getElementById(config.filterButtonId);
+      const clearButton = config.filterClearButton || (config.filterClearButtonId
+        ? document.getElementById(config.filterClearButtonId)
+        : null);
       if (!button) {
         return;
       }
@@ -3130,6 +3253,11 @@
         button.setAttribute('aria-disabled', 'true');
         button.disabled = true;
         button.setAttribute('data-active', 'false');
+        if (clearButton) {
+          clearButton.hidden = true;
+          clearButton.setAttribute('aria-hidden', 'true');
+          clearButton.disabled = true;
+        }
         return;
       }
       button.disabled = false;
@@ -3138,6 +3266,17 @@
         ? Array.from(filterState.fields.values()).some((field) => field.activeSelection instanceof Set && field.activeSelection.size > 0)
         : false;
       button.setAttribute('data-active', isActive ? 'true' : 'false');
+      if (clearButton) {
+        if (isActive) {
+          clearButton.hidden = false;
+          clearButton.removeAttribute('aria-hidden');
+          clearButton.disabled = false;
+        } else {
+          clearButton.hidden = true;
+          clearButton.setAttribute('aria-hidden', 'true');
+          clearButton.disabled = true;
+        }
+      }
     }
 
     function computeNewProductRowValues(baseRow, attribute, normalizedNewOldSelection) {
@@ -3417,6 +3556,25 @@
       }
     }
 
+    function clearNewProductFilters(config) {
+      if (!config) {
+        return;
+      }
+      const filterState = ensureNewProductFilterState(config);
+      if (filterState) {
+        filterState.fields.forEach((field) => {
+          field.activeSelection = null;
+          field.pendingSelection = null;
+        });
+      }
+      closeNewProductFilter(config, { keepSelection: true, returnFocus: false });
+      updateNewProductFilterButtonState(config);
+      if (config.table) {
+        updateNewProductTableFilters(config);
+        config.table.draw();
+      }
+    }
+
     function resetNewProductFilterState(config) {
       const filterState = ensureNewProductFilterState(config);
       if (filterState) {
@@ -3442,6 +3600,9 @@
       config.filterEmptyElement = document.getElementById(config.filterEmptyId);
       config.filterCloseButton = config.filterContainer
         ? config.filterContainer.querySelector('.regular-filter__close')
+        : null;
+      config.filterClearButton = config.filterClearButtonId
+        ? document.getElementById(config.filterClearButtonId)
         : null;
       ensureNewProductFilterState(config);
       if (!config.filterButton || !config.filterContainer) {
@@ -3484,6 +3645,9 @@
           }
           applyNewProductFilter(config);
         });
+      }
+      if (config.filterClearButton) {
+        config.filterClearButton.addEventListener('click', () => clearNewProductFilters(config));
       }
     }
 
@@ -4482,6 +4646,24 @@
       return Object.values(source).some((values) => Array.isArray(values) && values.length > 0);
     }
 
+    function setFilterClearButtonsVisibility(buttons, isActive) {
+      const shouldShow = Boolean(isActive);
+      buttons.forEach((button) => {
+        if (!button) {
+          return;
+        }
+        if (shouldShow) {
+          button.hidden = false;
+          button.removeAttribute('aria-hidden');
+          button.disabled = false;
+        } else {
+          button.hidden = true;
+          button.setAttribute('aria-hidden', 'true');
+          button.disabled = true;
+        }
+      });
+    }
+
     function updateRegularFilterButtonState() {
       const isActive = hasActiveColumnFilters();
       const targets = regularFilterButtons.length
@@ -4492,6 +4674,7 @@
           button.setAttribute('data-active', isActive ? 'true' : 'false');
         }
       });
+      setFilterClearButtonsVisibility(regularFilterClearButtons, isActive);
     }
 
     function updateMainFilterButtonState() {
@@ -4504,6 +4687,7 @@
           button.setAttribute('data-active', isActive ? 'true' : 'false');
         }
       });
+      setFilterClearButtonsVisibility(mainFilterClearButtons, isActive);
     }
 
     function syncRegularFilterSelectionFromFilters(columnIndex) {
@@ -4974,6 +5158,21 @@
         : null;
       const skuFilterButton = document.getElementById('sku-filter-button');
       regularFilterButtons = [regularFilterButtonElement, loFilterButtonElement, platformFilterButtonElement, skuFilterButton].filter((button) => button);
+      regularFilterClearButtons = [
+        regularFilterClearButtonElement,
+        loFilterClearButtonElement,
+        platformFilterClearButtonElement,
+        skuFilterClearButtonElement,
+      ].filter((button) => button);
+
+      const handleRegularClear = () => {
+        const tableInstance = regularTableInitialised && regularTable ? regularTable : null;
+        clearAllColumnFilters(tableInstance);
+        closeRegularFilter({ returnFocus: false });
+      };
+      regularFilterClearButtons.forEach((button) => {
+        button.addEventListener('click', handleRegularClear);
+      });
 
       const elementsReady = [
         regularFilterButtonElement,
@@ -5148,6 +5347,16 @@
         ? mainFilterContainerElement.querySelector('.regular-filter__close')
         : null;
       mainFilterButtons = [mainFilterButtonElement, dashboardFilterButtonElement].filter((button) => button);
+      mainFilterClearButtons = [mainFilterClearButtonElement, dashboardFilterClearButtonElement].filter((button) => button);
+
+      const handleMainClear = () => {
+        const tableInstance = mainTableInitialised && mainTable ? mainTable : null;
+        clearAllColumnFilters(tableInstance, mainColumnFilters, handleMainFilterChange);
+        closeMainFilter({ returnFocus: false });
+      };
+      mainFilterClearButtons.forEach((button) => {
+        button.addEventListener('click', handleMainClear);
+      });
 
       const elementsReady = [
         mainFilterButtonElement,
