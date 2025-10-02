@@ -1022,7 +1022,9 @@
     #regular-table thead tr:last-child th.cell-numeric,
     #regular-table tbody td.cell-numeric,
     #main-table thead tr:last-child th.cell-numeric,
-    #main-table tbody td.cell-numeric {
+    #main-table tbody td.cell-numeric,
+    .new-product-table thead th.cell-numeric,
+    .new-product-table tbody td.cell-numeric {
       text-align: right;
       font-variant-numeric: tabular-nums;
     }
@@ -2234,6 +2236,16 @@
       return String(value).trim().toUpperCase();
     }
 
+    function normaliseNewProductStatus(value) {
+      if (value === null || value === undefined) {
+        return '';
+      }
+      if (typeof value === 'string') {
+        return value.trim().toUpperCase();
+      }
+      return String(value).trim().toUpperCase();
+    }
+
     function sortNewProductNewOldValues(values) {
       if (!Array.isArray(values) || !values.length) {
         return [];
@@ -2795,9 +2807,30 @@
             totals: new Array(metricDescriptors.length).fill(0),
             hasValue: new Array(metricDescriptors.length).fill(false),
             newOldValues: new Set(),
+            newOldBreakdown: new Map(),
           };
           groupLookup.set(normalizedLabel, entry);
           groups.push(entry);
+        }
+        let newOldEntry = null;
+        if (newOldIndex !== undefined && newOldIndex < row.length) {
+          const rawNewOld = row[newOldIndex];
+          const trimmed = typeof rawNewOld === 'string'
+            ? rawNewOld.trim()
+            : (rawNewOld === null || rawNewOld === undefined ? '' : String(rawNewOld).trim());
+          const normalizedNewOld = normaliseNewProductStatus(trimmed);
+          if (normalizedNewOld) {
+            entry.newOldValues.add(trimmed);
+            if (!entry.newOldBreakdown.has(normalizedNewOld)) {
+              entry.newOldBreakdown.set(normalizedNewOld, {
+                label: trimmed,
+                normalizedLabel: normalizedNewOld,
+                totals: new Array(metricDescriptors.length).fill(0),
+                hasValue: new Array(metricDescriptors.length).fill(false),
+              });
+            }
+            newOldEntry = entry.newOldBreakdown.get(normalizedNewOld);
+          }
         }
         metricDescriptors.forEach((descriptor, descriptorIndex) => {
           if (!descriptor) {
@@ -2811,17 +2844,12 @@
           if (numericValue !== null) {
             entry.totals[descriptorIndex] += numericValue;
             entry.hasValue[descriptorIndex] = true;
+            if (newOldEntry) {
+              newOldEntry.totals[descriptorIndex] += numericValue;
+              newOldEntry.hasValue[descriptorIndex] = true;
+            }
           }
         });
-        if (newOldIndex !== undefined && newOldIndex < row.length) {
-          const rawNewOld = row[newOldIndex];
-          const trimmed = typeof rawNewOld === 'string'
-            ? rawNewOld.trim()
-            : (rawNewOld === null || rawNewOld === undefined ? '' : String(rawNewOld).trim());
-          if (trimmed) {
-            entry.newOldValues.add(trimmed);
-          }
-        }
       });
 
       const rows = [];
@@ -2839,6 +2867,20 @@
           label: entry.label,
           normalizedLabel: entry.normalizedLabel,
           newOld: new Set(entry.newOldValues),
+          totals: entry.totals.slice(),
+          hasValue: entry.hasValue.slice(),
+          newOldBreakdown: (() => {
+            const breakdown = new Map();
+            entry.newOldBreakdown.forEach((value, key) => {
+              breakdown.set(key, {
+                label: value.label,
+                normalizedLabel: value.normalizedLabel,
+                totals: value.totals.slice(),
+                hasValue: value.hasValue.slice(),
+              });
+            });
+            return breakdown;
+          })(),
         });
       });
 
@@ -2856,6 +2898,48 @@
 
     function buildNewProductPivotSectionsFromDataset(dataset) {
       return NEW_PRODUCT_DATASET_PIVOT_DEFINITIONS.map((definition) => buildNewProductPivotFromDataset(dataset, definition));
+    }
+
+    function cloneNewProductRowAttributes(attributes) {
+      if (!Array.isArray(attributes)) {
+        return [];
+      }
+      return attributes.map((attribute) => {
+        if (!attribute || typeof attribute !== 'object') {
+          return {
+            label: '',
+            normalizedLabel: '',
+            newOld: new Set(),
+            totals: [],
+            hasValue: [],
+            newOldBreakdown: new Map(),
+          };
+        }
+        const breakdown = new Map();
+        if (attribute.newOldBreakdown instanceof Map) {
+          attribute.newOldBreakdown.forEach((value, key) => {
+            if (!value || typeof value !== 'object') {
+              return;
+            }
+            const totals = Array.isArray(value.totals) ? value.totals.slice() : [];
+            const hasValue = Array.isArray(value.hasValue) ? value.hasValue.slice() : [];
+            breakdown.set(key, {
+              label: value.label || '',
+              normalizedLabel: value.normalizedLabel || key,
+              totals,
+              hasValue,
+            });
+          });
+        }
+        return {
+          label: attribute.label || '',
+          normalizedLabel: attribute.normalizedLabel || normaliseNewProductLabel(attribute.label || ''),
+          newOld: attribute.newOld instanceof Set ? new Set(attribute.newOld) : new Set(),
+          totals: Array.isArray(attribute.totals) ? attribute.totals.slice() : [],
+          hasValue: Array.isArray(attribute.hasValue) ? attribute.hasValue.slice() : [],
+          newOldBreakdown: breakdown,
+        };
+      });
     }
 
     function loadNewProductPivotSectionsFromDataset() {
@@ -3056,24 +3140,123 @@
       button.setAttribute('data-active', isActive ? 'true' : 'false');
     }
 
+    function computeNewProductRowValues(baseRow, attribute, normalizedNewOldSelection) {
+      const safeRow = Array.isArray(baseRow) ? baseRow : [];
+      const label = safeRow.length ? safeRow[0] : '';
+      const metricCount = Math.max(0, safeRow.length - 1);
+      if (!Array.isArray(normalizedNewOldSelection)) {
+        const hasValues = (() => {
+          if (!attribute || typeof attribute !== 'object') {
+            return safeRow.slice(1).some((value) => !isPlaceholderValue(value));
+          }
+          if (Array.isArray(attribute.hasValue)) {
+            return attribute.hasValue.some((flag) => Boolean(flag));
+          }
+          return safeRow.slice(1).some((value) => !isPlaceholderValue(value));
+        })();
+        return {
+          row: safeRow.slice(),
+          hasValues,
+        };
+      }
+      if (!normalizedNewOldSelection.length) {
+        return {
+          row: [label, ...new Array(metricCount).fill('')],
+          hasValues: false,
+        };
+      }
+      const breakdown = attribute && attribute.newOldBreakdown instanceof Map ? attribute.newOldBreakdown : null;
+      if (!breakdown || !breakdown.size) {
+        return {
+          row: [label, ...new Array(metricCount).fill('')],
+          hasValues: false,
+        };
+      }
+      const totals = new Array(metricCount).fill(0);
+      const hasValueFlags = new Array(metricCount).fill(false);
+      normalizedNewOldSelection.forEach((key) => {
+        if (!key || !breakdown.has(key)) {
+          return;
+        }
+        const entry = breakdown.get(key);
+        if (!entry || typeof entry !== 'object') {
+          return;
+        }
+        const entryTotals = Array.isArray(entry.totals) ? entry.totals : [];
+        const entryHasValue = Array.isArray(entry.hasValue) ? entry.hasValue : [];
+        entryTotals.forEach((value, index) => {
+          if (!Number.isFinite(value)) {
+            return;
+          }
+          totals[index] += value;
+          if (entryHasValue[index] || value !== 0) {
+            hasValueFlags[index] = true;
+          }
+        });
+      });
+      const hasValues = hasValueFlags.some((flag) => Boolean(flag));
+      const computedRow = [label];
+      for (let index = 0; index < metricCount; index += 1) {
+        if (hasValueFlags[index]) {
+          computedRow.push(totals[index]);
+        } else {
+          computedRow.push('');
+        }
+      }
+      return {
+        row: computedRow,
+        hasValues,
+      };
+    }
+
     function updateNewProductTableFilters(config) {
       if (!config || !config.table) {
         return;
       }
       const filterState = ensureNewProductFilterState(config);
       const rowField = filterState ? filterState.fields.get('row') : null;
-      const column = config.table.column(0);
-      const selection = rowField ? rowField.activeSelection : null;
-      if (selection === null || selection === undefined) {
-        column.search('', false, false);
-      } else if (selection instanceof Set) {
-        if (!selection.size) {
-          column.search('^(?!)', true, false);
-        } else {
-          const safeValues = Array.from(selection).map((value) => escapeRegex(value));
-          column.search(`^(${safeValues.join('|')})$`, true, false);
+      const newOldField = filterState ? filterState.fields.get('new-old') : null;
+      const rowSelection = rowField ? rowField.activeSelection : null;
+      const newOldSelection = newOldField ? newOldField.activeSelection : null;
+      const rawRows = Array.isArray(config.rawRows) ? config.rawRows : [];
+      const rowAttributes = Array.isArray(config.rowAttributes) ? config.rowAttributes : [];
+      const columns = Array.isArray(config.columns) ? config.columns : [];
+      const normalizedRowSelection = rowSelection instanceof Set
+        ? new Set(Array.from(rowSelection).map((value) => normaliseNewProductLabel(value)))
+        : null;
+      const normalizedNewOldSelection = newOldSelection instanceof Set
+        ? Array.from(newOldSelection)
+          .map((value) => normaliseNewProductStatus(value))
+          .filter((value) => value.length)
+        : null;
+      const filteredRows = [];
+      rawRows.forEach((row, index) => {
+        if (!Array.isArray(row) || !row.length) {
+          return;
         }
+        const label = row[0];
+        const normalizedLabel = normaliseNewProductLabel(label);
+        if (normalizedRowSelection instanceof Set) {
+          if (!normalizedRowSelection.size) {
+            return;
+          }
+          if (!normalizedRowSelection.has(normalizedLabel)) {
+            return;
+          }
+        }
+        const attribute = rowAttributes[index];
+        const computed = computeNewProductRowValues(row, attribute, normalizedNewOldSelection);
+        if (!computed.hasValues) {
+          return;
+        }
+        filteredRows.push(computed.row);
+      });
+      const formattedRows = filteredRows.map((row) => row.map((value, columnIndex) => formatCellValue(value, columns[columnIndex])));
+      config.table.clear();
+      if (formattedRows.length) {
+        config.table.rows.add(formattedRows);
       }
+      config.table.draw();
       if (typeof config.tableId === 'string') {
         newProductTableFilterRegistry.set(config.tableId, config);
       }
@@ -3314,7 +3497,15 @@
       }
       tableElement.innerHTML = '';
       const columns = Array.isArray(pivot?.columns) ? pivot.columns.slice() : [];
-      const rows = Array.isArray(pivot?.rows) ? pivot.rows.slice() : [];
+      const rows = Array.isArray(pivot?.rows)
+        ? pivot.rows.map((row) => (Array.isArray(row) ? row.slice() : []))
+        : [];
+      const rowAttributes = Array.isArray(pivot?.rowAttributes)
+        ? cloneNewProductRowAttributes(pivot.rowAttributes)
+        : [];
+      config.rawRows = rows.map((row) => row.slice());
+      config.rowAttributes = rowAttributes;
+      config.columns = columns.slice();
       if (!columns.length || !rows.length) {
         tableElement.innerHTML = '<tbody><tr><td>No data available</td></tr></tbody>';
         config.table = null;
@@ -3365,7 +3556,6 @@
           rowField.activeSelection = validValues.length ? new Set(validValues) : null;
         }
       }
-      const rowAttributes = Array.isArray(pivot?.rowAttributes) ? pivot.rowAttributes : [];
       const rowLabelNewOldMap = new Map();
       const newOldValues = new Set();
       const appendNewOldValue = (valueSet, rawValue) => {
