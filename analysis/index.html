@@ -371,6 +371,11 @@
       outline: none;
       box-shadow: 0 10px 22px rgba(20, 90, 252, 0.18);
     }
+    .filter-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
     .filter-button[data-active="true"] {
       background: var(--accent);
       color: #fff;
@@ -1663,17 +1668,19 @@
             <h2 class="lo-card__title">Listing owner performance</h2>
             <p class="lo-card__subtitle">Daily sales and spend totals derived from regular data</p>
           </div>
-          <button type="button" class="filter-button lo-card__filter-button" id="lo-filter-button" aria-haspopup="dialog" aria-expanded="false">Filters</button>
-          <button
-            type="button"
-            class="filter-clear-button"
-            id="lo-filter-clear-button"
-            aria-label="Clear listing owner filters"
-            title="Clear filters"
-            hidden
-          >
-            <span aria-hidden="true">&times;</span>
-          </button>
+          <div class="filter-actions">
+            <button
+              type="button"
+              class="filter-clear-button"
+              id="lo-filter-clear-button"
+              aria-label="Clear listing owner filters"
+              title="Clear filters"
+              hidden
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+            <button type="button" class="filter-button lo-card__filter-button" id="lo-filter-button" aria-haspopup="dialog" aria-expanded="false">Filters</button>
+          </div>
         </header>
         <nav class="sub-tab-nav" aria-label="Listing owner metrics">
           <button class="sub-tab-button lo-sub-tab-button active" id="lo-sales-button" type="button" data-subtab="sales" aria-controls="lo-sales-panel" aria-selected="true">Sales</button>
@@ -1704,17 +1711,19 @@
             <h2 class="lo-card__title">Store wise Daily Sales</h2>
             <p class="lo-card__subtitle">Daily sales and NET totals grouped by store from regular data</p>
           </div>
-          <button type="button" class="filter-button lo-card__filter-button" id="platform-filter-button" aria-haspopup="dialog" aria-expanded="false">Filters</button>
-          <button
-            type="button"
-            class="filter-clear-button"
-            id="platform-filter-clear-button"
-            aria-label="Clear store filters"
-            title="Clear filters"
-            hidden
-          >
-            <span aria-hidden="true">&times;</span>
-          </button>
+          <div class="filter-actions">
+            <button
+              type="button"
+              class="filter-clear-button"
+              id="platform-filter-clear-button"
+              aria-label="Clear store filters"
+              title="Clear filters"
+              hidden
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+            <button type="button" class="filter-button lo-card__filter-button" id="platform-filter-button" aria-haspopup="dialog" aria-expanded="false">Filters</button>
+          </div>
         </header>
         <nav class="sub-tab-nav" aria-label="Store metrics">
           <button class="sub-tab-button platform-tab-button active" id="platform-sales-button" type="button" data-subtab="sales" aria-controls="platform-sales-panel" aria-selected="true">Sales</button>
@@ -1746,17 +1755,19 @@
             <h2 class="new-product-card__title">New product targets vs performance</h2>
             <p class="new-product-card__subtitle" id="new-product-target-subtitle">Pivot metrics derived from the Main sheet dataset</p>
           </div>
-          <button type="button" class="filter-button" id="new-product-target-filter-button" aria-haspopup="dialog" aria-expanded="false">Filter rows</button>
-          <button
-            type="button"
-            class="filter-clear-button"
-            id="new-product-target-filter-clear-button"
-            aria-label="Clear new product filters"
-            title="Clear filters"
-            hidden
-          >
-            <span aria-hidden="true">&times;</span>
-          </button>
+          <div class="filter-actions">
+            <button
+              type="button"
+              class="filter-clear-button"
+              id="new-product-target-filter-clear-button"
+              aria-label="Clear new product filters"
+              title="Clear filters"
+              hidden
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+            <button type="button" class="filter-button" id="new-product-target-filter-button" aria-haspopup="dialog" aria-expanded="false">Filter rows</button>
+          </div>
         </header>
         <div class="new-product-table-container">
           <div class="new-product-table-wrapper">
@@ -1770,17 +1781,19 @@
             <h2 class="new-product-card__title">New product targets vs performance (pivot 2)</h2>
             <p class="new-product-card__subtitle" id="new-product-secondary-subtitle">Pivot metrics derived from the Main sheet dataset</p>
           </div>
-          <button type="button" class="filter-button" id="new-product-secondary-filter-button" aria-haspopup="dialog" aria-expanded="false">Filter rows</button>
-          <button
-            type="button"
-            class="filter-clear-button"
-            id="new-product-secondary-filter-clear-button"
-            aria-label="Clear new product filters"
-            title="Clear filters"
-            hidden
-          >
-            <span aria-hidden="true">&times;</span>
-          </button>
+          <div class="filter-actions">
+            <button
+              type="button"
+              class="filter-clear-button"
+              id="new-product-secondary-filter-clear-button"
+              aria-label="Clear new product filters"
+              title="Clear filters"
+              hidden
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+            <button type="button" class="filter-button" id="new-product-secondary-filter-button" aria-haspopup="dialog" aria-expanded="false">Filter rows</button>
+          </div>
         </header>
         <div class="new-product-table-container">
           <div class="new-product-table-wrapper">
@@ -1797,17 +1810,19 @@
           <h2 class="sku-card__title">SKU wise summary</h2>
           <p class="sku-card__subtitle">Pivoted averages, fees, and totals by SKU directly from the workbook</p>
           <div class="sku-card__toolbar" data-active="false">
-            <button type="button" class="filter-button sku-card__filter-button" id="sku-filter-button" aria-haspopup="dialog" aria-expanded="false">Filters</button>
-            <button
-              type="button"
-              class="filter-clear-button"
-              id="sku-filter-clear-button"
-              aria-label="Clear SKU summary filters"
-              title="Clear filters"
-              hidden
-            >
-              <span aria-hidden="true">&times;</span>
-            </button>
+            <div class="filter-actions">
+              <button
+                type="button"
+                class="filter-clear-button"
+                id="sku-filter-clear-button"
+                aria-label="Clear SKU summary filters"
+                title="Clear filters"
+                hidden
+              >
+                <span aria-hidden="true">&times;</span>
+              </button>
+              <button type="button" class="filter-button sku-card__filter-button" id="sku-filter-button" aria-haspopup="dialog" aria-expanded="false">Filters</button>
+            </div>
             <div class="sku-card__pagination" id="sku-summary-pagination" aria-label="SKU wise summary pagination" aria-hidden="true"></div>
           </div>
         </header>
@@ -1827,26 +1842,28 @@
             <h2 class="dashboard-card__title">Name wise targets &amp; performance</h2>
             <p class="dashboard-card__subtitle">Aggregated Main sheet totals grouped by NAME (Excel dashboard pivot 1)</p>
           </div>
-          <button
-            type="button"
-            class="filter-button dashboard-card__filter-button"
-            id="dashboard-filter-button"
-            aria-haspopup="dialog"
-            aria-expanded="false"
-            data-active="false"
-          >
-            Filters
-          </button>
-          <button
-            type="button"
-            class="filter-clear-button"
-            id="dashboard-filter-clear-button"
-            aria-label="Clear dashboard filters"
-            title="Clear filters"
-            hidden
-          >
-            <span aria-hidden="true">&times;</span>
-          </button>
+          <div class="filter-actions">
+            <button
+              type="button"
+              class="filter-clear-button"
+              id="dashboard-filter-clear-button"
+              aria-label="Clear dashboard filters"
+              title="Clear filters"
+              hidden
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+            <button
+              type="button"
+              class="filter-button dashboard-card__filter-button"
+              id="dashboard-filter-button"
+              aria-haspopup="dialog"
+              aria-expanded="false"
+              data-active="false"
+            >
+              Filters
+            </button>
+          </div>
         </header>
         <div class="dashboard-table-container">
           <div class="dashboard-table-scroll">
@@ -1891,17 +1908,19 @@
             <p class="regular-card__subtitle">Detailed metrics sourced from the Main worksheet</p>
           </div>
           <div class="regular-card__controls">
-            <button type="button" class="regular-card__filter-button filter-button" id="main-filter-button" aria-haspopup="dialog" aria-expanded="false" data-active="false">Filters</button>
-            <button
-              type="button"
-              class="filter-clear-button"
-              id="main-filter-clear-button"
-              aria-label="Clear main filters"
-              title="Clear filters"
-              hidden
-            >
-              <span aria-hidden="true">&times;</span>
-            </button>
+            <div class="filter-actions">
+              <button
+                type="button"
+                class="filter-clear-button"
+                id="main-filter-clear-button"
+                aria-label="Clear main filters"
+                title="Clear filters"
+                hidden
+              >
+                <span aria-hidden="true">&times;</span>
+              </button>
+              <button type="button" class="regular-card__filter-button filter-button" id="main-filter-button" aria-haspopup="dialog" aria-expanded="false" data-active="false">Filters</button>
+            </div>
             <div class="regular-card__pagination" id="main-table-pagination" aria-label="Main table pagination"></div>
           </div>
         </header>
@@ -1920,17 +1939,19 @@
             <p class="regular-card__subtitle">Detailed order and spend metrics across all listings</p>
           </div>
           <div class="regular-card__controls">
-            <button type="button" class="regular-card__filter-button filter-button" id="regular-filter-button" aria-haspopup="dialog" aria-expanded="false" data-active="false">Filters</button>
-            <button
-              type="button"
-              class="filter-clear-button"
-              id="regular-filter-clear-button"
-              aria-label="Clear regular filters"
-              title="Clear filters"
-              hidden
-            >
-              <span aria-hidden="true">&times;</span>
-            </button>
+            <div class="filter-actions">
+              <button
+                type="button"
+                class="filter-clear-button"
+                id="regular-filter-clear-button"
+                aria-label="Clear regular filters"
+                title="Clear filters"
+                hidden
+              >
+                <span aria-hidden="true">&times;</span>
+              </button>
+              <button type="button" class="regular-card__filter-button filter-button" id="regular-filter-button" aria-haspopup="dialog" aria-expanded="false" data-active="false">Filters</button>
+            </div>
             <div class="regular-card__pagination" id="regular-table-pagination" aria-label="Regular table pagination"></div>
           </div>
         </header>
