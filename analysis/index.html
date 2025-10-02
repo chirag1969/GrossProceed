@@ -17,59 +17,160 @@
     }
     :root {
       color-scheme: light;
-      --bg: #f4f6fb;
-      --card-bg: #fff;
-      --text: #1b1e28;
+      --bg: #edf1ff;
+      --card-bg: #ffffff;
+      --text: #121625;
       --muted: #5f677b;
       --accent: #145afc;
+      --accent-soft: rgba(20, 90, 252, 0.12);
+      --shadow-soft: 0 24px 45px rgba(15, 23, 42, 0.12);
+      --transition-snappy: 260ms;
+      --transition-gentle: 340ms;
       --sticky-header-offset: 72px;
       font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     }
     body {
       margin: 0;
-      background: var(--bg);
+      background:
+        radial-gradient(circle at top left, rgba(20, 90, 252, 0.16), transparent 52%),
+        radial-gradient(circle at bottom right, rgba(20, 90, 252, 0.2), transparent 46%),
+        var(--bg);
       color: var(--text);
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       overflow-x: hidden;
       overflow-y: auto;
+      -webkit-font-smoothing: antialiased;
     }
     .tab-nav {
+      position: sticky;
+      top: 1rem;
+      z-index: 45;
       display: flex;
-      gap: 1rem;
-      margin: 1rem 2rem 0.75rem;
-      border-bottom: 1px solid rgba(27, 30, 40, 0.1);
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin: 1.25rem 2rem 1rem;
+      padding: 0.6rem;
+      border-radius: 999px;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.96) 0%, rgba(237, 241, 255, 0.82) 100%);
+      backdrop-filter: blur(18px);
+      box-shadow: 0 28px 55px rgba(15, 23, 42, 0.14);
+      border: 1px solid rgba(20, 90, 252, 0.12);
+      overflow: hidden;
     }
     .tab-button {
       position: relative;
-      padding: 0.65rem 1.5rem;
+      padding: 0.65rem 1.35rem;
       border: none;
-      background: none;
+      background: transparent;
       font: inherit;
       color: var(--muted);
       font-weight: 600;
       cursor: pointer;
-      border-bottom: 3px solid transparent;
-      transition: color 0.2s ease, border-color 0.2s ease;
+      border-radius: 999px;
+      z-index: 1;
+      transition:
+        color var(--transition-snappy) ease,
+        transform var(--transition-snappy) ease,
+        background var(--transition-snappy) ease,
+        box-shadow var(--transition-snappy) ease;
     }
+    .tab-button:hover,
     .tab-button:focus-visible {
-      outline: 2px solid var(--accent);
-      outline-offset: 4px;
+      color: var(--text);
+      background: rgba(20, 90, 252, 0.1);
+      outline: none;
     }
     .tab-button.active {
-      color: var(--text);
-      border-color: var(--accent);
+      color: var(--accent);
+      background: transparent;
+      box-shadow: none;
+      transform: translateY(-2px);
+      font-weight: 700;
+      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.9);
+    }
+    .tab-nav__indicator {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: var(--indicator-width, 0px);
+      height: var(--indicator-height, 100%);
+      transform: translate3d(var(--indicator-left, 0px), var(--indicator-top, 0px), 0);
+      border-radius: 999px;
+      background: linear-gradient(135deg, rgba(20, 90, 252, 0.28), rgba(41, 71, 137, 0.16));
+      box-shadow: 0 24px 45px rgba(15, 23, 42, 0.18);
+      opacity: 0;
+      transition:
+        transform var(--transition-gentle) cubic-bezier(0.22, 0.61, 0.36, 1),
+        width var(--transition-gentle) cubic-bezier(0.22, 0.61, 0.36, 1),
+        height var(--transition-gentle) cubic-bezier(0.22, 0.61, 0.36, 1),
+        opacity 220ms ease;
+      pointer-events: none;
+    }
+    .tab-nav.has-active-indicator .tab-nav__indicator {
+      opacity: 1;
     }
     .tab-panel {
+      position: relative;
       display: none;
       flex: 1 1 auto;
       min-height: 0;
       overflow: hidden;
     }
-    .tab-panel.active {
+    .tab-panel.active,
+    .tab-panel.is-exiting {
       display: flex;
       flex-direction: column;
+    }
+    .tab-panel.active {
+      animation: tab-panel-in var(--transition-gentle) ease forwards;
+    }
+    .tab-panel.is-exiting {
+      animation: tab-panel-out calc(var(--transition-snappy) + 40ms) ease forwards;
+      pointer-events: none;
+    }
+    .panel-loading {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      background: linear-gradient(180deg, rgba(237, 241, 255, 0.86) 0%, rgba(237, 241, 255, 0.95) 100%);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity var(--transition-snappy) ease;
+      z-index: 40;
+    }
+    .panel-loading.is-visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .panel-loading__content {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.9rem;
+      border-radius: 1rem;
+      padding: 1rem 1.5rem;
+      background: rgba(255, 255, 255, 0.88);
+      box-shadow: 0 26px 55px rgba(15, 23, 42, 0.2);
+      backdrop-filter: blur(14px);
+      color: var(--text);
+      font-weight: 600;
+      letter-spacing: 0.01em;
+    }
+    .panel-loading__spinner {
+      width: 1.65rem;
+      height: 1.65rem;
+      border-radius: 50%;
+      border: 3px solid rgba(20, 90, 252, 0.22);
+      border-top-color: var(--accent);
+      animation: spin 0.9s linear infinite;
+    }
+    .panel-loading__message {
+      margin: 0;
+      font-size: 0.95rem;
     }
     .grid {
       display: grid;
@@ -287,10 +388,33 @@
       background: linear-gradient(180deg, rgba(244, 246, 251, 0) 0%, rgba(244, 246, 251, 0.9) 100%);
     }
     .card {
-      background: var(--card-bg);
-      border-radius: 0.75rem;
-      padding: 1.25rem;
-      box-shadow: 0 8px 24px rgba(16, 24, 40, 0.06);
+      position: relative;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(255, 255, 255, 0.88) 100%);
+      border-radius: 1rem;
+      padding: 1.5rem;
+      box-shadow: var(--shadow-soft);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(20, 90, 252, 0.08);
+      overflow: hidden;
+      transition:
+        opacity var(--transition-gentle) ease,
+        transform var(--transition-gentle) ease,
+        box-shadow var(--transition-gentle) ease,
+        background var(--transition-gentle) ease;
+    }
+    .card[data-animate='true'] {
+      opacity: 0;
+      transform: translateY(28px);
+    }
+    .card[data-animate='true'].is-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    @media (hover: hover) {
+      .card.is-visible:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 32px 55px rgba(15, 23, 42, 0.18);
+      }
     }
     .placeholder-card {
       display: flex;
@@ -350,26 +474,32 @@
     .filter-button {
       display: inline-flex;
       align-items: center;
-      gap: 0.35rem;
+      gap: 0.45rem;
       border-radius: 999px;
-      border: 1px solid rgba(20, 90, 252, 0.35);
+      border: 1px solid rgba(20, 90, 252, 0.24);
       background: rgba(20, 90, 252, 0.12);
       color: var(--accent);
       font-weight: 600;
       font-size: 0.9rem;
-      padding: 0.55rem 1.1rem;
+      padding: 0.6rem 1.2rem;
       cursor: pointer;
-      transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+      transition:
+        background var(--transition-snappy) ease,
+        border-color var(--transition-snappy) ease,
+        color var(--transition-snappy) ease,
+        box-shadow var(--transition-snappy) ease,
+        transform var(--transition-snappy) ease;
     }
     .lo-card__filter-button--hidden {
       display: none !important;
     }
     .filter-button:hover,
     .filter-button:focus-visible {
-      border-color: var(--accent);
+      border-color: rgba(20, 90, 252, 0.45);
       background: rgba(20, 90, 252, 0.2);
       outline: none;
-      box-shadow: 0 10px 22px rgba(20, 90, 252, 0.18);
+      box-shadow: 0 20px 38px rgba(20, 90, 252, 0.2);
+      transform: translateY(-1px);
     }
     .filter-actions {
       display: inline-flex;
@@ -380,7 +510,8 @@
       background: var(--accent);
       color: #fff;
       border-color: var(--accent);
-      box-shadow: 0 12px 26px rgba(20, 90, 252, 0.28);
+      box-shadow: 0 24px 46px rgba(20, 90, 252, 0.32);
+      transform: translateY(-1px);
     }
     .filter-button[aria-disabled="true"] {
       opacity: 0.5;
@@ -1353,6 +1484,16 @@
       gap: 0.5rem;
       font-size: 0.85rem;
       color: var(--text);
+      opacity: 0;
+      transform: translateY(6px);
+      transition:
+        opacity var(--transition-snappy) ease,
+        transform var(--transition-snappy) ease;
+      transition-delay: calc(var(--stagger-index, 0) * 18ms);
+    }
+    .header-menu__option.is-visible {
+      opacity: 1;
+      transform: translateY(0);
     }
     .header-menu__option input[type="checkbox"] {
       width: 1rem;
@@ -1397,20 +1538,42 @@
     .main-filter {
       position: fixed;
       inset: 0;
-      display: none;
+      display: flex;
       align-items: center;
       justify-content: center;
       z-index: 60;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity var(--transition-snappy) ease;
+    }
+    .regular-filter[hidden],
+    .main-filter[hidden] {
+      display: none !important;
     }
     .regular-filter.is-visible,
     .main-filter.is-visible {
-      display: flex;
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .regular-filter.is-closing,
+    .main-filter.is-closing {
+      pointer-events: none;
     }
     .regular-filter__backdrop {
       position: absolute;
       inset: 0;
-      background: rgba(15, 23, 42, 0.35);
-      backdrop-filter: blur(2px);
+      background: rgba(15, 23, 42, 0.4);
+      backdrop-filter: blur(4px);
+      opacity: 0;
+      transition: opacity var(--transition-snappy) ease;
+    }
+    .regular-filter.is-visible .regular-filter__backdrop,
+    .main-filter.is-visible .regular-filter__backdrop {
+      opacity: 1;
+    }
+    .regular-filter.is-closing .regular-filter__backdrop,
+    .main-filter.is-closing .regular-filter__backdrop {
+      opacity: 0;
     }
     .regular-filter__dialog {
       position: relative;
@@ -1422,8 +1585,23 @@
       gap: 1rem;
       background: var(--card-bg);
       border-radius: 0.85rem;
-      box-shadow: 0 28px 55px rgba(15, 23, 42, 0.22);
+      box-shadow: 0 32px 60px rgba(15, 23, 42, 0.24);
       padding: 1.35rem;
+      transform: translateY(16px) scale(0.97);
+      opacity: 0;
+      transition:
+        transform var(--transition-gentle) ease,
+        opacity var(--transition-gentle) ease;
+    }
+    .regular-filter.is-visible .regular-filter__dialog,
+    .main-filter.is-visible .regular-filter__dialog {
+      transform: translateY(0) scale(1);
+      opacity: 1;
+    }
+    .regular-filter.is-closing .regular-filter__dialog,
+    .main-filter.is-closing .regular-filter__dialog {
+      transform: translateY(24px) scale(0.97);
+      opacity: 0;
     }
     .regular-filter__header {
       display: flex;
@@ -1548,6 +1726,16 @@
       font-size: 0.88rem;
       color: var(--text);
       line-height: 1.3;
+      opacity: 0;
+      transform: translateY(8px);
+      transition:
+        opacity var(--transition-snappy) ease,
+        transform var(--transition-snappy) ease;
+      transition-delay: calc(var(--stagger-index, 0) * 24ms);
+    }
+    .regular-filter__option.is-visible {
+      opacity: 1;
+      transform: translateY(0);
     }
     .regular-filter__option input[type="checkbox"] {
       width: 1rem;
@@ -1573,7 +1761,14 @@
       font-weight: 600;
       cursor: pointer;
       border: 1px solid transparent;
-      transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+      position: relative;
+      overflow: hidden;
+      transition:
+        background var(--transition-snappy) ease,
+        border-color var(--transition-snappy) ease,
+        color var(--transition-snappy) ease,
+        box-shadow var(--transition-snappy) ease,
+        transform var(--transition-snappy) ease;
     }
     .regular-filter__apply {
       background: var(--accent);
@@ -1583,7 +1778,8 @@
     .regular-filter__apply:focus-visible {
       background: #0f46c2;
       outline: none;
-      box-shadow: 0 12px 24px rgba(20, 90, 252, 0.32);
+      box-shadow: 0 20px 38px rgba(20, 90, 252, 0.32);
+      transform: translateY(-1px);
     }
     .regular-filter__reset {
       background: rgba(20, 90, 252, 0.14);
@@ -1594,6 +1790,53 @@
     .regular-filter__reset:focus-visible {
       background: rgba(20, 90, 252, 0.22);
       outline: none;
+      transform: translateY(-1px);
+    }
+    .regular-filter__apply[data-loading='true'],
+    .regular-filter__reset[data-loading='true'] {
+      color: transparent;
+      pointer-events: none;
+      padding-left: 2.6rem;
+    }
+    .regular-filter__apply[data-loading='true']::before,
+    .regular-filter__reset[data-loading='true']::before {
+      content: '';
+      position: absolute;
+      left: 0.9rem;
+      top: 50%;
+      width: 1.15rem;
+      height: 1.15rem;
+      border-radius: 50%;
+      border: 2px solid currentColor;
+      border-right-color: transparent;
+      transform: translateY(-50%);
+      animation: spin 0.9s linear infinite;
+      opacity: 0.85;
+    }
+    .regular-filter__apply[data-loading='true']::before {
+      border-color: rgba(255, 255, 255, 0.7);
+      border-right-color: transparent;
+    }
+    .regular-filter__reset[data-loading='true']::before {
+      border-color: rgba(20, 90, 252, 0.45);
+      border-right-color: transparent;
+    }
+    .regular-filter__apply[data-loading='true']::after,
+    .regular-filter__reset[data-loading='true']::after {
+      content: attr(data-loading-label);
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+    .regular-filter__apply[data-loading='true']::after {
+      color: #fff;
+    }
+    .regular-filter__reset[data-loading='true']::after {
+      color: var(--accent);
     }
     .sr-only {
       position: absolute;
@@ -1639,10 +1882,62 @@
         top: calc(var(--sticky-header-offset) - 24px);
       }
     }
+    @keyframes tab-panel-in {
+      from {
+        opacity: 0;
+        transform: translateY(24px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    @keyframes tab-panel-out {
+      from {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      to {
+        opacity: 0;
+        transform: translateY(-16px);
+      }
+    }
+    @keyframes spin {
+      from {
+        transform: rotate(0deg);
+      }
+      to {
+        transform: rotate(360deg);
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .tab-panel.active,
+      .tab-panel.is-exiting,
+      .regular-filter,
+      .regular-filter__dialog,
+      .panel-loading,
+      .regular-filter__apply::before,
+      .regular-filter__reset::before,
+      .tab-nav__indicator,
+      .card[data-animate='true'],
+      .regular-filter__option,
+      .header-menu__option {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+      .card[data-animate='true'],
+      .regular-filter__option,
+      .header-menu__option {
+        opacity: 1 !important;
+        transform: none !important;
+      }
+    }
   </style>
 </head>
 <body>
   <nav class="tab-nav" aria-label="Dashboard views">
+    <span class="tab-nav__indicator" aria-hidden="true"></span>
     <button class="tab-button" id="tab-sku-gap-button" type="button" data-tab="sku-gap" aria-controls="tab-sku-gap" aria-selected="false">SKU wise Gap</button>
     <button class="tab-button" id="tab-dashboard-button" type="button" data-tab="dashboard" aria-controls="tab-dashboard" aria-selected="false">Dashboard</button>
     <button class="tab-button" id="tab-platform-button" type="button" data-tab="platform" aria-controls="tab-platform" aria-selected="false">Store wise Daily Sales</button>
@@ -2056,6 +2351,8 @@
   <script>
     const tabButtons = document.querySelectorAll('.tab-button');
     const tabPanels = document.querySelectorAll('.tab-panel');
+    const tabNavElement = document.querySelector('.tab-nav');
+    const tabNavIndicatorElement = tabNavElement ? tabNavElement.querySelector('.tab-nav__indicator') : null;
     const loSubTabButtons = document.querySelectorAll('.lo-sub-tab-button');
     const loSubTabPanels = document.querySelectorAll('.lo-sub-tab-panel');
     const platformSubTabButtons = document.querySelectorAll('.platform-tab-button');
@@ -2070,6 +2367,71 @@
     const skuFilterClearButtonElement = document.getElementById('sku-filter-clear-button');
     const mainFilterClearButtonElement = document.getElementById('main-filter-clear-button');
     const regularFilterClearButtonElement = document.getElementById('regular-filter-clear-button');
+
+    const reduceMotionQuery = typeof window.matchMedia === 'function' ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
+    let shouldReduceMotion = reduceMotionQuery ? reduceMotionQuery.matches : false;
+
+    const animatedCards = Array.from(document.querySelectorAll('.card'));
+    let cardObserver = null;
+
+    function revealCardElement(card) {
+      if (!(card instanceof HTMLElement)) {
+        return;
+      }
+      card.classList.add('is-visible');
+      if (cardObserver) {
+        cardObserver.unobserve(card);
+      }
+    }
+
+    if ('IntersectionObserver' in window) {
+      cardObserver = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              revealCardElement(entry.target);
+            }
+          });
+        },
+        { root: null, threshold: 0.18, rootMargin: '0px 0px -12%' },
+      );
+    }
+
+    animatedCards.forEach((card) => {
+      if (!(card instanceof HTMLElement)) {
+        return;
+      }
+      card.setAttribute('data-animate', 'true');
+      if (shouldReduceMotion || !cardObserver) {
+        revealCardElement(card);
+      } else {
+        cardObserver.observe(card);
+      }
+    });
+
+    if (reduceMotionQuery) {
+      const handleReduceMotionChange = (event) => {
+        shouldReduceMotion = event.matches;
+        if (shouldReduceMotion) {
+          animatedCards.forEach((card) => revealCardElement(card));
+        } else if (cardObserver) {
+          animatedCards.forEach((card) => {
+            if (card instanceof HTMLElement && !card.classList.contains('is-visible')) {
+              cardObserver.observe(card);
+            }
+          });
+        }
+      };
+      if (typeof reduceMotionQuery.addEventListener === 'function') {
+        reduceMotionQuery.addEventListener('change', handleReduceMotionChange);
+      } else if (typeof reduceMotionQuery.addListener === 'function') {
+        reduceMotionQuery.addListener(handleReduceMotionChange);
+      }
+    }
+
+    const PANEL_TRANSITION_DURATION = 340;
+    const FILTER_TRANSITION_DURATION = 320;
+    const BUTTON_BUSY_TIMEOUT = 420;
 
     let regularTable;
     let regularTableInitialised = false;
@@ -2098,6 +2460,7 @@
     let mainDashboardInitialised = false;
     let mainDashboardPivotCache = null;
     let dashboardPivotPromise = null;
+    let activeTabId = null;
     let newProductInitialised = false;
     let newProductPivotCache = null;
     let newProductPivotPromise = null;
@@ -2354,6 +2717,182 @@
     ];
     const EXCEL_DEFAULT_HEADER_SEARCH_VALUES = EXCEL_KEY_COLUMN_NAMES;
     const EXCEL_MAX_BLANK_ROWS = 2000;
+
+    function getTabPanelElement(tabId) {
+      if (!tabId) {
+        return null;
+      }
+      return Array.from(tabPanels).find((panel) => panel.dataset.tab === tabId) || null;
+    }
+
+    function showTabPanel(panel) {
+      if (!panel) {
+        return;
+      }
+      panel.classList.remove('is-exiting');
+      panel.classList.add('active');
+      panel.setAttribute('aria-hidden', 'false');
+    }
+
+    function hideTabPanel(panel) {
+      if (!panel) {
+        return;
+      }
+      if (!panel.classList.contains('active') && !panel.classList.contains('is-exiting')) {
+        panel.setAttribute('aria-hidden', 'true');
+        return;
+      }
+      panel.classList.remove('active');
+      panel.setAttribute('aria-hidden', 'true');
+      panel.classList.add('is-exiting');
+      function finalize() {
+        panel.classList.remove('is-exiting');
+        panel.removeEventListener('animationend', handleAnimationEnd);
+      }
+      function handleAnimationEnd(event) {
+        if (event.target !== panel) {
+          return;
+        }
+        finalize();
+      }
+      panel.addEventListener('animationend', handleAnimationEnd);
+      window.setTimeout(finalize, PANEL_TRANSITION_DURATION);
+    }
+
+    function updateTabIndicator(targetTab) {
+      if (!tabNavElement || !tabNavIndicatorElement) {
+        return;
+      }
+      const activeButton = Array.from(tabButtons).find((button) => button.dataset.tab === targetTab);
+      if (!activeButton) {
+        tabNavElement.classList.remove('has-active-indicator');
+        return;
+      }
+      const applyPosition = () => {
+        const navRect = tabNavElement.getBoundingClientRect();
+        const buttonRect = activeButton.getBoundingClientRect();
+        const left = buttonRect.left - navRect.left;
+        const top = buttonRect.top - navRect.top;
+        tabNavIndicatorElement.style.setProperty('--indicator-left', `${left}px`);
+        tabNavIndicatorElement.style.setProperty('--indicator-top', `${top}px`);
+        tabNavIndicatorElement.style.setProperty('--indicator-width', `${buttonRect.width}px`);
+        tabNavIndicatorElement.style.setProperty('--indicator-height', `${buttonRect.height}px`);
+        tabNavElement.classList.add('has-active-indicator');
+      };
+      if (typeof requestAnimationFrame === 'function') {
+        requestAnimationFrame(applyPosition);
+      } else {
+        applyPosition();
+      }
+    }
+
+    function setTabPanelLoading(tabId, isLoading, message = 'Loading…') {
+      const panel = getTabPanelElement(tabId);
+      if (!panel) {
+        return;
+      }
+      let overlay = panel.querySelector(':scope > .panel-loading');
+      if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.className = 'panel-loading';
+        overlay.setAttribute('aria-hidden', 'true');
+        overlay.innerHTML = `
+          <div class="panel-loading__content" role="status">
+            <span class="panel-loading__spinner" aria-hidden="true"></span>
+            <span class="panel-loading__message"></span>
+          </div>
+        `;
+        panel.appendChild(overlay);
+      }
+      const messageElement = overlay.querySelector('.panel-loading__message');
+      if (messageElement && typeof message === 'string' && message.trim().length) {
+        messageElement.textContent = message;
+      }
+      const shouldShow = Boolean(isLoading);
+      overlay.classList.toggle('is-visible', shouldShow);
+      overlay.setAttribute('aria-hidden', shouldShow ? 'false' : 'true');
+    }
+
+    function showFilterContainer(element) {
+      if (!element) {
+        return;
+      }
+      element.classList.remove('is-closing');
+      element.removeAttribute('hidden');
+      element.setAttribute('aria-hidden', 'false');
+      requestAnimationFrame(() => {
+        element.classList.add('is-visible');
+      });
+    }
+
+    function hideFilterContainer(element) {
+      if (!element) {
+        return;
+      }
+      element.setAttribute('aria-hidden', 'true');
+      element.classList.add('is-closing');
+      element.classList.remove('is-visible');
+      const dialog = element.querySelector('.regular-filter__dialog');
+      const transitionTarget = dialog || element;
+      let completed = false;
+      function finalize() {
+        if (completed) {
+          return;
+        }
+        completed = true;
+        element.classList.remove('is-closing');
+        element.setAttribute('hidden', '');
+        transitionTarget.removeEventListener('transitionend', handleTransitionEnd);
+      }
+      function handleTransitionEnd(event) {
+        if (event.target !== transitionTarget) {
+          return;
+        }
+        finalize();
+      }
+      transitionTarget.addEventListener('transitionend', handleTransitionEnd);
+      window.setTimeout(finalize, FILTER_TRANSITION_DURATION + 60);
+    }
+
+    function flashButtonBusy(button, fallbackLabel = 'Applying…') {
+      if (!button) {
+        return;
+      }
+      const existingLabel = button.getAttribute('data-loading-label');
+      const label = existingLabel && existingLabel.trim().length ? existingLabel : fallbackLabel;
+      button.setAttribute('data-loading-label', label);
+      button.dataset.loading = 'true';
+      window.setTimeout(() => {
+        delete button.dataset.loading;
+        if (!existingLabel) {
+          button.removeAttribute('data-loading-label');
+        }
+      }, BUTTON_BUSY_TIMEOUT);
+    }
+
+    function animateOptionList(container, selector) {
+      if (!container) {
+        return;
+      }
+      const options = Array.from(container.querySelectorAll(selector));
+      if (!options.length) {
+        return;
+      }
+      options.forEach((option) => {
+        option.classList.remove('is-visible');
+        option.style.removeProperty('--stagger-index');
+      });
+      if (shouldReduceMotion) {
+        options.forEach((option) => option.classList.add('is-visible'));
+        return;
+      }
+      requestAnimationFrame(() => {
+        options.forEach((option, index) => {
+          option.style.setProperty('--stagger-index', index);
+          option.classList.add('is-visible');
+        });
+      });
+    }
 
     let loSalesOrderCache = [];
     let loDisplayNameOverridesCache = new Map();
@@ -3484,6 +4023,7 @@
         })
         .join('');
       config.filterOptionsElement.innerHTML = optionsMarkup;
+      animateOptionList(config.filterOptionsElement, '.regular-filter__option');
       const checkboxes = config.filterOptionsElement.querySelectorAll('input[type="checkbox"]');
       checkboxes.forEach((checkbox) => {
         checkbox.addEventListener('change', (event) => {
@@ -3529,9 +4069,7 @@
       }
       renderNewProductFilterOptions(config);
       renderNewProductFilterFieldButtons(config);
-      config.filterContainer.removeAttribute('hidden');
-      config.filterContainer.classList.add('is-visible');
-      config.filterContainer.setAttribute('aria-hidden', 'false');
+      showFilterContainer(config.filterContainer);
       if (config.filterButton) {
         config.filterButton.setAttribute('aria-expanded', 'true');
       }
@@ -3558,9 +4096,7 @@
           });
         }
       }
-      config.filterContainer.classList.remove('is-visible');
-      config.filterContainer.setAttribute('aria-hidden', 'true');
-      config.filterContainer.setAttribute('hidden', '');
+      hideFilterContainer(config.filterContainer);
       if (config.filterButton) {
         config.filterButton.setAttribute('aria-expanded', 'false');
       }
@@ -3572,6 +4108,9 @@
     function applyNewProductFilter(config) {
       if (!config) {
         return;
+      }
+      if (config.filterApplyButton) {
+        flashButtonBusy(config.filterApplyButton);
       }
       const filterState = ensureNewProductFilterState(config);
       if (filterState) {
@@ -3876,10 +4415,12 @@
     function loadNewProductPivots() {
       if (newProductInitialised && Array.isArray(newProductPivotCache) && newProductPivotCache.length) {
         renderNewProductPivots(newProductPivotCache);
-        return;
+        setTabPanelLoading('new-product', false);
+        return Promise.resolve(newProductPivotCache);
       }
+      setTabPanelLoading('new-product', true, 'Loading new product pivots…');
       showNewProductStatus('Loading new product pivots…');
-      fetchNewProductPivotSections()
+      return fetchNewProductPivotSections()
         .then((sections) => {
           newProductInitialised = true;
           newProductPivotCache = sections;
@@ -3888,6 +4429,9 @@
         .catch((error) => {
           console.error('Failed to load new product pivots:', error);
           showNewProductStatus(error.message || 'Unable to load new product pivots', 'error');
+        })
+        .finally(() => {
+          setTabPanelLoading('new-product', false);
         });
     }
 
@@ -4491,56 +5035,81 @@
     }
 
     function setActiveTab(targetTab) {
+      const previousTab = activeTabId;
+      activeTabId = targetTab;
       tabButtons.forEach((button) => {
         const isActive = button.dataset.tab === targetTab;
         button.classList.toggle('active', isActive);
         button.setAttribute('aria-selected', String(isActive));
       });
-      tabPanels.forEach((panel) => {
-        const isActive = panel.dataset.tab === targetTab;
-        panel.classList.toggle('active', isActive);
-        panel.setAttribute('aria-hidden', String(!isActive));
-      });
+      updateTabIndicator(targetTab);
+      const nextPanel = getTabPanelElement(targetTab);
+      const previousPanel = previousTab ? getTabPanelElement(previousTab) : null;
+      if (previousPanel && previousPanel !== nextPanel) {
+        hideTabPanel(previousPanel);
+      }
+      if (nextPanel) {
+        showTabPanel(nextPanel);
+      }
       if (targetTab !== 'main' && mainFilterContainerElement && mainFilterContainerElement.classList.contains('is-visible')) {
         closeMainFilter({ returnFocus: false });
       }
       if (targetTab === 'regular') {
         loadRegularTable();
         refreshRegularTableLayout();
-      } else if (targetTab === 'main') {
-        closeHeaderMenu();
+        return;
+      }
+      closeHeaderMenu();
+      if (targetTab === 'main') {
         if (regularFilterContainerElement && regularFilterContainerElement.classList.contains('is-visible')) {
           closeRegularFilter({ returnFocus: false });
         }
         loadMainTable();
         refreshMainTableLayout();
-      } else if (targetTab === 'dashboard') {
-        closeHeaderMenu();
+        return;
+      }
+      if (targetTab === 'dashboard') {
         if (regularFilterContainerElement && regularFilterContainerElement.classList.contains('is-visible')) {
           closeRegularFilter({ returnFocus: false });
         }
         loadMainDashboard();
-      } else if (targetTab === 'sku-summary') {
-        closeHeaderMenu();
+        return;
+      }
+      if (targetTab === 'sku-summary') {
         loadSkuSummaryTable();
-      } else if (targetTab === 'new-product') {
-        closeHeaderMenu();
+        return;
+      }
+      if (targetTab === 'new-product') {
         loadNewProductPivots();
-      } else {
-        closeHeaderMenu();
-        if (targetTab === 'lo') {
-          if (!loTablesInitialised) {
-            renderLoMessage('Loading data…');
-          }
-          fetchRegularDataset()
-            .then((dataset) => {
-              initializeLoTables(dataset);
-            })
-            .catch((error) => {
-              renderLoMessage(error.message || 'Unable to load data');
-            });
-          requestAnimationFrame(() => resizeLoTableContainers());
+        return;
+      }
+      if (targetTab === 'lo' || targetTab === 'platform') {
+        if (regularFilterContainerElement && regularFilterContainerElement.classList.contains('is-visible')) {
+          closeRegularFilter({ returnFocus: false });
         }
+        const showLoLoader = targetTab === 'lo' && !loTablesInitialised;
+        const showPlatformLoader = targetTab === 'platform' && !platformTablesInitialised;
+        if (showLoLoader || showPlatformLoader) {
+          renderLoMessage('Loading data…');
+        }
+        if (showLoLoader) {
+          setTabPanelLoading('lo', true, 'Loading listing owner metrics…');
+        }
+        if (showPlatformLoader) {
+          setTabPanelLoading('platform', true, 'Loading store metrics…');
+        }
+        fetchRegularDataset()
+          .then((dataset) => {
+            initializeLoTables(dataset);
+          })
+          .catch((error) => {
+            renderLoMessage(error.message || 'Unable to load data');
+          })
+          .finally(() => {
+            setTabPanelLoading('lo', false);
+            setTabPanelLoading('platform', false);
+          });
+        requestAnimationFrame(() => resizeLoTableContainers());
       }
     }
 
@@ -4616,15 +5185,23 @@
       const navEl = document.querySelector('.tab-nav');
       const headerHeight = headerEl ? headerEl.offsetHeight : 0;
       const navHeight = navEl ? navEl.offsetHeight : 0;
-      const offset = headerHeight + navHeight + 24;
+      let navTop = 0;
+      if (navEl) {
+        const computedTop = window.getComputedStyle(navEl).top;
+        const numericTop = Number.parseFloat(computedTop || '0');
+        navTop = Number.isFinite(numericTop) ? numericTop : 0;
+      }
+      const offset = headerHeight + navHeight + navTop + 24;
       document.documentElement.style.setProperty('--sticky-header-offset', `${offset}px`);
     }
 
     setActiveTab('regular');
     NEW_PRODUCT_PIVOT_CONFIGS.forEach((config) => updateNewProductFilterButtonState(config));
     updateStickyOffset();
+    updateTabIndicator(activeTabId);
     window.addEventListener('resize', () => {
       updateStickyOffset();
+      updateTabIndicator(activeTabId);
       resizeLoTableContainers();
       if (regularTableInitialised && regularTable) {
         applyTableHeight(regularTable);
@@ -4856,6 +5433,7 @@
           })
           .join('');
         regularFilterOptionsElement.innerHTML = optionsMarkup;
+        animateOptionList(regularFilterOptionsElement, '.regular-filter__option');
       }
 
       if (regularFilterEmptyElement) {
@@ -4887,6 +5465,7 @@
           })
           .join('');
         mainFilterOptionsElement.innerHTML = optionsMarkup;
+        animateOptionList(mainFilterOptionsElement, '.regular-filter__option');
       }
 
       if (mainFilterEmptyElement) {
@@ -4955,9 +5534,7 @@
         syncRegularFilterSelectionFromFilters(regularFilterActiveColumnIndex);
         renderRegularFilterOptions();
       }
-      regularFilterContainerElement.removeAttribute('hidden');
-      regularFilterContainerElement.classList.add('is-visible');
-      regularFilterContainerElement.setAttribute('aria-hidden', 'false');
+      showFilterContainer(regularFilterContainerElement);
       targets.forEach((button) => {
         if (button) {
           const expanded = button === activeRegularFilterTrigger;
@@ -4977,9 +5554,7 @@
       }
       const { returnFocus = true } = options;
       const previousTrigger = activeRegularFilterTrigger;
-      regularFilterContainerElement.classList.remove('is-visible');
-      regularFilterContainerElement.setAttribute('aria-hidden', 'true');
-      regularFilterContainerElement.setAttribute('hidden', '');
+      hideFilterContainer(regularFilterContainerElement);
       const targets = regularFilterButtons.length
         ? regularFilterButtons
         : (regularFilterButtonElement ? [regularFilterButtonElement] : []);
@@ -5022,9 +5597,7 @@
         syncMainFilterSelectionFromFilters(mainFilterActiveColumnIndex);
         renderMainFilterOptions();
       }
-      mainFilterContainerElement.removeAttribute('hidden');
-      mainFilterContainerElement.classList.add('is-visible');
-      mainFilterContainerElement.setAttribute('aria-hidden', 'false');
+      showFilterContainer(mainFilterContainerElement);
       targets.forEach((button) => {
         if (button) {
           const expanded = button === activeMainFilterTrigger;
@@ -5044,9 +5617,7 @@
       }
       const { returnFocus = true } = options;
       const previousTrigger = activeMainFilterTrigger;
-      mainFilterContainerElement.classList.remove('is-visible');
-      mainFilterContainerElement.setAttribute('aria-hidden', 'true');
-      mainFilterContainerElement.setAttribute('hidden', '');
+      hideFilterContainer(mainFilterContainerElement);
       const targets = mainFilterButtons.length
         ? mainFilterButtons
         : (mainFilterButtonElement ? [mainFilterButtonElement] : []);
@@ -5140,6 +5711,22 @@
       if (!regularDatasetCache || !Array.isArray(regularDatasetCache.rows)) {
         return;
       }
+      const animateRegular = regularTableInitialised && Boolean(regularTable);
+      const animateLo = loTablesInitialised;
+      const animatePlatform = platformTablesInitialised;
+      const animateSku = skuSummaryInitialised;
+      if (animateRegular) {
+        setTabPanelLoading('regular', true, 'Applying filters…');
+      }
+      if (animateLo) {
+        setTabPanelLoading('lo', true, 'Updating view…');
+      }
+      if (animatePlatform) {
+        setTabPanelLoading('platform', true, 'Updating view…');
+      }
+      if (animateSku) {
+        setTabPanelLoading('sku-summary', true, 'Updating summary…');
+      }
       const filteredDataset = buildFilteredDataset(regularDatasetCache, columnFilters);
       if (loTablesInitialised) {
         updateLoTablesWithDataset(filteredDataset);
@@ -5150,6 +5737,20 @@
       if (skuSummaryInitialised) {
         updateSkuSummaryWithDataset(filteredDataset);
       }
+      requestAnimationFrame(() => {
+        if (animateRegular) {
+          setTabPanelLoading('regular', false);
+        }
+        if (animateLo) {
+          setTabPanelLoading('lo', false);
+        }
+        if (animatePlatform) {
+          setTabPanelLoading('platform', false);
+        }
+        if (animateSku) {
+          setTabPanelLoading('sku-summary', false);
+        }
+      });
     }
 
     function handleMainFilterChange() {
@@ -5157,6 +5758,11 @@
       if (mainTableInitialised && mainTable) {
         requestAnimationFrame(() => updateMainTableFooter(mainTable));
       }
+      const animateMain = mainTableInitialised && Boolean(mainTable);
+      if (animateMain) {
+        setTabPanelLoading('main', true, 'Applying filters…');
+      }
+      setTabPanelLoading('dashboard', true, 'Updating dashboard…');
       const datasetSource = mainDatasetCache
         ? Promise.resolve(mainDatasetCache)
         : fetchMainDataset();
@@ -5176,6 +5782,12 @@
         })
         .catch((error) => {
           console.error('Failed to update dashboard filters:', error);
+        })
+        .finally(() => {
+          if (animateMain) {
+            setTabPanelLoading('main', false);
+          }
+          setTabPanelLoading('dashboard', false);
         });
     }
 
@@ -5336,6 +5948,7 @@
         if (!Number.isFinite(regularFilterActiveColumnIndex)) {
           return;
         }
+        flashButtonBusy(regularFilterApplyButton);
         const tableInstance = regularTableInitialised && regularTable ? regularTable : null;
         const allOptions = columnValueOptions[regularFilterActiveColumnIndex] || [];
         const selectedValues = Array.from(regularFilterSelection);
@@ -5521,6 +6134,7 @@
         if (!Number.isFinite(mainFilterActiveColumnIndex)) {
           return;
         }
+        flashButtonBusy(mainFilterApplyButton);
         const tableInstance = mainTableInitialised && mainTable ? mainTable : null;
         const allOptions = mainColumnValueOptions[mainFilterActiveColumnIndex] || [];
         const selectedValues = Array.from(mainFilterSelection);
@@ -5704,6 +6318,8 @@
           <button type="button" class="header-menu__apply">Apply</button>
         </div>
       `;
+
+      animateOptionList(headerMenuElement.querySelector('.header-menu__options'), '.header-menu__option');
 
       headerMenuElement.classList.remove('hidden');
       positionHeaderMenu(headerCell);
@@ -6874,9 +7490,10 @@
 
     function loadSkuSummaryTable() {
       if (skuSummaryInitialised) {
-        return;
+        return Promise.resolve();
       }
 
+      setTabPanelLoading('sku-summary', true, 'Preparing SKU summary…');
       renderSkuSummaryMessage('Loading data…');
 
       const datasetPromise = fetchRegularDataset()
@@ -6894,7 +7511,7 @@
         });
 
       if (hasActiveColumnFilters()) {
-        datasetPromise
+        return datasetPromise
           .then((dataset) => {
             if (!dataset) {
               throw new Error('Dataset is unavailable');
@@ -6910,11 +7527,13 @@
           .catch((error) => {
             const message = error && error.message ? error.message : 'Unable to load SKU summary';
             renderSkuSummaryMessage(message);
+          })
+          .finally(() => {
+            setTabPanelLoading('sku-summary', false);
           });
-        return;
       }
 
-      fetchSkuSummaryPivot()
+      return fetchSkuSummaryPivot()
         .then((pivotData) => {
           if (!pivotData || !Array.isArray(pivotData.columns) || !pivotData.columns.length) {
             throw new Error('SKU summary pivot is unavailable');
@@ -6926,7 +7545,7 @@
           skuSummaryInitialised = true;
         })
         .catch(() => {
-          datasetPromise
+          return datasetPromise
             .then((dataset) => {
               if (!dataset) {
                 throw new Error('Dataset is unavailable');
@@ -6943,6 +7562,9 @@
               const message = error && error.message ? error.message : 'Unable to load SKU summary';
               renderSkuSummaryMessage(message);
             });
+        })
+        .finally(() => {
+          setTabPanelLoading('sku-summary', false);
         });
     }
 
@@ -7325,8 +7947,11 @@
       const filtersInitiallyActive = hasActiveColumnFilters(mainColumnFilters);
       if (mainDashboardInitialised && mainDashboardPivotCache instanceof Map) {
         renderMainDashboard(mainDashboardPivotCache);
+        setTabPanelLoading('dashboard', false);
         return;
       }
+      const loadingMessage = filtersInitiallyActive ? 'Updating dashboard…' : 'Loading dashboard…';
+      setTabPanelLoading('dashboard', true, loadingMessage);
       DASHBOARD_PIVOT_CONFIGS.forEach((config) => {
         setDashboardTableMessage(config.tableId, 'Loading data…', (config.columns?.length || 0) + 1);
       });
@@ -7349,7 +7974,7 @@
         ? loadFromDataset()
         : fetchDashboardPivotSections().then((results) => ({ results, filtersActiveAtBuild: false }));
 
-      sourcePromise
+      return sourcePromise
         .then(({ results, filtersActiveAtBuild }) => {
           if (!(results instanceof Map)) {
             throw new Error('Dashboard data is unavailable');
@@ -7363,7 +7988,7 @@
         })
         .catch((dashboardError) => {
           console.error('Failed to build dashboard pivots from Main worksheet:', dashboardError);
-          loadFromDataset()
+          return loadFromDataset()
             .then(({ results, filtersActiveAtBuild }) => {
               if (!(results instanceof Map)) {
                 throw new Error('Dashboard data is unavailable');
@@ -7394,6 +8019,9 @@
                 dashboardFilterButtonElement.dataset.active = 'false';
               }
             });
+        })
+        .finally(() => {
+          setTabPanelLoading('dashboard', false);
         });
     }
 
@@ -7507,9 +8135,10 @@
 
     function loadRegularTable() {
       if (regularTableInitialised) {
-        return;
+        return Promise.resolve();
       }
-      fetchRegularDataset()
+      setTabPanelLoading('regular', true, 'Loading regular data…');
+      return fetchRegularDataset()
         .then((dataset) => {
           updateStickyOffset();
 
@@ -7608,14 +8237,18 @@
           if (tableElement) {
             tableElement.outerHTML = `<p style="color: var(--muted);">${error.message}</p>`;
           }
+        })
+        .finally(() => {
+          setTabPanelLoading('regular', false);
         });
     }
 
     function loadMainTable() {
       if (mainTableInitialised) {
-        return;
+        return Promise.resolve();
       }
-      fetchMainDataset()
+      setTabPanelLoading('main', true, 'Loading main data…');
+      return fetchMainDataset()
         .then((dataset) => {
           updateStickyOffset();
           const augmentedDataset = augmentDatasetWithTotals(dataset);
@@ -7743,6 +8376,9 @@
             mainFilterContainerElement.setAttribute('hidden', '');
             mainFilterContainerElement.setAttribute('aria-hidden', 'true');
           }
+        })
+        .finally(() => {
+          setTabPanelLoading('main', false);
         });
     }
 
