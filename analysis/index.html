@@ -383,6 +383,118 @@
       pointer-events: none;
       background: linear-gradient(180deg, rgba(244, 246, 251, 0) 0%, rgba(244, 246, 251, 0.9) 100%);
     }
+    .sales-gap-card {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .sales-gap-card__header {
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+    }
+    .sales-gap-card__title {
+      margin: 0;
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .sales-gap-card__subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+    .sales-gap-table-container {
+      position: relative;
+      border-radius: 0.75rem;
+      border: 1px solid rgba(27, 30, 40, 0.08);
+      box-shadow: inset 0 0 0 1px rgba(27, 30, 40, 0.03), 0 12px 30px rgba(15, 23, 42, 0.08);
+      background: #fff;
+      overflow: hidden;
+    }
+    .sales-gap-table-scroll {
+      width: 100%;
+      overflow-x: auto;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+    }
+    .sales-gap-table {
+      width: 100%;
+      min-width: 720px;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+    .sales-gap-table thead th {
+      background: linear-gradient(180deg, #f6f8ff 0%, #e3e8f7 100%);
+      color: #1b1e28;
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 700;
+      padding: 0.6rem 0.75rem;
+      text-align: right;
+      border-bottom: 1px solid rgba(27, 30, 40, 0.12);
+    }
+    .sales-gap-table thead th:first-child {
+      text-align: left;
+    }
+    #sales-gap-table thead .table-preamble-row th {
+      background: rgba(20, 90, 252, 0.06);
+      border: 1px solid rgba(27, 30, 40, 0.12);
+      color: var(--text);
+      font-size: 0.82rem;
+      font-weight: 600;
+      text-transform: none;
+      letter-spacing: 0;
+      padding: 0.4rem 0.55rem;
+      text-align: center;
+      white-space: nowrap;
+    }
+    #sales-gap-table thead .table-preamble-row th:first-child {
+      text-align: left;
+    }
+    #sales-gap-table thead .table-preamble-row th.is-empty {
+      background: rgba(27, 30, 40, 0.04);
+      color: var(--muted);
+      font-weight: 500;
+    }
+    .sales-gap-table tbody td {
+      padding: 0.55rem 0.75rem;
+      border-top: 1px solid rgba(27, 30, 40, 0.08);
+      text-align: right;
+      font-size: 0.85rem;
+      background: #fff;
+    }
+    .sales-gap-table tbody td:first-child {
+      text-align: left;
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+    }
+    .sales-gap-table tbody td.cell-numeric {
+      font-variant-numeric: tabular-nums;
+    }
+    .sales-gap-table tbody tr:nth-child(even) td {
+      background: rgba(226, 231, 244, 0.35);
+    }
+    .sales-gap-table tbody tr:hover td {
+      background: rgba(41, 71, 137, 0.12);
+    }
+    .sales-gap-row--total td {
+      font-weight: 700;
+      background: rgba(20, 90, 252, 0.12);
+      color: var(--text);
+    }
+    .sales-gap-row--total td:first-child {
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .sales-gap-table__empty {
+      padding: 1.75rem 1rem;
+      text-align: center;
+      color: var(--muted);
+      font-weight: 500;
+    }
     .card {
       position: relative;
       background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(255, 255, 255, 0.88) 100%);
@@ -1937,6 +2049,7 @@
   <nav class="tab-nav" aria-label="Dashboard views">
     <span class="tab-nav__indicator" aria-hidden="true"></span>
     <button class="tab-button" id="tab-sku-gap-button" type="button" data-tab="sku-gap" aria-controls="tab-sku-gap" aria-selected="false">SKU wise Gap</button>
+    <button class="tab-button" id="tab-sales-gap-button" type="button" data-tab="sales-gap" aria-controls="tab-sales-gap" aria-selected="false">Sales GAP</button>
     <button class="tab-button" id="tab-dashboard-button" type="button" data-tab="dashboard" aria-controls="tab-dashboard" aria-selected="false">Dashboard</button>
     <button class="tab-button" id="tab-platform-button" type="button" data-tab="platform" aria-controls="tab-platform" aria-selected="false">Store wise Daily Sales</button>
     <button class="tab-button" id="tab-new-product-button" type="button" data-tab="new-product" aria-controls="tab-new-product" aria-selected="false">New Product Performance</button>
@@ -1950,6 +2063,23 @@
       <article class="card placeholder-card">
         <h2 class="placeholder-card__title">SKU wise Gap</h2>
         <p class="placeholder-card__message">A web version of the SKUWISE GAP sheet is not yet available. Please refer to the Excel workbook for the latest details.</p>
+      </article>
+    </section>
+  </div>
+  <div class="tab-panel" id="tab-sales-gap" data-tab="sales-gap" role="tabpanel" aria-labelledby="tab-sales-gap-button" aria-hidden="true">
+    <section class="grid">
+      <article class="card sales-gap-card">
+        <header class="sales-gap-card__header">
+          <div>
+            <h2 class="sales-gap-card__title">Sales GAP by listing owner</h2>
+            <p class="sales-gap-card__subtitle">Comparison of our performance against competitors from the Sales GAP worksheet.</p>
+          </div>
+        </header>
+        <div class="sales-gap-table-container">
+          <div class="sales-gap-table-scroll">
+            <table id="sales-gap-table" class="sales-gap-table"></table>
+          </div>
+        </div>
       </article>
     </section>
   </div>
@@ -2463,6 +2593,9 @@
     let newProductInitialised = false;
     let newProductPivotCache = null;
     let newProductPivotPromise = null;
+    let salesGapDatasetCache = null;
+    let salesGapDatasetPromise = null;
+    let salesGapInitialised = false;
     let excelWorkbookCache = null;
     let excelWorkbookPromise = null;
 
@@ -2541,6 +2674,9 @@
     const EXCEL_MAIN_SHEET_CANDIDATES = ['Main', 'MAIN'];
     const EXCEL_KEY_COLUMN_NAMES = ['ORDER NO', 'Order No', 'ORDER NO.', 'ORDER #', 'Plain Order No'];
     const EXCEL_MAIN_KEY_COLUMN_NAMES = ['SKU', 'Sr. No.', 'NAME', 'DC LIST'];
+    const EXCEL_SALES_GAP_SHEET_CANDIDATES = ['LO WISE GAP', 'LO-wise GAP', 'Sales GAP', 'Sales Gap'];
+    const EXCEL_SALES_GAP_HEADER_SEARCH_VALUES = ['Listing owner', 'Cat', 'SKU'];
+    const EXCEL_SALES_GAP_KEY_COLUMN_NAMES = ['Listing owner', 'Cat', 'SKU'];
     const NEW_PRODUCT_FILTER_FIELDS = [
       { id: 'row', label: 'Row labels', type: 'row', columnIndex: 0 },
       { id: 'new-old', label: 'NEW/OLD', type: 'attribute' },
@@ -2998,6 +3134,18 @@
       return text.trim().length ? text : '';
     }
 
+    function isPlaceholderColumnName(name) {
+      if (name === null || name === undefined) {
+        return true;
+      }
+      const value = typeof name === 'string' ? name : String(name);
+      const trimmed = value.trim();
+      if (!trimmed.length) {
+        return true;
+      }
+      return /^column\d*$/i.test(trimmed);
+    }
+
     function findWorksheetFromWorkbook(workbook, options = {}) {
       if (!workbook || !Array.isArray(workbook.SheetNames) || !workbook.SheetNames.length) {
         return { worksheet: null, sheetName: null };
@@ -3253,6 +3401,79 @@
         });
     }
 
+    function trimSalesGapDataset(dataset) {
+      if (!dataset || !Array.isArray(dataset.columns) || !Array.isArray(dataset.rows)) {
+        return { columns: [], rows: [] };
+      }
+      const originalColumns = dataset.columns;
+      const columnMapping = [];
+      const indexMap = new Map();
+      originalColumns.forEach((name, index) => {
+        if (!isPlaceholderColumnName(name)) {
+          indexMap.set(index, columnMapping.length);
+          columnMapping.push(index);
+        }
+      });
+      if (!columnMapping.length) {
+        return { columns: [], rows: [] };
+      }
+      const trimmedColumns = columnMapping.map((index) => originalColumns[index]);
+      const trimmedRows = dataset.rows.map((row) => {
+        const sourceRow = Array.isArray(row) ? row : [];
+        return columnMapping.map((index) => (index < sourceRow.length ? sourceRow[index] : ''));
+      });
+      let headerPreamble = null;
+      if (dataset.headerPreamble && Array.isArray(dataset.headerPreamble.rows)) {
+        const trimmedPreambleRows = dataset.headerPreamble.rows.map((row) => {
+          const sourceRow = Array.isArray(row) ? row : [];
+          return columnMapping.map((index) => (index < sourceRow.length ? sourceRow[index] : ''));
+        });
+        const merges = Array.isArray(dataset.headerPreamble.merges) ? dataset.headerPreamble.merges : [];
+        const trimmedMerges = [];
+        merges.forEach((entry) => {
+          if (!entry) {
+            return;
+          }
+          const startRow = Number.isFinite(entry.row) ? Math.max(0, Math.floor(entry.row)) : 0;
+          const rowSpan = Number.isFinite(entry.rowSpan) ? Math.max(1, Math.floor(entry.rowSpan)) : 1;
+          const colSpan = Number.isFinite(entry.colSpan) ? Math.max(1, Math.floor(entry.colSpan)) : 1;
+          const startCol = Number.isFinite(entry.column) ? Math.max(0, Math.floor(entry.column)) : 0;
+          const endCol = startCol + colSpan - 1;
+          let mappedStart = null;
+          let mappedEnd = null;
+          for (let col = startCol; col <= endCol; col += 1) {
+            if (indexMap.has(col)) {
+              const mappedIndex = indexMap.get(col);
+              if (mappedStart === null || mappedIndex < mappedStart) {
+                mappedStart = mappedIndex;
+              }
+              if (mappedEnd === null || mappedIndex > mappedEnd) {
+                mappedEnd = mappedIndex;
+              }
+            }
+          }
+          if (mappedStart === null || mappedEnd === null || mappedStart > mappedEnd) {
+            return;
+          }
+          trimmedMerges.push({
+            row: startRow,
+            column: mappedStart,
+            rowSpan,
+            colSpan: mappedEnd - mappedStart + 1,
+          });
+        });
+        headerPreamble = { rows: trimmedPreambleRows };
+        if (trimmedMerges.length) {
+          headerPreamble.merges = trimmedMerges;
+        }
+      }
+      const trimmedDataset = { columns: trimmedColumns, rows: trimmedRows };
+      if (headerPreamble) {
+        trimmedDataset.headerPreamble = headerPreamble;
+      }
+      return trimmedDataset;
+    }
+
     function loadDashboardPivotSectionsFromExcel() {
       return fetchExcelWorkbook()
         .then((workbook) => {
@@ -3358,6 +3579,37 @@
           throw error;
         });
       return mainDatasetPromise;
+    }
+
+    function fetchSalesGapDataset() {
+      if (salesGapDatasetCache) {
+        return Promise.resolve(salesGapDatasetCache);
+      }
+      if (salesGapDatasetPromise) {
+        return salesGapDatasetPromise;
+      }
+      salesGapDatasetPromise = loadDatasetFromExcel({
+        sheetCandidates: EXCEL_SALES_GAP_SHEET_CANDIDATES,
+        fallbackPredicate: (name) => {
+          const normalised = normaliseSheetName(name);
+          return normalised.includes('lowisegap') || normalised.includes('salesgap');
+        },
+        errorMessage: 'Sales GAP worksheet not found in workbook',
+        headerRowIndex: 2,
+        headerSearchValues: EXCEL_SALES_GAP_HEADER_SEARCH_VALUES,
+        keyColumnNames: EXCEL_SALES_GAP_KEY_COLUMN_NAMES,
+        includeHeaderPreamble: true,
+      })
+        .then((dataset) => {
+          const trimmed = trimSalesGapDataset(dataset);
+          salesGapDatasetCache = trimmed;
+          return trimmed;
+        })
+        .catch((error) => {
+          salesGapDatasetPromise = null;
+          throw error;
+        });
+      return salesGapDatasetPromise;
     }
 
     function fetchSpendPivot() {
@@ -5102,6 +5354,13 @@
       }
       if (targetTab === 'new-product') {
         loadNewProductPivots();
+        return;
+      }
+      if (targetTab === 'sales-gap') {
+        if (regularFilterContainerElement && regularFilterContainerElement.classList.contains('is-visible')) {
+          closeRegularFilter({ returnFocus: false });
+        }
+        loadSalesGapTable();
         return;
       }
       if (targetTab === 'lo' || targetTab === 'platform') {
@@ -6907,6 +7166,80 @@
       }
 
       tableElement.innerHTML = `${headerHtml}${bodyHtml}${footerHtml}`;
+    }
+
+    function renderSalesGapTable(dataset) {
+      const tableElement = document.getElementById('sales-gap-table');
+      if (!tableElement) {
+        return;
+      }
+      if (!dataset || !Array.isArray(dataset.columns) || dataset.columns.length === 0) {
+        tableElement.innerHTML = '<tbody><tr><td class="sales-gap-table__empty">No data available</td></tr></tbody>';
+        return;
+      }
+
+      const rows = Array.isArray(dataset.rows) ? dataset.rows : [];
+      if (!rows.length) {
+        tableElement.innerHTML = '<tbody><tr><td class="sales-gap-table__empty">No data available</td></tr></tbody>';
+        return;
+      }
+
+      tableElement.innerHTML = '';
+      applyHeaderPreambleToTable(tableElement, dataset.headerPreamble || null, dataset.columns);
+
+      const numericColumns = detectNumericColumns(dataset);
+      const numericColumnSet = new Set(numericColumns);
+      const tbody = document.createElement('tbody');
+
+      rows.forEach((row) => {
+        const sourceRow = Array.isArray(row) ? row : [];
+        const tr = document.createElement('tr');
+        const firstCell = sourceRow[0];
+        if (typeof firstCell === 'string' && firstCell.trim().toLowerCase() === TOTAL_ROW_LABEL.toLowerCase()) {
+          tr.classList.add('sales-gap-row--total');
+        }
+        dataset.columns.forEach((columnName, columnIndex) => {
+          const td = document.createElement('td');
+          const value = columnIndex < sourceRow.length ? sourceRow[columnIndex] : '';
+          const formatted = formatCellValue(value, columnName);
+          if (columnIndex === 0) {
+            td.textContent = formatted;
+          } else {
+            if (numericColumnSet.has(columnIndex)) {
+              td.classList.add('cell-numeric');
+            }
+            td.textContent = formatted;
+          }
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+
+      tableElement.appendChild(tbody);
+    }
+
+    function loadSalesGapTable() {
+      if (salesGapInitialised && salesGapDatasetCache) {
+        return Promise.resolve();
+      }
+      setTabPanelLoading('sales-gap', true, salesGapInitialised ? 'Refreshing sales gap data…' : 'Loading sales gap data…');
+      return fetchSalesGapDataset()
+        .then((dataset) => {
+          renderSalesGapTable(dataset);
+          salesGapInitialised = true;
+        })
+        .catch((error) => {
+          const tableElement = document.getElementById('sales-gap-table');
+          if (tableElement) {
+            const message = typeof error?.message === 'string' && error.message.trim().length
+              ? error.message
+              : 'Unable to load Sales GAP data';
+            tableElement.innerHTML = `<tbody><tr><td class="sales-gap-table__empty">${escapeHtml(message)}</td></tr></tbody>`;
+          }
+        })
+        .finally(() => {
+          setTabPanelLoading('sales-gap', false);
+        });
     }
 
     function buildSpendScaling(actualPivot, referencePivot) {
