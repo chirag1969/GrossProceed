@@ -2463,6 +2463,8 @@
     let newProductInitialised = false;
     let newProductPivotCache = null;
     let newProductPivotPromise = null;
+    let excelWorkbookCache = null;
+    let excelWorkbookPromise = null;
 
     const NUMERIC_COLUMN_EXCLUSIONS = new Set(['ORDER NO', 'PLAIN ORDER NO', 'ORDER #', 'ORDER NO.', 'CHECKOUT']);
     const ZERO_DECIMAL_COLUMNS = new Set(['qty', 'order no', 'plain order no', 'order no.', 'order #']);
@@ -3203,11 +3205,17 @@
       return dataset;
     }
 
-    function loadDatasetFromExcel(options = {}) {
+    function fetchExcelWorkbook() {
       if (typeof XLSX === 'undefined') {
         return Promise.reject(new Error('Excel parser library is not available'));
       }
-      return fetch(EXCEL_WORKBOOK_PATH, { cache: 'no-store' })
+      if (excelWorkbookCache) {
+        return Promise.resolve(excelWorkbookCache);
+      }
+      if (excelWorkbookPromise) {
+        return excelWorkbookPromise;
+      }
+      excelWorkbookPromise = fetch(EXCEL_WORKBOOK_PATH, { cache: 'no-store' })
         .then((response) => {
           if (!response.ok) {
             throw new Error('Unable to load Excel workbook');
@@ -3216,6 +3224,19 @@
         })
         .then((buffer) => {
           const workbook = XLSX.read(buffer, { type: 'array' });
+          excelWorkbookCache = workbook;
+          return workbook;
+        })
+        .catch((error) => {
+          excelWorkbookPromise = null;
+          throw error;
+        });
+      return excelWorkbookPromise;
+    }
+
+    function loadDatasetFromExcel(options = {}) {
+      return fetchExcelWorkbook()
+        .then((workbook) => {
           const { worksheet } = findWorksheetFromWorkbook(workbook, {
             candidates: options.sheetCandidates,
             fallbackPredicate: options.fallbackPredicate,
@@ -3233,18 +3254,8 @@
     }
 
     function loadDashboardPivotSectionsFromExcel() {
-      if (typeof XLSX === 'undefined') {
-        return Promise.reject(new Error('Excel parser library is not available'));
-      }
-      return fetch(EXCEL_WORKBOOK_PATH, { cache: 'no-store' })
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error('Unable to load Excel workbook');
-          }
-          return response.arrayBuffer();
-        })
-        .then((buffer) => {
-          const workbook = XLSX.read(buffer, { type: 'array' });
+      return fetchExcelWorkbook()
+        .then((workbook) => {
           const { worksheet } = findWorksheetFromWorkbook(workbook, {
             candidates: EXCEL_MAIN_SHEET_CANDIDATES,
             fallbackPredicate: (name) => normaliseSheetName(name).includes('main'),
