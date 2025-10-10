@@ -14,20 +14,24 @@ from __future__ import annotations
 
 import json
 import math
+import os
 import posixpath
 import re
 import sqlite3
 import zipfile
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from io import BytesIO
 from pathlib import Path
 from typing import Callable, Dict, Iterable, List, Optional, Sequence, Tuple
+from urllib.parse import quote
 from xml.etree import ElementTree as ET
 
 EXCEL_EPOCH = datetime(1899, 12, 30)
 REL_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
 PACKAGE_REL_NS = "http://schemas.openxmlformats.org/package/2006/relationships"
+
+WORKBOOK_GLOB_PATTERN = "*GROSS PROCEED*COMBINE.xlsx"
 
 
 @dataclass
@@ -88,11 +92,45 @@ def normalise_sheet_name(value: Optional[str]) -> str:
     return re.sub(r"[^0-9a-z]+", "", value.lower())
 
 
+def utc_now_isoformat() -> str:
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def find_workbook_path(
+    search_root: Path,
+    pattern: str = WORKBOOK_GLOB_PATTERN,
+) -> Path:
+    env_override = os.environ.get("GROSS_PROCEED_WORKBOOK")
+    if env_override:
+        candidate = Path(env_override).expanduser()
+        if candidate.is_file():
+            return candidate.resolve()
+        raise FileNotFoundError(
+            f"Workbook specified by GROSS_PROCEED_WORKBOOK not found: {candidate}"
+        )
+
+    candidates = sorted(search_root.glob(pattern))
+    if not candidates:
+        raise FileNotFoundError(
+            f"No Excel workbooks matching '{pattern}' were found in {search_root}"
+        )
+
+    def sort_key(path: Path) -> Tuple[float, str]:
+        try:
+            mtime = path.stat().st_mtime
+        except OSError:
+            mtime = 0.0
+        return (mtime, path.name)
+
+    latest = max(candidates, key=sort_key)
+    return latest.resolve()
+
+
 def resolve_sheet_rel_path(
     archive: zipfile.ZipFile,
     candidates: Optional[Sequence[str]] = None,
     fallback: Optional[Callable[[str], bool]] = None,
-) -> Optional[str]:
+) -> Optional[Tuple[str, str]]:
     try:
         workbook_xml = archive.read("xl/workbook.xml")
     except KeyError:
@@ -142,21 +180,22 @@ def resolve_sheet_rel_path(
         for candidate in normalised_candidates:
             for normalised_name, _original_name, target in sheet_entries:
                 if candidate and normalised_name == candidate:
-                    return target
+                    return target, _original_name
             for normalised_name, _original_name, target in sheet_entries:
                 if candidate and normalised_name.startswith(candidate):
-                    return target
+                    return target, _original_name
 
     if fallback:
         for _normalised_name, original_name, target in sheet_entries:
             try:
                 if fallback(original_name):
-                    return target
+                    return target, original_name
             except Exception:  # pylint: disable=broad-except
                 continue
 
     # Fall back to the first worksheet if no criteria matched.
-    return sheet_entries[0][2]
+    _normalised_name, original_name, target = sheet_entries[0]
+    return target, original_name
 
 
 COLUMN_SPECS: Sequence[ColumnSpec] = [
@@ -227,7 +266,7 @@ COLUMN_SPECS: Sequence[ColumnSpec] = [
 def parse_sheet(
     path: Path,
     sheet_name_candidates: Optional[Sequence[str]] = None,
-) -> Tuple[List[str], List[Dict[str, object]]]:
+) -> Tuple[List[str], List[Dict[str, object]], Optional[str]]:
     with zipfile.ZipFile(path) as archive:
         shared_strings = []
         if "xl/sharedStrings.xml" in archive.namelist():
@@ -237,14 +276,14 @@ def parse_sheet(
                 shared_strings.append(text)
 
         sheet_candidates = sheet_name_candidates or ["REGULAR SEP-25", "REGULAR"]
-        sheet_rel_path = resolve_sheet_rel_path(
+        sheet_resolved = resolve_sheet_rel_path(
             archive,
             sheet_candidates,
             fallback=lambda name: "regular" in normalise_sheet_name(name),
         )
-        if not sheet_rel_path:
+        if not sheet_resolved:
             raise ValueError("Failed to locate the regular sales worksheet in the workbook")
-
+        sheet_rel_path, sheet_name = sheet_resolved
         sheet_stream = BytesIO(archive.read(sheet_rel_path))
 
     cell_ref_pattern = re.compile(r"([A-Z]+)(\d+)")
@@ -361,7 +400,7 @@ def parse_sheet(
     if header_unique is None:
         raise ValueError("Failed to locate header row with 'ORDER NO'.")
 
-    return header_unique, rows
+    return header_unique, rows, sheet_name
 
 
 def extract_lo_spend_pivot(
@@ -380,7 +419,7 @@ def extract_lo_spend_pivot(
             "L.O. wise Daily Sales & Spend",
             "LO wise Daily Sales & Spend",
         ]
-        sheet_rel_path = resolve_sheet_rel_path(
+        sheet_resolved = resolve_sheet_rel_path(
             archive,
             sheet_candidates,
             fallback=lambda name: all(
@@ -388,9 +427,10 @@ def extract_lo_spend_pivot(
                 for keyword in ("lo", "daily", "sales")
             ),
         )
-        if not sheet_rel_path:
+        if not sheet_resolved:
             raise ValueError("Failed to locate the LO spend pivot worksheet in the workbook")
 
+        sheet_rel_path, _sheet_name = sheet_resolved
         sheet_root = ET.fromstring(archive.read(sheet_rel_path))
 
     ns = {"ns": "http://schemas.openxmlformats.org/spreadsheetml/2006/main"}
@@ -554,7 +594,7 @@ def extract_sku_summary_pivot(
                 shared_strings.append(text)
 
         sheet_candidates = sheet_name_candidates or ["SKUWISE SUMMARY", "SKU WISE SUMMARY"]
-        sheet_rel_path = resolve_sheet_rel_path(
+        sheet_resolved = resolve_sheet_rel_path(
             archive,
             sheet_candidates,
             fallback=lambda name: all(
@@ -562,9 +602,10 @@ def extract_sku_summary_pivot(
                 for keyword in ("skuwise", "summary")
             ),
         )
-        if not sheet_rel_path:
+        if not sheet_resolved:
             raise ValueError("Failed to locate the SKU summary pivot worksheet in the workbook")
 
+        sheet_rel_path, _sheet_name = sheet_resolved
         sheet_root = ET.fromstring(archive.read(sheet_rel_path))
 
     ns = {"ns": "http://schemas.openxmlformats.org/spreadsheetml/2006/main"}
@@ -785,7 +826,12 @@ def fetch_series(conn: sqlite3.Connection) -> Dict[str, List[Dict[str, object]]]
     }
 
 
-def render_dashboard(metrics: Dict[str, object], series: Dict[str, List[Dict[str, object]]], output_path: Path) -> None:
+def render_dashboard(
+    metrics: Dict[str, object],
+    series: Dict[str, List[Dict[str, object]]],
+    output_path: Path,
+    report_label: Optional[str] = None,
+) -> None:
     import html
 
     daily = series["daily_performance"]
@@ -794,12 +840,14 @@ def render_dashboard(metrics: Dict[str, object], series: Dict[str, List[Dict[str
     def json_dumps(obj) -> str:
         return json.dumps(obj, separators=(",", ":"))
 
+    report_name = report_label or "Regular"
+    report_title = html.escape(report_name)
     html_content = f"""
 <!DOCTYPE html>
 <html lang=\"en\">
 <head>
   <meta charset=\"utf-8\" />
-  <title>REGULAR SEP-25 Performance Dashboard</title>
+  <title>{report_title} Performance Dashboard</title>
   <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />
   <link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin>
   <link href=\"https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap\" rel=\"stylesheet\">
@@ -882,7 +930,7 @@ def render_dashboard(metrics: Dict[str, object], series: Dict[str, List[Dict[str
 </head>
 <body>
   <header>
-    <h1>REGULAR SEP-25 Performance Dashboard</h1>
+    <h1>{report_title} Performance Dashboard</h1>
     <p class=\"lead\">Automated analysis generated from the Gross Proceed workbook.</p>
   </header>
   <section class=\"grid kpi-grid\">
@@ -1039,8 +1087,10 @@ def render_table(rows: List[Dict[str, object]], keys: Sequence[str]) -> str:
 
 
 def main() -> None:
-    workbook_path = Path("09 GROSS PROCEED SEP-25 COMBINE.xlsx")
-    _header, records = parse_sheet(workbook_path)
+    project_root = Path(__file__).resolve().parent.parent
+    workbook_path = find_workbook_path(project_root)
+    _header, records, sheet_name = parse_sheet(workbook_path)
+    report_label = sheet_name or workbook_path.stem
     final_net_totals, final_net_grand_total = compute_final_net_by_sku(records)
     conn = build_sqlite(records)
     metrics = fetch_metrics(conn)
@@ -1048,7 +1098,17 @@ def main() -> None:
 
     output_dir = Path(__file__).resolve().parent
     metrics_path = output_dir / "regular_sep25_metrics.json"
-    metrics_path.write_text(json.dumps({"metrics": metrics, "series": series}, indent=2), encoding="utf-8")
+    metrics_payload = {
+        "metrics": metrics,
+        "series": series,
+        "workbook": {
+            "filename": workbook_path.name,
+            "sheet_name": sheet_name,
+            "label": report_label,
+        },
+        "generated_at": utc_now_isoformat(),
+    }
+    metrics_path.write_text(json.dumps(metrics_payload, indent=2), encoding="utf-8")
 
     spend_pivot_path = output_dir / "lo_spend_pivot.json"
     try:
@@ -1069,10 +1129,21 @@ def main() -> None:
         sku_pivot_path.write_text(json.dumps(sku_pivot, indent=2), encoding="utf-8")
         print(f"Saved SKU summary pivot to {sku_pivot_path}")
 
+    config_path = output_dir / "workbook-config.json"
+    config_payload = {
+        "workbookFilename": workbook_path.name,
+        "workbookUrl": f"../{quote(workbook_path.name)}",
+        "regularSheetName": sheet_name,
+        "regularDisplayName": report_label,
+        "generatedAt": utc_now_isoformat(),
+    }
+    config_path.write_text(json.dumps(config_payload, indent=2), encoding="utf-8")
+
     dashboard_path = output_dir / "index.html"
-    render_dashboard(metrics, series, dashboard_path)
+    render_dashboard(metrics, series, dashboard_path, report_label)
 
     print(f"Saved metrics to {metrics_path}")
+    print(f"Saved workbook config to {config_path}")
     print(f"Saved dashboard to {dashboard_path}")
 
 

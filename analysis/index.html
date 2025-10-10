@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>REGULAR SEP-25 Performance Dashboard</title>
+  <title>Gross Proceed Performance Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
@@ -2693,13 +2693,110 @@
     const REGULAR_TABLE_PAGE_LENGTH = 200;
     const SHOW_REGULAR_TOTAL_ROW = true;
     const REGULAR_FILTER_MAX_UNIQUE_VALUES = 350;
-    const EXCEL_WORKBOOK_PATH = '../09%20GROSS%20PROCEED%20SEP-25%20COMBINE.xlsx';
-    const EXCEL_REGULAR_SHEET_CANDIDATES = [
-      'REGULAR SEP-25',
-      'Regular Sep-25',
+    const WORKBOOK_CONFIG_PATH = './workbook-config.json';
+    let EXCEL_WORKBOOK_PATH = null;
+    let EXCEL_REGULAR_SHEET_CANDIDATES = [
       'REGULAR',
       'Regular',
     ];
+    let EXCEL_REGULAR_DISPLAY_NAME = 'Regular';
+    let workbookConfigPromise = null;
+
+    function applyWorkbookDisplayName(displayName) {
+      if (typeof displayName !== 'string') {
+        return;
+      }
+      const trimmed = displayName.trim();
+      if (!trimmed.length) {
+        return;
+      }
+      EXCEL_REGULAR_DISPLAY_NAME = trimmed;
+      document.title = `${trimmed} Performance Dashboard`;
+      const headerTitle = document.querySelector('[data-report-title]');
+      if (headerTitle) {
+        headerTitle.textContent = `${trimmed} Performance Dashboard`;
+      }
+      const headerSubtitle = document.querySelector('[data-report-subtitle]');
+      if (headerSubtitle) {
+        headerSubtitle.textContent = `Automated analysis generated from the ${trimmed} workbook.`;
+      }
+    }
+
+    function applyWorkbookConfig(config) {
+      if (!config || typeof config !== 'object') {
+        return;
+      }
+
+      if (typeof config.regularDisplayName === 'string') {
+        applyWorkbookDisplayName(config.regularDisplayName);
+      } else if (typeof config.regularSheetName === 'string') {
+        applyWorkbookDisplayName(config.regularSheetName);
+      }
+
+      if (typeof config.regularSheetName === 'string') {
+        const sheetName = config.regularSheetName.trim();
+        if (sheetName.length) {
+          const sheetVariants = [
+            sheetName,
+            sheetName.toUpperCase(),
+            sheetName.toLowerCase(),
+            sheetName.replace(/\s+/g, ' '),
+            'REGULAR',
+            'Regular',
+          ];
+          const unique = Array.from(new Set(sheetVariants.filter((value) => typeof value === 'string' && value.trim().length))).map((value) => value.trim());
+          if (unique.length) {
+            EXCEL_REGULAR_SHEET_CANDIDATES = unique;
+          }
+        }
+      }
+
+      if (typeof config.workbookUrl === 'string' && config.workbookUrl.trim().length) {
+        EXCEL_WORKBOOK_PATH = config.workbookUrl.trim();
+      } else if (typeof config.workbookFilename === 'string' && config.workbookFilename.trim().length) {
+        const filename = config.workbookFilename.trim();
+        const encoded = encodeURIComponent(filename).replace(/%2F/gi, '/');
+        EXCEL_WORKBOOK_PATH = `../${encoded}`;
+      }
+    }
+
+    function ensureWorkbookConfig() {
+      if (EXCEL_WORKBOOK_PATH) {
+        return Promise.resolve({ path: EXCEL_WORKBOOK_PATH, displayName: EXCEL_REGULAR_DISPLAY_NAME });
+      }
+      if (workbookConfigPromise) {
+        return workbookConfigPromise;
+      }
+      workbookConfigPromise = fetch(WORKBOOK_CONFIG_PATH, { cache: 'no-store' })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error('Unable to load workbook configuration');
+          }
+          return response.json();
+        })
+        .then((config) => {
+          applyWorkbookConfig(config);
+          if (!EXCEL_WORKBOOK_PATH) {
+            throw new Error('Workbook configuration is missing a valid path');
+          }
+          return {
+            path: EXCEL_WORKBOOK_PATH,
+            displayName: EXCEL_REGULAR_DISPLAY_NAME,
+            raw: config,
+          };
+        })
+        .catch((error) => {
+          workbookConfigPromise = null;
+          throw error;
+        });
+      return workbookConfigPromise;
+    }
+
+    function getRegularDisplayName() {
+      return EXCEL_REGULAR_DISPLAY_NAME && EXCEL_REGULAR_DISPLAY_NAME.length
+        ? EXCEL_REGULAR_DISPLAY_NAME
+        : 'Regular';
+    }
     const EXCEL_MAIN_SHEET_CANDIDATES = ['Main', 'MAIN'];
     const EXCEL_KEY_COLUMN_NAMES = ['ORDER NO', 'Order No', 'ORDER NO.', 'ORDER #', 'Plain Order No'];
     const EXCEL_MAIN_KEY_COLUMN_NAMES = ['SKU', 'Sr. No.', 'NAME', 'DC LIST'];
@@ -3392,7 +3489,13 @@
       if (excelWorkbookPromise) {
         return excelWorkbookPromise;
       }
-      excelWorkbookPromise = fetch(EXCEL_WORKBOOK_PATH, { cache: 'no-store' })
+      excelWorkbookPromise = ensureWorkbookConfig()
+        .then(() => {
+          if (!EXCEL_WORKBOOK_PATH) {
+            throw new Error('Excel workbook path is not configured');
+          }
+          return fetch(EXCEL_WORKBOOK_PATH, { cache: 'no-store' });
+        })
         .then((response) => {
           if (!response.ok) {
             throw new Error('Unable to load Excel workbook');
@@ -3641,7 +3744,7 @@
           const normalised = normaliseSheetName(name);
           return normalised.includes('regular') && normalised.includes('sep');
         },
-        errorMessage: 'REGULAR SEP-25 worksheet not found in workbook',
+        errorMessage: `${getRegularDisplayName()} worksheet not found in workbook`,
       })
         .catch((excelError) => {
           console.error('Failed to load dataset from Excel:', excelError);
