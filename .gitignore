@@ -1,0 +1,2 @@
+analysis/*.json
+!analysis/workbook-config.json
