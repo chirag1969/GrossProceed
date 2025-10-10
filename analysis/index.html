@@ -4008,26 +4008,17 @@
         sheetCandidates: EXCEL_REGULAR_SHEET_CANDIDATES,
         fallbackPredicate: (name) => {
           const normalised = normaliseSheetName(name);
-          return normalised.includes('regular') && normalised.includes('sep');
+          return normalised.includes('regular');
         },
         errorMessage: `${getRegularDisplayName()} worksheet not found in workbook`,
       })
-        .catch((excelError) => {
-          console.error('Failed to load dataset from Excel:', excelError);
-          return fetch('regular_sep25_data.json')
-            .then((response) => {
-              if (!response.ok) {
-                throw new Error('Unable to load fallback dataset');
-              }
-              return response.json();
-            });
-        })
         .then((data) => {
           regularDatasetCache = data;
           return data;
         })
         .catch((error) => {
           regularDatasetPromise = null;
+          console.error('Failed to load dataset from Excel:', error);
           throw error;
         });
       return regularDatasetPromise;
@@ -4131,16 +4122,20 @@
       if (skuSummaryPivotPromise) {
         return skuSummaryPivotPromise;
       }
-      skuSummaryPivotPromise = fetch('sku_summary_pivot.json')
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error('Unable to load SKU pivot');
+      const datasetSource = regularDatasetCache
+        ? Promise.resolve(regularDatasetCache)
+        : fetchRegularDataset();
+      skuSummaryPivotPromise = datasetSource
+        .then((dataset) => {
+          if (!dataset) {
+            throw new Error('Dataset is unavailable');
           }
-          return response.json();
-        })
-        .then((data) => {
-          skuSummaryPivotCache = data;
-          return data;
+          const pivot = buildSkuSummaryPivotFromDataset(dataset);
+          if (!pivot || !Array.isArray(pivot.columns) || !pivot.columns.length) {
+            throw new Error('Unable to build SKU summary pivot from dataset');
+          }
+          skuSummaryPivotCache = pivot;
+          return pivot;
         })
         .catch((error) => {
           skuSummaryPivotPromise = null;
