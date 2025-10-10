@@ -8047,16 +8047,30 @@
       if (!dataset || !Array.isArray(dataset.columns) || !Array.isArray(dataset.rows)) {
         return { columns: [], rows: [], totals: null };
       }
-      const skuIndex = findColumnIndex(dataset, 'SKU_2');
-      const salePriceIndex = findColumnIndex(dataset, 'Sale Price + Shipping');
-      const carrierFeeIndex = findColumnIndex(dataset, 'CARRIER FEE');
-      const marketplaceFeeIndex = findColumnIndex(dataset, 'Ebay/ Amazon');
-      const costIndex = findColumnIndex(dataset, 'P.COST');
-      const netPerQtyIndex = findColumnIndex(dataset, 'NET/Q');
-      const netIndex = findColumnIndex(dataset, 'NET');
-      const finalNetIndex = findColumnIndex(dataset, 'Final Net');
-      const revenueIndex = findColumnIndex(dataset, 'Total Revenue');
-      const qtyIndex = findColumnIndex(dataset, 'Qty');
+
+      const resolveColumnIndex = (...candidates) => {
+        for (const candidate of candidates) {
+          if (!candidate) {
+            continue;
+          }
+          const index = findColumnIndex(dataset, candidate);
+          if (index !== -1) {
+            return index;
+          }
+        }
+        return -1;
+      };
+
+      const skuIndex = resolveColumnIndex('SKU_2', 'SKU2', 'SKU 2', 'SKU');
+      const salePriceIndex = resolveColumnIndex('Sale Price + Shipping');
+      const carrierFeeIndex = resolveColumnIndex('CARRIER FEE');
+      const marketplaceFeeIndex = resolveColumnIndex('Ebay/ Amazon');
+      const costIndex = resolveColumnIndex('P.COST');
+      const netPerQtyIndex = resolveColumnIndex('NET/Q');
+      const netIndex = resolveColumnIndex('NET');
+      const finalNetIndex = resolveColumnIndex('Final Net');
+      const revenueIndex = resolveColumnIndex('Total Revenue');
+      const qtyIndex = resolveColumnIndex('Qty');
       const requiredIndices = [
         skuIndex,
         salePriceIndex,
