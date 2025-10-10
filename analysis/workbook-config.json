@@ -1,8 +1,7 @@
 {
-  "workbookFilename": "09 GROSS PROCEED SEP-25 COMBINE.xlsx",
-  "workbookUrl": "../09%20GROSS%20PROCEED%20SEP-25%20COMBINE.xlsx",
-  "regularSheetName": "REGULAR SEP-25",
-  "regularDisplayName": "REGULAR SEP-25",
-  "generatedAt": "2025-10-10T09:39:24Z"
+  "workbookPattern": "*GROSS PROCEED*COMBINE.xlsx",
+  "workbookDirectory": "..",
+  "regularSheetName": "Regular",
+  "regularDisplayName": "Gross Proceed",
+  "generatedAt": "2025-10-28T00:00:00Z"
 }
-

@@ -24,7 +24,6 @@ from datetime import datetime, timedelta, timezone
 from io import BytesIO
 from pathlib import Path
 from typing import Callable, Dict, Iterable, List, Optional, Sequence, Tuple
-from urllib.parse import quote
 from xml.etree import ElementTree as ET
 
 EXCEL_EPOCH = datetime(1899, 12, 30)
@@ -1131,9 +1130,9 @@ def main() -> None:
 
     config_path = output_dir / "workbook-config.json"
     config_payload = {
-        "workbookFilename": workbook_path.name,
-        "workbookUrl": f"../{quote(workbook_path.name)}",
-        "regularSheetName": sheet_name,
+        "workbookPattern": WORKBOOK_GLOB_PATTERN,
+        "workbookDirectory": "..",
+        "regularSheetName": sheet_name or "Regular",
         "regularDisplayName": report_label,
         "generatedAt": utc_now_isoformat(),
     }

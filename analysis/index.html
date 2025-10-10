@@ -2694,7 +2694,11 @@
     const SHOW_REGULAR_TOTAL_ROW = true;
     const REGULAR_FILTER_MAX_UNIQUE_VALUES = 350;
     const WORKBOOK_CONFIG_PATH = './workbook-config.json';
+    const DEFAULT_WORKBOOK_PATTERN = '*GROSS PROCEED*COMBINE.xlsx';
+    const DEFAULT_WORKBOOK_DIRECTORY = '..';
     let EXCEL_WORKBOOK_PATH = null;
+    let EXCEL_WORKBOOK_PATTERN = DEFAULT_WORKBOOK_PATTERN;
+    let EXCEL_WORKBOOK_DIRECTORY = DEFAULT_WORKBOOK_DIRECTORY;
     let EXCEL_REGULAR_SHEET_CANDIDATES = [
       'REGULAR',
       'Regular',
@@ -2751,44 +2755,306 @@
         }
       }
 
+      if (typeof config.workbookDirectory === 'string' && config.workbookDirectory.trim().length) {
+        const normalisedDirectory = normaliseDirectoryPath(config.workbookDirectory);
+        if (normalisedDirectory) {
+          EXCEL_WORKBOOK_DIRECTORY = normalisedDirectory;
+        }
+      }
+
+      if (typeof config.workbookPattern === 'string' && config.workbookPattern.trim().length) {
+        EXCEL_WORKBOOK_PATTERN = config.workbookPattern.trim();
+      }
+
       if (typeof config.workbookUrl === 'string' && config.workbookUrl.trim().length) {
-        EXCEL_WORKBOOK_PATH = config.workbookUrl.trim();
+        const resolvedUrl = new URL(config.workbookUrl.trim(), window.location.href);
+        const relativeUrl = toRelativeUrl(resolvedUrl);
+        EXCEL_WORKBOOK_PATH = relativeUrl || resolvedUrl.toString();
+        const parentUrl = new URL('./', resolvedUrl);
+        const relativeDirectory = toRelativeUrl(parentUrl);
+        const normalisedParentDirectory = normaliseDirectoryPath(relativeDirectory);
+        if (normalisedParentDirectory) {
+          EXCEL_WORKBOOK_DIRECTORY = normalisedParentDirectory;
+        }
       } else if (typeof config.workbookFilename === 'string' && config.workbookFilename.trim().length) {
         const filename = config.workbookFilename.trim();
         const encoded = encodeURIComponent(filename).replace(/%2F/gi, '/');
-        EXCEL_WORKBOOK_PATH = `../${encoded}`;
+        const baseDirectory = normaliseDirectoryPath(EXCEL_WORKBOOK_DIRECTORY) || DEFAULT_WORKBOOK_DIRECTORY;
+        const baseUrl = new URL(baseDirectory, window.location.href);
+        const resolvedUrl = new URL(encoded, baseUrl);
+        const relativePath = toRelativeUrl(resolvedUrl);
+        EXCEL_WORKBOOK_PATH = relativePath || resolvedUrl.toString();
       }
     }
 
-    function ensureWorkbookConfig() {
-      if (EXCEL_WORKBOOK_PATH) {
-        return Promise.resolve({ path: EXCEL_WORKBOOK_PATH, displayName: EXCEL_REGULAR_DISPLAY_NAME });
+    function normaliseDirectoryPath(value) {
+      if (typeof value !== 'string') {
+        return null;
       }
+      const trimmed = value.trim();
+      if (!trimmed.length) {
+        return null;
+      }
+      if (trimmed === '.' || trimmed === './') {
+        return './';
+      }
+      if (trimmed === '..' || trimmed === '../') {
+        return '../';
+      }
+      if (trimmed === '/') {
+        return '/';
+      }
+      if (/^https?:/i.test(trimmed)) {
+        try {
+          const resolved = new URL(trimmed, window.location.href);
+          return toRelativeUrl(resolved) || resolved.toString();
+        } catch (error) {
+          return null;
+        }
+      }
+      if (trimmed.endsWith('/')) {
+        return trimmed;
+      }
+      return `${trimmed}/`;
+    }
+
+    function toRelativeUrl(value) {
+      if (!value) {
+        return null;
+      }
+      try {
+        const base = new URL(window.location.href);
+        const resolved = value instanceof URL ? value : new URL(value, base);
+        if (resolved.origin === base.origin) {
+          return `${resolved.pathname}${resolved.search}${resolved.hash}`;
+        }
+        return resolved.toString();
+      } catch (error) {
+        return typeof value === 'string' ? value : null;
+      }
+    }
+
+    function globToRegExp(pattern) {
+      if (typeof pattern !== 'string' || !pattern.trim().length) {
+        return null;
+      }
+      const characters = pattern.trim().split('');
+      let regexString = '^';
+      for (const char of characters) {
+        if (char === '*') {
+          regexString += '.*';
+        } else if (char === '?') {
+          regexString += '.';
+        } else if ('\.[]{}()+-^$|'.includes(char)) {
+          regexString += `\${char}`;
+        } else {
+          regexString += char;
+        }
+      }
+      regexString += '$';
+      try {
+        return new RegExp(regexString, 'i');
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function parseLastModifiedHeader(headers) {
+      if (!headers) {
+        return null;
+      }
+      let headerValue = null;
+      if (typeof headers.get === 'function') {
+        headerValue = headers.get('last-modified');
+      } else if (headers && typeof headers === 'object' && typeof headers['last-modified'] === 'string') {
+        headerValue = headers['last-modified'];
+      }
+      if (!headerValue) {
+        return null;
+      }
+      const timestamp = Date.parse(headerValue);
+      return Number.isNaN(timestamp) ? null : timestamp;
+    }
+
+    async function fetchResourceMetadata(path) {
+      const metadata = { exists: false, lastModified: null };
+      if (!path) {
+        return metadata;
+      }
+      try {
+        const headResponse = await fetch(path, { method: 'HEAD', cache: 'no-store' });
+        if (headResponse.ok) {
+          metadata.exists = true;
+          metadata.lastModified = parseLastModifiedHeader(headResponse.headers);
+          return metadata;
+        }
+        if (headResponse.status && headResponse.status !== 405 && headResponse.status !== 403) {
+          return metadata;
+        }
+      } catch (error) {
+        // Intentionally ignored; fallback request will be attempted.
+      }
+      try {
+        const response = await fetch(path, {
+          method: 'GET',
+          headers: { Range: 'bytes=0-0' },
+          cache: 'no-store',
+        });
+        if (response.ok) {
+          metadata.exists = true;
+          metadata.lastModified = parseLastModifiedHeader(response.headers);
+          if (response.body && typeof response.body.cancel === 'function') {
+            response.body.cancel().catch(() => {});
+          }
+        }
+      } catch (error) {
+        // Ignore network failures during metadata checks.
+      }
+      return metadata;
+    }
+
+    async function verifyWorkbookPath(path) {
+      if (!path) {
+        return null;
+      }
+      const metadata = await fetchResourceMetadata(path);
+      return metadata.exists ? path : null;
+    }
+
+    async function listDirectoryEntries(directoryPath) {
+      if (!directoryPath) {
+        return [];
+      }
+      try {
+        const directoryUrl = new URL(directoryPath, window.location.href);
+        const response = await fetch(directoryUrl.toString(), { cache: 'no-store' });
+        if (!response.ok) {
+          return [];
+        }
+        const text = await response.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(text, 'text/html');
+        if (!doc || typeof doc.querySelectorAll !== 'function') {
+          return [];
+        }
+        const anchors = Array.from(doc.querySelectorAll('a[href]'));
+        const entries = anchors
+          .map((anchor) => {
+            const rawHref = anchor.getAttribute('href');
+            if (!rawHref || rawHref.startsWith('?') || rawHref.startsWith('#')) {
+              return null;
+            }
+            const cleanedHref = rawHref.trim();
+            if (!cleanedHref.length || cleanedHref === '/' || cleanedHref === '../' || cleanedHref === './') {
+              return null;
+            }
+            if (cleanedHref.endsWith('/')) {
+              return null;
+            }
+            let resolvedUrl;
+            try {
+              resolvedUrl = new URL(cleanedHref, directoryUrl);
+            } catch (error) {
+              return null;
+            }
+            const relativePath = toRelativeUrl(resolvedUrl);
+            if (!relativePath) {
+              return null;
+            }
+            const segments = resolvedUrl.pathname.split('/').filter((segment) => segment.length);
+            const nameSegment = segments.length ? segments[segments.length - 1] : cleanedHref;
+            let decodedName;
+            try {
+              decodedName = decodeURIComponent(nameSegment);
+            } catch (decodeError) {
+              decodedName = nameSegment;
+            }
+            return { name: decodedName, href: relativePath };
+          })
+          .filter((entry) => entry && entry.name.toLowerCase().endsWith('.xlsx'));
+        const seen = new Set();
+        const unique = [];
+        for (const entry of entries) {
+          if (!seen.has(entry.href)) {
+            seen.add(entry.href);
+            unique.push(entry);
+          }
+        }
+        return unique;
+      } catch (error) {
+        return [];
+      }
+    }
+
+    async function resolveWorkbookPathFromPattern() {
+      const directory = normaliseDirectoryPath(EXCEL_WORKBOOK_DIRECTORY) || DEFAULT_WORKBOOK_DIRECTORY;
+      const pattern = EXCEL_WORKBOOK_PATTERN || DEFAULT_WORKBOOK_PATTERN;
+      const regex = globToRegExp(pattern);
+      const entries = await listDirectoryEntries(directory);
+      if (!entries.length) {
+        return null;
+      }
+      const candidates = Array.isArray(entries)
+        ? entries.filter((entry) => (regex ? regex.test(entry.name) : true))
+        : [];
+      if (!candidates.length) {
+        return null;
+      }
+      const metadataResults = await Promise.all(
+        candidates.map(async (entry) => ({
+          entry,
+          metadata: await fetchResourceMetadata(entry.href),
+        })),
+      );
+      const available = metadataResults
+        .filter((candidate) => candidate.metadata && candidate.metadata.exists)
+        .sort((a, b) => {
+          const timeA = typeof a.metadata.lastModified === 'number' ? a.metadata.lastModified : Number.NEGATIVE_INFINITY;
+          const timeB = typeof b.metadata.lastModified === 'number' ? b.metadata.lastModified : Number.NEGATIVE_INFINITY;
+          if (timeA !== timeB) {
+            return timeB - timeA;
+          }
+          return a.entry.name.localeCompare(b.entry.name);
+        });
+      if (available.length) {
+        return available[0].entry.href;
+      }
+      return candidates[0].href || null;
+    }
+
+    function ensureWorkbookConfig() {
       if (workbookConfigPromise) {
         return workbookConfigPromise;
       }
-      workbookConfigPromise = fetch(WORKBOOK_CONFIG_PATH, { cache: 'no-store' })
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error('Unable to load workbook configuration');
-          }
-          return response.json();
-        })
-        .then((config) => {
-          applyWorkbookConfig(config);
-          if (!EXCEL_WORKBOOK_PATH) {
-            throw new Error('Workbook configuration is missing a valid path');
-          }
-          return {
-            path: EXCEL_WORKBOOK_PATH,
-            displayName: EXCEL_REGULAR_DISPLAY_NAME,
-            raw: config,
-          };
-        })
-        .catch((error) => {
-          workbookConfigPromise = null;
-          throw error;
-        });
+      workbookConfigPromise = (async () => {
+        const response = await fetch(WORKBOOK_CONFIG_PATH, { cache: 'no-store' });
+        if (!response.ok) {
+          throw new Error('Unable to load workbook configuration');
+        }
+        const config = await response.json();
+        applyWorkbookConfig(config);
+
+        let resolvedPath = null;
+        if (EXCEL_WORKBOOK_PATH) {
+          resolvedPath = await verifyWorkbookPath(EXCEL_WORKBOOK_PATH);
+        }
+        if (!resolvedPath) {
+          resolvedPath = await resolveWorkbookPathFromPattern();
+        }
+        if (!resolvedPath) {
+          throw new Error('Workbook configuration is missing a valid path');
+        }
+        EXCEL_WORKBOOK_PATH = resolvedPath;
+
+        return {
+          path: EXCEL_WORKBOOK_PATH,
+          displayName: EXCEL_REGULAR_DISPLAY_NAME,
+          raw: config,
+        };
+      })().catch((error) => {
+        workbookConfigPromise = null;
+        throw error;
+      });
       return workbookConfigPromise;
     }
 
