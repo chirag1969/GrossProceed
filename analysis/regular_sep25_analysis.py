@@ -45,6 +45,16 @@ BAD_VALUES = {None, "", "-", "#N/A", "#REF!", "#VALUE!", "#DIV/0!"}
 BLANK_ROW_LIMIT = 2000
 
 
+def normalise_header_label(value: Optional[str]) -> str:
+    if not isinstance(value, str):
+        return ""
+    text = value.strip()
+    if not text:
+        return ""
+    text = re.sub(r"\s+", " ", text)
+    return text.upper()
+
+
 def clean_text(value) -> Optional[str]:
     if value in BAD_VALUES:
         return None
@@ -199,66 +209,66 @@ def resolve_sheet_rel_path(
 
 COLUMN_SPECS: Sequence[ColumnSpec] = [
     ColumnSpec("ORDER NO", "order_no", "TEXT", clean_text),
-    ColumnSpec("Plain Order No", "plain_order_no", "TEXT", clean_text),
-    ColumnSpec("Checkout", "checkout_date", "TEXT", excel_serial_to_date),
-    ColumnSpec("Checkout", "checkout_serial", "REAL", clean_numeric),
-    ColumnSpec("Platform", "platform", "TEXT", clean_text),
-    ColumnSpec("Product", "product", "TEXT", clean_text),
+    ColumnSpec("PLAIN ORDER NO", "plain_order_no", "TEXT", clean_text),
+    ColumnSpec("CHECKOUT", "checkout_date", "TEXT", excel_serial_to_date),
+    ColumnSpec("CHECKOUT_2", "checkout_serial", "REAL", clean_numeric),
+    ColumnSpec("PLATFORM", "platform", "TEXT", clean_text),
+    ColumnSpec("PRODUCT", "product", "TEXT", clean_text),
     ColumnSpec("CATEGORY", "category", "TEXT", clean_text),
     ColumnSpec("SKU", "sku_parent", "TEXT", clean_text),
     ColumnSpec("SKU_2", "sku", "TEXT", clean_text),
-    ColumnSpec("Qty", "quantity", "REAL", clean_numeric),
-    ColumnSpec("Sale Price", "sale_price", "REAL", clean_numeric),
-    ColumnSpec("Sale Price + Shipping", "sale_price_plus_shipping", "REAL", clean_numeric),
-    ColumnSpec("Net Sale Price", "net_sale_price", "REAL", clean_numeric),
-    ColumnSpec("Shipping PAID", "shipping_paid", "REAL", clean_numeric),
-    ColumnSpec("Tax", "tax", "REAL", clean_numeric),
-    ColumnSpec("Total Revenue", "total_revenue", "REAL", clean_numeric),
+    ColumnSpec("QTY", "quantity", "REAL", clean_numeric),
+    ColumnSpec("SALE PRICE", "sale_price", "REAL", clean_numeric),
+    ColumnSpec("SALE PRICE + SHIPPING", "sale_price_plus_shipping", "REAL", clean_numeric),
+    ColumnSpec("NET SALE PRICE", "net_sale_price", "REAL", clean_numeric),
+    ColumnSpec("SHIPPING PAID", "shipping_paid", "REAL", clean_numeric),
+    ColumnSpec("TAX", "tax", "REAL", clean_numeric),
+    ColumnSpec("TOTAL REVENUE", "total_revenue", "REAL", clean_numeric),
     ColumnSpec("CARRIER FEE", "carrier_fee", "REAL", clean_numeric),
-    ColumnSpec("Ebay/ Amazon", "marketplace_fee", "REAL", clean_numeric),
-    ColumnSpec("Gross Proceed", "gross_proceed", "REAL", clean_numeric),
+    ColumnSpec("EBAY/ AMAZON", "marketplace_fee", "REAL", clean_numeric),
+    ColumnSpec("GROSS PROCEED", "gross_proceed", "REAL", clean_numeric),
     ColumnSpec("P.COST", "product_cost", "REAL", clean_numeric),
     ColumnSpec("T.P.COST", "total_product_cost", "REAL", clean_numeric),
     ColumnSpec("NET", "net", "REAL", clean_numeric),
     ColumnSpec("NET/Q", "net_per_qty", "REAL", clean_numeric),
     ColumnSpec("TYPE", "order_type", "TEXT", clean_text),
-    ColumnSpec("T.Net/T.Rev", "net_to_revenue_ratio", "REAL", clean_numeric),
+    ColumnSpec("T.NET/T.REV", "net_to_revenue_ratio", "REAL", clean_numeric),
     ColumnSpec("N2R/Q", "net_to_revenue_per_qty", "REAL", clean_numeric),
-    ColumnSpec("Customer City", "customer_city", "TEXT", clean_text),
-    ColumnSpec("Customer State", "customer_state", "TEXT", clean_text),
-    ColumnSpec("Customer Zip", "customer_zip", "TEXT", clean_text),
-    ColumnSpec("Warehouse", "warehouse", "TEXT", clean_text),
-    ColumnSpec("Data From", "data_from", "TEXT", clean_text),
+    ColumnSpec("CUSTOMER CITY", "customer_city", "TEXT", clean_text),
+    ColumnSpec("CUSTOMER STATE", "customer_state", "TEXT", clean_text),
+    ColumnSpec("CUSTOMER ZIP", "customer_zip", "TEXT", clean_text),
+    ColumnSpec("WAREHOUSE", "warehouse", "TEXT", clean_text),
+    ColumnSpec("DATA FROM", "data_from", "TEXT", clean_text),
     ColumnSpec("LISTING OWNER", "listing_owner", "TEXT", clean_text),
     ColumnSpec("AVG. SALES/MONTH", "avg_sales_per_month", "REAL", clean_numeric),
     ColumnSpec("RANK", "rank", "REAL", clean_numeric),
-    ColumnSpec("selling fees", "selling_fees", "REAL", clean_numeric),
-    ColumnSpec("fba fees", "fba_fees", "REAL", clean_numeric),
+    ColumnSpec("SELLING FEES", "selling_fees", "REAL", clean_numeric),
+    ColumnSpec("FBA FEES", "fba_fees", "REAL", clean_numeric),
     ColumnSpec("FREIGHT CHARGES", "freight_charges", "REAL", clean_numeric),
     ColumnSpec("T.FREIGHT", "total_freight", "REAL", clean_numeric),
-    ColumnSpec("promotional rebates", "promotional_rebates", "REAL", clean_numeric),
-    ColumnSpec("Carrier Name", "carrier_name", "TEXT", clean_text),
-    ColumnSpec("State Sort", "state_sort", "TEXT", clean_text),
-    ColumnSpec("Country", "country", "TEXT", clean_text),
+    ColumnSpec("PROMOTIONAL REBATES", "promotional_rebates", "REAL", clean_numeric),
+    ColumnSpec("CARRIER NAME", "carrier_name", "TEXT", clean_text),
+    ColumnSpec("STATE SORT", "state_sort", "TEXT", clean_text),
+    ColumnSpec("COUNTRY", "country", "TEXT", clean_text),
     ColumnSpec("C/R", "customer_type", "TEXT", clean_text),
-    ColumnSpec("Price-Promo", "price_promo", "REAL", clean_numeric),
-    ColumnSpec("Min Price", "min_price", "REAL", clean_numeric),
+    ColumnSpec("PRICE-PROMO", "price_promo", "REAL", clean_numeric),
+    ColumnSpec("MIN PRICE", "min_price", "REAL", clean_numeric),
     ColumnSpec("NEW/OLD", "condition_flag", "TEXT", clean_text),
     ColumnSpec("REFUND", "refund", "REAL", clean_numeric),
     ColumnSpec("SHIPPING TAX", "shipping_tax", "REAL", clean_numeric),
     ColumnSpec("GIFT WRAP TAX", "gift_wrap_tax", "REAL", clean_numeric),
-    ColumnSpec("Count", "line_count", "REAL", clean_numeric),
-    ColumnSpec("Coupon Fee", "coupon_fee", "REAL", clean_numeric),
-    ColumnSpec("Replacement", "replacement", "TEXT", clean_text),
-    ColumnSpec("Ad Spend", "ad_spend", "REAL", clean_numeric),
-    ColumnSpec("Strorage Fees", "storage_fees", "REAL", clean_numeric),
-    ColumnSpec("Final Net", "final_net", "REAL", clean_numeric),
-    ColumnSpec("Final Net%", "final_net_pct", "REAL", clean_numeric),
-    ColumnSpec("Filter Store", "filter_store", "TEXT", clean_text),
-    ColumnSpec("Org Sale Price", "original_sale_price", "REAL", clean_numeric),
-    ColumnSpec("Conv. Rate", "conversion_rate", "REAL", clean_numeric),
-    ColumnSpec("Aged Inv.", "aged_inventory", "TEXT", clean_text),
-    ColumnSpec("Late Delivery", "late_delivery", "TEXT", clean_text),
+    ColumnSpec("COUNT", "line_count", "REAL", clean_numeric),
+    ColumnSpec("COUPON FEE", "coupon_fee", "REAL", clean_numeric),
+    ColumnSpec("REPLACEMENT", "replacement", "TEXT", clean_text),
+    ColumnSpec("AD SPEND", "ad_spend", "REAL", clean_numeric),
+    ColumnSpec("STRORAGE FEES", "storage_fees", "REAL", clean_numeric),
+    ColumnSpec("FINAL NET", "final_net", "REAL", clean_numeric),
+    ColumnSpec("FINAL NET%", "final_net_pct", "REAL", clean_numeric),
+    ColumnSpec("FILTER STORE", "filter_store", "TEXT", clean_text),
+    ColumnSpec("ORG SALE PRICE", "original_sale_price", "REAL", clean_numeric),
+    ColumnSpec("CONV. RATE", "conversion_rate", "REAL", clean_numeric),
+    ColumnSpec("AGED INV.", "aged_inventory", "TEXT", clean_text),
+    ColumnSpec("LATE DELIVERY", "late_delivery", "TEXT", clean_text),
 ]
 
 
@@ -295,6 +305,7 @@ def parse_sheet(
 
     header: Optional[List[str]] = None
     header_unique: Optional[List[str]] = None
+    header_keys: Optional[List[str]] = None
     rows: List[Dict[str, object]] = []
 
     current_cells: Dict[int, object] = {}
@@ -358,32 +369,41 @@ def parse_sheet(
                     max_col = max(current_cells) if current_cells else -1
                     row_values = [current_cells.get(i) for i in range(max_col + 1)] if max_col >= 0 else []
                     if header is None:
-                        if any(val == "ORDER NO" for val in row_values):
+                        if any(
+                            isinstance(val, str)
+                            and normalise_header_label(val) == "ORDER NO"
+                            for val in row_values
+                        ):
                             header = row_values
                             counts: Dict[str, int] = {}
                             header_unique = []
+                            header_keys = []
                             for name in header:
-                                base = name or "Column"
-                                count = counts.get(base, 0) + 1
-                                counts[base] = count
-                                if count == 1 and name:
-                                    header_unique.append(base)
+                                display_name = name or "Column"
+                                normalised = normalise_header_label(name) or "COLUMN"
+                                count = counts.get(normalised, 0) + 1
+                                counts[normalised] = count
+                                if count > 1:
+                                    display_entry = f"{display_name}_{count}"
+                                    key_entry = f"{normalised}_{count}"
                                 else:
-                                    header_unique.append(f"{base}_{count}")
+                                    display_entry = display_name
+                                    key_entry = normalised
+                                header_unique.append(display_entry)
+                                header_keys.append(key_entry)
                             blank_run = 0
                         else:
                             blank_run += 1
-                    elif header_unique is not None:
-                        if len(row_values) < len(header_unique):
-                            row_values += [None] * (len(header_unique) - len(row_values))
+                    elif header_unique is not None and header_keys is not None:
+                        if len(row_values) < len(header_keys):
+                            row_values += [None] * (len(header_keys) - len(row_values))
                         record = {
-                            header_unique[i]: row_values[i] if i < len(row_values) else None
-                            for i in range(len(header_unique))
+                            header_keys[i]: row_values[i] if i < len(row_values) else None
+                            for i in range(len(header_keys))
                         }
                         key_candidates = (
                             record.get("ORDER NO"),
-                            record.get("Order No"),
-                            record.get("Plain Order No"),
+                            record.get("PLAIN ORDER NO"),
                         )
                         if any(val not in (None, "", "-") for val in key_candidates):
                             rows.append(record)
@@ -396,10 +416,10 @@ def parse_sheet(
                     break
                 elem.clear()
 
-    if header_unique is None:
+    if header_keys is None:
         raise ValueError("Failed to locate header row with 'ORDER NO'.")
 
-    return header_unique, rows, sheet_name
+    return header_keys, rows, sheet_name
 
 
 def extract_lo_spend_pivot(
@@ -536,7 +556,7 @@ def compute_final_net_by_sku(records: Iterable[Dict[str, object]]) -> Tuple[Dict
         sku = clean_text(raw_sku)
         if not sku:
             continue
-        value = clean_numeric(record.get("Final Net"))
+        value = clean_numeric(record.get("FINAL NET"))
         if value is None:
             continue
         totals[sku] = totals.get(sku, 0.0) + value
