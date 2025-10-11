@@ -1406,6 +1406,10 @@
       overflow-x: auto !important;
       flex: 1 1 auto;
       min-height: 0;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+      will-change: scroll-position;
+      scrollbar-gutter: stable both-edges;
     }
     #regular-table_wrapper .dataTables_scrollBody table,
     #main-table_wrapper .dataTables_scrollBody table {
