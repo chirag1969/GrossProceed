@@ -2090,6 +2090,19 @@
             <h2 class="sales-gap-card__title">Sales GAP by listing owner</h2>
             <p class="sales-gap-card__subtitle">Comparison of our performance against competitors from the Sales GAP worksheet.</p>
           </div>
+          <div class="filter-actions">
+            <button
+              type="button"
+              class="filter-clear-button"
+              id="sales-gap-filter-clear-button"
+              aria-label="Clear Sales GAP filters"
+              title="Clear filters"
+              hidden
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+            <button type="button" class="filter-button" id="sales-gap-filter-button" aria-haspopup="dialog" aria-expanded="false">Filters</button>
+          </div>
         </header>
         <div class="sales-gap-table-container">
           <div class="sales-gap-table-scroll">
@@ -2102,6 +2115,19 @@
           <div>
             <h2 class="sku-gap-card__title">SKU wise GAP</h2>
             <p class="sku-gap-card__subtitle">Detailed SKU comparison sourced directly from the SKUWISE GAP worksheet.</p>
+          </div>
+          <div class="filter-actions">
+            <button
+              type="button"
+              class="filter-clear-button"
+              id="sku-gap-filter-clear-button"
+              aria-label="Clear SKU GAP filters"
+              title="Clear filters"
+              hidden
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+            <button type="button" class="filter-button" id="sku-gap-filter-button" aria-haspopup="dialog" aria-expanded="false">Filters</button>
           </div>
         </header>
         <div class="sku-gap-table-container">
@@ -2451,6 +2477,44 @@
       </div>
     </div>
   </div>
+  <div class="regular-filter" id="sales-gap-filter" hidden aria-hidden="true">
+    <div class="regular-filter__backdrop"></div>
+    <div class="regular-filter__dialog" role="dialog" aria-modal="true" aria-labelledby="sales-gap-filter-title">
+      <div class="regular-filter__header">
+        <h3 class="regular-filter__title" id="sales-gap-filter-title">Filter Sales GAP rows</h3>
+        <button type="button" class="regular-filter__close" aria-label="Close filters">&times;</button>
+      </div>
+      <div class="regular-filter__field">
+        <span class="regular-filter__label" id="sales-gap-filter-field-label">Field</span>
+        <div class="regular-filter__field-options" id="sales-gap-filter-field-options" role="group" aria-labelledby="sales-gap-filter-field-label"></div>
+      </div>
+      <div class="regular-filter__options" id="sales-gap-filter-options" role="group" aria-label="Filter values"></div>
+      <p class="regular-filter__empty" id="sales-gap-filter-empty" hidden>No filter values available</p>
+      <div class="regular-filter__footer">
+        <button type="button" class="regular-filter__reset" id="sales-gap-filter-reset">Reset</button>
+        <button type="button" class="regular-filter__apply" id="sales-gap-filter-apply">Apply</button>
+      </div>
+    </div>
+  </div>
+  <div class="regular-filter" id="sku-gap-filter" hidden aria-hidden="true">
+    <div class="regular-filter__backdrop"></div>
+    <div class="regular-filter__dialog" role="dialog" aria-modal="true" aria-labelledby="sku-gap-filter-title">
+      <div class="regular-filter__header">
+        <h3 class="regular-filter__title" id="sku-gap-filter-title">Filter SKU GAP rows</h3>
+        <button type="button" class="regular-filter__close" aria-label="Close filters">&times;</button>
+      </div>
+      <div class="regular-filter__field">
+        <span class="regular-filter__label" id="sku-gap-filter-field-label">Field</span>
+        <div class="regular-filter__field-options" id="sku-gap-filter-field-options" role="group" aria-labelledby="sku-gap-filter-field-label"></div>
+      </div>
+      <div class="regular-filter__options" id="sku-gap-filter-options" role="group" aria-label="Filter values"></div>
+      <p class="regular-filter__empty" id="sku-gap-filter-empty" hidden>No filter values available</p>
+      <div class="regular-filter__footer">
+        <button type="button" class="regular-filter__reset" id="sku-gap-filter-reset">Reset</button>
+        <button type="button" class="regular-filter__apply" id="sku-gap-filter-apply">Apply</button>
+      </div>
+    </div>
+  </div>
   <div class="regular-filter main-filter" id="main-filter" hidden aria-hidden="true">
     <div class="regular-filter__backdrop"></div>
     <div class="regular-filter__dialog" role="dialog" aria-modal="true" aria-labelledby="main-filter-title">
@@ -2625,6 +2689,8 @@
     let salesGapDatasetCache = null;
     let salesGapDatasetPromise = null;
     let salesGapInitialised = false;
+    let activeSalesGapFilterConfig = null;
+    let salesGapFilterKeyListenerRegistered = false;
     let excelWorkbookCache = null;
     let excelWorkbookPromise = null;
 
@@ -3106,6 +3172,36 @@
         filterClearButtonId: 'new-product-secondary-filter-clear-button',
         subtitleId: 'new-product-secondary-subtitle',
         filterFieldDefinitions: NEW_PRODUCT_FILTER_FIELDS,
+      },
+    ];
+    const SALES_GAP_FILTER_CONFIGS = [
+      {
+        id: 'sales-gap',
+        datasetKey: 'loDataset',
+        tableId: 'sales-gap-table',
+        filterButtonId: 'sales-gap-filter-button',
+        filterClearButtonId: 'sales-gap-filter-clear-button',
+        filterContainerId: 'sales-gap-filter',
+        filterFieldOptionsId: 'sales-gap-filter-field-options',
+        filterOptionsId: 'sales-gap-filter-options',
+        filterEmptyId: 'sales-gap-filter-empty',
+        filterApplyId: 'sales-gap-filter-apply',
+        filterResetId: 'sales-gap-filter-reset',
+        filterTitleId: 'sales-gap-filter-title',
+      },
+      {
+        id: 'sku-gap',
+        datasetKey: 'skuDataset',
+        tableId: 'sku-gap-table',
+        filterButtonId: 'sku-gap-filter-button',
+        filterClearButtonId: 'sku-gap-filter-clear-button',
+        filterContainerId: 'sku-gap-filter',
+        filterFieldOptionsId: 'sku-gap-filter-field-options',
+        filterOptionsId: 'sku-gap-filter-options',
+        filterEmptyId: 'sku-gap-filter-empty',
+        filterApplyId: 'sku-gap-filter-apply',
+        filterResetId: 'sku-gap-filter-reset',
+        filterTitleId: 'sku-gap-filter-title',
       },
     ];
     const NEW_PRODUCT_DATASET_PIVOT_DEFINITIONS = [
@@ -5812,6 +5908,9 @@
         return;
       }
       closeHeaderMenu();
+      if (targetTab !== 'sales-gap' && activeSalesGapFilterConfig && activeSalesGapFilterConfig.filterContainer && activeSalesGapFilterConfig.filterContainer.classList.contains('is-visible')) {
+        closeSalesGapFilter(activeSalesGapFilterConfig, { returnFocus: false });
+      }
       if (targetTab === 'main') {
         if (regularFilterContainerElement && regularFilterContainerElement.classList.contains('is-visible')) {
           closeRegularFilter({ returnFocus: false });
@@ -7647,6 +7746,440 @@
       tableElement.innerHTML = `${headerHtml}${bodyHtml}${footerHtml}`;
     }
 
+    function getSalesGapFilterConfigByDatasetKey(datasetKey) {
+      return SALES_GAP_FILTER_CONFIGS.find((config) => config.datasetKey === datasetKey) || null;
+    }
+
+    function hasActiveSalesGapFilters(config) {
+      if (!config || !config.filters) {
+        return false;
+      }
+      return Object.values(config.filters).some((values) => Array.isArray(values) && values.length > 0);
+    }
+
+    function updateSalesGapFilterButtonState(config) {
+      if (!config) {
+        return;
+      }
+      const hasFilterableColumns = Array.isArray(config.availableColumns) && config.availableColumns.length > 0;
+      const hasFilters = hasActiveSalesGapFilters(config);
+      const button = config.filterButton || null;
+      if (button) {
+        if (hasFilterableColumns) {
+          button.disabled = false;
+          button.removeAttribute('aria-disabled');
+        } else {
+          button.disabled = true;
+          button.setAttribute('aria-disabled', 'true');
+        }
+        button.setAttribute('data-active', hasFilters ? 'true' : 'false');
+      }
+      const clearButton = config.filterClearButton || null;
+      if (clearButton) {
+        clearButton.hidden = !hasFilters;
+        clearButton.disabled = !hasFilters;
+      }
+    }
+
+    function renderSalesGapFilterFieldButtons(config) {
+      const container = config?.filterFieldOptionsElement;
+      if (!container) {
+        return;
+      }
+      const columns = Array.isArray(config.availableColumns) ? config.availableColumns : [];
+      if (!columns.length) {
+        container.innerHTML = '<p class="regular-filter__empty" style="margin:0">No filterable fields</p>';
+        return;
+      }
+      const markup = columns
+        .map((column) => {
+          const pressed = column.index === config.activeColumnIndex ? ' aria-pressed="true"' : ' aria-pressed="false"';
+          const label = escapeHtml(column.title || `Column ${column.index + 1}`);
+          return `<button type="button" class="regular-filter__field-button" data-column-index="${column.index}"${pressed}>${label}</button>`;
+        })
+        .join('');
+      container.innerHTML = markup;
+      const buttons = Array.from(container.querySelectorAll('.regular-filter__field-button'));
+      buttons.forEach((buttonElement) => {
+        buttonElement.addEventListener('click', () => {
+          const targetIndex = Number(buttonElement.dataset.columnIndex);
+          setSalesGapFilterActiveColumn(config, targetIndex);
+        });
+      });
+    }
+
+    function syncSalesGapPendingSelections(config) {
+      if (!config) {
+        return;
+      }
+      if (!(config.pendingSelections instanceof Map)) {
+        config.pendingSelections = new Map();
+      }
+      const pending = config.pendingSelections;
+      const optionsSource = Array.isArray(config.columnValueOptions) ? config.columnValueOptions : [];
+      if (config.filters && typeof config.filters === 'object') {
+        Object.entries(config.filters).forEach(([key, values]) => {
+          const columnIndex = Number(key);
+          if (!Number.isFinite(columnIndex)) {
+            return;
+          }
+          const availableValues = optionsSource[columnIndex] || [];
+          const validValues = Array.isArray(values) ? values.filter((value) => availableValues.includes(value)) : [];
+          if (validValues.length) {
+            pending.set(columnIndex, new Set(validValues));
+          }
+        });
+      }
+      if (Number.isFinite(config.activeColumnIndex) && !pending.has(config.activeColumnIndex)) {
+        pending.set(config.activeColumnIndex, new Set());
+      }
+    }
+
+    function renderSalesGapFilterOptions(config) {
+      const container = config?.filterOptionsElement;
+      if (!container) {
+        return;
+      }
+      const emptyMessage = config.filterEmptyElement || null;
+      const columnIndex = Number.isFinite(config?.activeColumnIndex) ? config.activeColumnIndex : null;
+      const optionsSource = Array.isArray(config.columnValueOptions) ? config.columnValueOptions : [];
+      const options = Number.isFinite(columnIndex) ? optionsSource[columnIndex] || [] : [];
+      syncSalesGapPendingSelections(config);
+      const pending = config.pendingSelections instanceof Map ? config.pendingSelections : new Map();
+      const selectionSet = Number.isFinite(columnIndex) ? pending.get(columnIndex) || new Set() : new Set();
+      if (!Number.isFinite(columnIndex) || !options.length) {
+        container.innerHTML = '';
+        if (emptyMessage) {
+          emptyMessage.hidden = false;
+        }
+        return;
+      }
+      const optionMarkup = options
+        .map((value, index) => {
+          const safeValue = escapeHtml(value);
+          const label = escapeHtml(optionLabel(value));
+          const checkboxId = `${config.id}-filter-option-${columnIndex}-${index}`;
+          const checkedAttr = selectionSet.has(value) ? ' checked' : '';
+          return `<label class="regular-filter__option" for="${checkboxId}"><input type="checkbox" id="${checkboxId}" value="${safeValue}"${checkedAttr}><span>${label}</span></label>`;
+        })
+        .join('');
+      container.innerHTML = optionMarkup;
+      animateOptionList(container, '.regular-filter__option');
+      if (emptyMessage) {
+        emptyMessage.hidden = optionMarkup.length > 0;
+      }
+    }
+
+    function setSalesGapFilterActiveColumn(config, columnIndex) {
+      if (!config || !Number.isFinite(columnIndex)) {
+        return;
+      }
+      const columns = Array.isArray(config.availableColumns) ? config.availableColumns : [];
+      if (!columns.some((column) => column.index === columnIndex)) {
+        return;
+      }
+      config.activeColumnIndex = columnIndex;
+      renderSalesGapFilterFieldButtons(config);
+      renderSalesGapFilterOptions(config);
+    }
+
+    function closeSalesGapFilter(config, options = {}) {
+      if (!config || !config.filterContainer) {
+        return;
+      }
+      const { returnFocus = true } = options;
+      hideFilterContainer(config.filterContainer);
+      const triggers = [config.filterButton].filter(Boolean);
+      triggers.forEach((button) => {
+        if (button) {
+          button.setAttribute('aria-expanded', 'false');
+        }
+      });
+      const previousTrigger = config.activeTrigger;
+      config.activeTrigger = null;
+      if (returnFocus && previousTrigger && typeof previousTrigger.focus === 'function') {
+        previousTrigger.focus();
+      }
+      if (activeSalesGapFilterConfig === config) {
+        activeSalesGapFilterConfig = null;
+      }
+    }
+
+    function openSalesGapFilter(config, triggerButton = null) {
+      if (!config || !config.filterContainer || !config.filterInitialised) {
+        return;
+      }
+      const hasColumns = Array.isArray(config.availableColumns) && config.availableColumns.length > 0;
+      if (!hasColumns) {
+        return;
+      }
+      if (!Number.isFinite(config.activeColumnIndex)) {
+        config.activeColumnIndex = config.availableColumns[0].index;
+      }
+      config.pendingSelections = null;
+      syncSalesGapPendingSelections(config);
+      renderSalesGapFilterFieldButtons(config);
+      renderSalesGapFilterOptions(config);
+      showFilterContainer(config.filterContainer);
+      const triggers = [config.filterButton].filter(Boolean);
+      if (triggerButton) {
+        config.activeTrigger = triggerButton;
+      } else if (!config.activeTrigger && triggers.length) {
+        config.activeTrigger = triggers[0];
+      }
+      triggers.forEach((button) => {
+        if (button) {
+          const expanded = button === config.activeTrigger;
+          button.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+        }
+      });
+      activeSalesGapFilterConfig = config;
+      requestAnimationFrame(() => {
+        const firstButton = config.filterFieldOptionsElement?.querySelector('.regular-filter__field-button[aria-pressed="true"]');
+        if (firstButton instanceof HTMLElement) {
+          firstButton.focus();
+        }
+      });
+    }
+
+    function resetSalesGapFilters(config) {
+      if (!config) {
+        return;
+      }
+      config.filters = {};
+      if (config.pendingSelections instanceof Map) {
+        config.pendingSelections.clear();
+      } else {
+        config.pendingSelections = new Map();
+      }
+      renderSalesGapFilterOptions(config);
+      updateSalesGapFilterButtonState(config);
+      refreshSalesGapTables();
+    }
+
+    function clearSalesGapFilters(config) {
+      if (!config || !hasActiveSalesGapFilters(config)) {
+        return;
+      }
+      config.filters = {};
+      if (config.pendingSelections instanceof Map) {
+        config.pendingSelections.clear();
+      }
+      if (config.filterContainer && config.filterContainer.classList.contains('is-visible')) {
+        renderSalesGapFilterOptions(config);
+      }
+      updateSalesGapFilterButtonState(config);
+      refreshSalesGapTables();
+    }
+
+    function applySalesGapFilterSelections(config) {
+      if (!config) {
+        return;
+      }
+      if (!(config.pendingSelections instanceof Map)) {
+        config.pendingSelections = new Map();
+      }
+      const filters = {};
+      const optionsSource = Array.isArray(config.columnValueOptions) ? config.columnValueOptions : [];
+      config.pendingSelections.forEach((selectionSet, key) => {
+        const columnIndex = Number(key);
+        if (!Number.isFinite(columnIndex) || !(selectionSet instanceof Set)) {
+          return;
+        }
+        const availableValues = optionsSource[columnIndex] || [];
+        const selectedValues = Array.from(selectionSet).filter((value) => availableValues.includes(value));
+        if (selectedValues.length === 0 || selectedValues.length === availableValues.length) {
+          return;
+        }
+        filters[columnIndex] = selectedValues;
+      });
+      config.filters = filters;
+      config.pendingSelections = null;
+      updateSalesGapFilterButtonState(config);
+      refreshSalesGapTables();
+    }
+
+    function ensureSalesGapFiltersSetup() {
+      SALES_GAP_FILTER_CONFIGS.forEach((config) => {
+        if (!config) {
+          return;
+        }
+        config.filterButton = config.filterButton || document.getElementById(config.filterButtonId);
+        config.filterClearButton = config.filterClearButton || document.getElementById(config.filterClearButtonId);
+        config.filterContainer = config.filterContainer || document.getElementById(config.filterContainerId);
+        config.filterFieldOptionsElement = config.filterFieldOptionsElement || document.getElementById(config.filterFieldOptionsId);
+        config.filterOptionsElement = config.filterOptionsElement || document.getElementById(config.filterOptionsId);
+        config.filterEmptyElement = config.filterEmptyElement || document.getElementById(config.filterEmptyId);
+        config.filterApplyButton = config.filterApplyButton || document.getElementById(config.filterApplyId);
+        config.filterResetButton = config.filterResetButton || document.getElementById(config.filterResetId);
+        if (!config.filterCloseButton && config.filterContainer) {
+          config.filterCloseButton = config.filterContainer.querySelector('.regular-filter__close');
+        }
+        if (!config.filters) {
+          config.filters = {};
+        }
+        const readyElements = [
+          config.filterButton,
+          config.filterContainer,
+          config.filterFieldOptionsElement,
+          config.filterOptionsElement,
+          config.filterApplyButton,
+          config.filterResetButton,
+          config.filterCloseButton,
+        ].every(Boolean);
+        if (!config.filterInitialised && readyElements) {
+          config.filterButton.addEventListener('click', () => {
+            const isVisible = config.filterContainer.classList.contains('is-visible');
+            if (isVisible) {
+              closeSalesGapFilter(config);
+            } else {
+              openSalesGapFilter(config, config.filterButton);
+            }
+          });
+          if (config.filterClearButton) {
+            config.filterClearButton.addEventListener('click', () => clearSalesGapFilters(config));
+          }
+          config.filterCloseButton.addEventListener('click', () => closeSalesGapFilter(config));
+          config.filterContainer.addEventListener('click', (event) => {
+            const target = event.target;
+            if (target === config.filterContainer || (target instanceof HTMLElement && target.classList.contains('regular-filter__backdrop'))) {
+              closeSalesGapFilter(config);
+            }
+          });
+          config.filterOptionsElement.addEventListener('change', (event) => {
+            const target = event.target;
+            if (!(target instanceof HTMLInputElement) || target.type !== 'checkbox') {
+              return;
+            }
+            if (!(config.pendingSelections instanceof Map)) {
+              config.pendingSelections = new Map();
+            }
+            const columnIndex = config.activeColumnIndex;
+            if (!Number.isFinite(columnIndex)) {
+              return;
+            }
+            let selection = config.pendingSelections.get(columnIndex);
+            if (!(selection instanceof Set)) {
+              selection = new Set(config.filters?.[columnIndex] || []);
+            }
+            if (target.checked) {
+              selection.add(target.value);
+            } else {
+              selection.delete(target.value);
+            }
+            if (selection.size) {
+              config.pendingSelections.set(columnIndex, selection);
+            } else {
+              config.pendingSelections.delete(columnIndex);
+            }
+          });
+          config.filterApplyButton.addEventListener('click', () => {
+            flashButtonBusy(config.filterApplyButton);
+            applySalesGapFilterSelections(config);
+            closeSalesGapFilter(config, { returnFocus: false });
+          });
+          config.filterResetButton.addEventListener('click', () => resetSalesGapFilters(config));
+          config.filterInitialised = true;
+        }
+        updateSalesGapFilterButtonState(config);
+      });
+
+      if (!salesGapFilterKeyListenerRegistered) {
+        document.addEventListener('keydown', (event) => {
+          if (event.key === 'Escape' && activeSalesGapFilterConfig && activeSalesGapFilterConfig.filterContainer && activeSalesGapFilterConfig.filterContainer.classList.contains('is-visible')) {
+            closeSalesGapFilter(activeSalesGapFilterConfig);
+          }
+        });
+        salesGapFilterKeyListenerRegistered = true;
+      }
+    }
+
+    function updateSalesGapFilterDataset(config, dataset) {
+      if (!config) {
+        return;
+      }
+      const baseDataset = dataset && Array.isArray(dataset.columns) ? dataset : { columns: [], rows: [] };
+      config.dataset = baseDataset;
+      config.columnValueOptions = Array.isArray(baseDataset.columns) && baseDataset.columns.length
+        ? buildColumnOptions(baseDataset)
+        : [];
+      const columns = Array.isArray(baseDataset.columns)
+        ? baseDataset.columns
+            .map((title, index) => ({
+              title: title || `Column ${index + 1}`,
+              index,
+              options: config.columnValueOptions[index] || [],
+            }))
+            .filter((entry) => entry.options.length > 0 && entry.options.length <= REGULAR_FILTER_MAX_UNIQUE_VALUES)
+        : [];
+      config.availableColumns = columns;
+      const sanitizedFilters = {};
+      if (config.filters && typeof config.filters === 'object') {
+        Object.entries(config.filters).forEach(([key, values]) => {
+          const columnIndex = Number(key);
+          if (!Number.isFinite(columnIndex)) {
+            return;
+          }
+          if (!columns.some((column) => column.index === columnIndex)) {
+            return;
+          }
+          const availableValues = config.columnValueOptions[columnIndex] || [];
+          const validValues = Array.isArray(values) ? values.filter((value) => availableValues.includes(value)) : [];
+          if (validValues.length) {
+            sanitizedFilters[columnIndex] = validValues;
+          }
+        });
+      }
+      config.filters = sanitizedFilters;
+      if (config.pendingSelections instanceof Map) {
+        Array.from(config.pendingSelections.keys()).forEach((key) => {
+          const columnIndex = Number(key);
+          const availableValues = config.columnValueOptions[columnIndex] || [];
+          const selection = config.pendingSelections.get(key);
+          if (!(selection instanceof Set)) {
+            config.pendingSelections.delete(key);
+            return;
+          }
+          const validValues = Array.from(selection).filter((value) => availableValues.includes(value));
+          if (validValues.length) {
+            config.pendingSelections.set(columnIndex, new Set(validValues));
+          } else {
+            config.pendingSelections.delete(key);
+          }
+        });
+      }
+      if (!columns.length) {
+        config.activeColumnIndex = null;
+      } else if (!Number.isFinite(config.activeColumnIndex) || !columns.some((column) => column.index === config.activeColumnIndex)) {
+        config.activeColumnIndex = columns[0].index;
+      }
+      if (config.filterInitialised) {
+        renderSalesGapFilterFieldButtons(config);
+        if (config.filterContainer && config.filterContainer.classList.contains('is-visible')) {
+          renderSalesGapFilterOptions(config);
+        }
+      }
+      updateSalesGapFilterButtonState(config);
+    }
+
+    function applySalesGapFiltersToDataset(dataset, config) {
+      if (!dataset || !config) {
+        return dataset;
+      }
+      return buildFilteredDataset(dataset, config.filters || {});
+    }
+
+    function refreshSalesGapTables() {
+      if (!salesGapDatasetCache) {
+        return;
+      }
+      setTabPanelLoading('sales-gap', true, 'Applying filters…');
+      requestAnimationFrame(() => {
+        renderSalesGapSection(salesGapDatasetCache);
+        setTabPanelLoading('sales-gap', false);
+      });
+    }
+
     function renderDatasetTable(dataset, options = {}) {
       const tableId = typeof options.tableId === 'string' && options.tableId.trim().length
         ? options.tableId.trim()
@@ -7719,12 +8252,19 @@
       const skuDataset = source.skuDataset && typeof source.skuDataset === 'object'
         ? source.skuDataset
         : { columns: [], rows: [] };
-      renderDatasetTable(loDataset, {
+      ensureSalesGapFiltersSetup();
+      const loFilterConfig = getSalesGapFilterConfigByDatasetKey('loDataset');
+      const skuFilterConfig = getSalesGapFilterConfigByDatasetKey('skuDataset');
+      updateSalesGapFilterDataset(loFilterConfig, loDataset);
+      updateSalesGapFilterDataset(skuFilterConfig, skuDataset);
+      const filteredLoDataset = loFilterConfig ? applySalesGapFiltersToDataset(loDataset, loFilterConfig) : loDataset;
+      const filteredSkuDataset = skuFilterConfig ? applySalesGapFiltersToDataset(skuDataset, skuFilterConfig) : skuDataset;
+      renderDatasetTable(filteredLoDataset, {
         tableId: 'sales-gap-table',
         emptyClass: 'sales-gap-table__empty',
         totalRowClass: 'sales-gap-row--total',
       });
-      renderDatasetTable(skuDataset, {
+      renderDatasetTable(filteredSkuDataset, {
         tableId: 'sku-gap-table',
         emptyClass: 'sku-gap-table__empty',
         totalRowClass: 'sku-gap-row--total',
@@ -7764,6 +8304,8 @@
             const text = target.message || salesMessage;
             tableElement.innerHTML = `<tbody><tr><td class="${safeClass}">${escapeHtml(text)}</td></tr></tbody>`;
           });
+          ensureSalesGapFiltersSetup();
+          SALES_GAP_FILTER_CONFIGS.forEach((config) => updateSalesGapFilterDataset(config, { columns: [], rows: [] }));
         })
         .finally(() => {
           setTabPanelLoading('sales-gap', false);
