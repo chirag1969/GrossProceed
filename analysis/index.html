@@ -4078,7 +4078,33 @@
           rows.push(row);
         }
       });
-      return { columns: columnNames, rows };
+
+      let finalColumns = columnNames;
+      let finalRows = rows;
+
+      if (options.pruneEmptyColumns) {
+        const keptColumnIndexes = columnNames.reduce((acc, _name, index) => {
+          if (index === 0 && options.firstColumnRequired !== false) {
+            acc.push(index);
+            return acc;
+          }
+          const hasContent = rows.some((row) => {
+            const value = index < row.length ? row[index] : '';
+            return !isPlaceholderValue(value);
+          });
+          if (hasContent) {
+            acc.push(index);
+          }
+          return acc;
+        }, []);
+
+        if (keptColumnIndexes.length && keptColumnIndexes.length !== columnNames.length) {
+          finalColumns = keptColumnIndexes.map((index) => columnNames[index]);
+          finalRows = rows.map((row) => keptColumnIndexes.map((columnIndex) => (columnIndex < row.length ? row[columnIndex] : '')));
+        }
+      }
+
+      return { columns: finalColumns, rows: finalRows };
     }
 
     function formatExcelHeaderLabel(rawValue) {
@@ -4172,6 +4198,7 @@
         ? { columns: [], rows: [] }
         : buildGapDatasetSlice(dataset, rowLabelIndex, dataset.columns.length, {
             transformColumnName: transformLoGapColumnName,
+            pruneEmptyColumns: true,
           });
       const skuDataset = buildGapDatasetSlice(dataset, 2, 9, {
         transformColumnName: transformSkuGapColumnName,
@@ -5454,6 +5481,16 @@
         if (!(container instanceof HTMLElement)) {
           return;
         }
+
+        const parentPanel = container.closest('.tab-panel, .sub-tab-panel');
+        const panelHidden = parentPanel && parentPanel.getAttribute('aria-hidden') === 'true';
+        const hasClientRect = container.getClientRects().length > 0;
+        if (panelHidden || !hasClientRect) {
+          container.style.removeProperty('height');
+          container.style.removeProperty('max-height');
+          return;
+        }
+
         const rect = container.getBoundingClientRect();
         if (!rect) {
           return;
