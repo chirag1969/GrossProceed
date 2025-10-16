@@ -1075,6 +1075,13 @@
       min-width: 0;
       flex: 1 1 auto;
     }
+    .dashboard-card__toolbar {
+      display: inline-flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
     .dashboard-card__filter-button {
       margin-left: auto;
     }
@@ -1088,6 +1095,57 @@
       margin: 0;
       color: var(--muted);
       font-size: 0.95rem;
+    }
+    .dashboard-card__quick-filter {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.35rem 0.85rem;
+      border-radius: 999px;
+      border: 1px solid var(--tab-border);
+      background: rgba(20, 90, 252, 0.08);
+      transition:
+        border-color var(--transition-snappy) ease,
+        background var(--transition-snappy) ease,
+        box-shadow var(--transition-snappy) ease;
+    }
+    .dashboard-card__quick-filter[data-active="true"] {
+      border-color: rgba(20, 90, 252, 0.55);
+      background: rgba(20, 90, 252, 0.16);
+      box-shadow: 0 16px 32px rgba(20, 90, 252, 0.28);
+    }
+    .dashboard-card__quick-filter-label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--tab-text-muted);
+      white-space: nowrap;
+    }
+    .dashboard-card__quick-filter-input {
+      border: none;
+      background: transparent;
+      font: inherit;
+      color: var(--tab-text);
+      min-width: 7.5rem;
+      outline: none;
+      padding: 0;
+    }
+    .dashboard-card__quick-filter-input::placeholder {
+      color: var(--tab-text-muted);
+    }
+    .dashboard-card__quick-filter-reset {
+      border: none;
+      background: none;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--accent);
+      cursor: pointer;
+      padding: 0;
+    }
+    .dashboard-card__quick-filter-empty {
+      margin: -0.25rem 0 0;
+      padding: 0 0.15rem;
+      font-size: 0.85rem;
+      color: var(--muted);
     }
     .dashboard-table-container {
       border-radius: 0.85rem;
@@ -2320,29 +2378,51 @@
             <h2 class="dashboard-card__title">Name wise targets &amp; performance</h2>
             <p class="dashboard-card__subtitle">Aggregated Main sheet totals grouped by NAME (Excel dashboard pivot 1)</p>
           </div>
-          <div class="filter-actions">
-            <button
-              type="button"
-              class="filter-clear-button"
-              id="dashboard-filter-clear-button"
-              aria-label="Clear dashboard filters"
-              title="Clear filters"
-              hidden
-            >
-              <span aria-hidden="true">&times;</span>
-            </button>
-            <button
-              type="button"
-              class="filter-button dashboard-card__filter-button"
-              id="dashboard-filter-button"
-              aria-haspopup="dialog"
-              aria-expanded="false"
-              data-active="false"
-            >
-              Filters
-            </button>
+          <div class="dashboard-card__toolbar">
+            <div class="dashboard-card__quick-filter" data-pivot="name" data-active="false">
+              <label class="dashboard-card__quick-filter-label" for="dashboard-name-filter">Filter</label>
+              <input
+                type="search"
+                id="dashboard-name-filter"
+                class="dashboard-card__quick-filter-input"
+                placeholder="Search rows"
+                aria-label="Filter name pivot rows"
+                autocomplete="off"
+              />
+              <button
+                type="button"
+                class="dashboard-card__quick-filter-reset"
+                id="dashboard-name-filter-clear"
+                hidden
+              >
+                Clear
+              </button>
+            </div>
+            <div class="filter-actions">
+              <button
+                type="button"
+                class="filter-clear-button"
+                id="dashboard-filter-clear-button"
+                aria-label="Clear dashboard filters"
+                title="Clear filters"
+                hidden
+              >
+                <span aria-hidden="true">&times;</span>
+              </button>
+              <button
+                type="button"
+                class="filter-button dashboard-card__filter-button"
+                id="dashboard-filter-button"
+                aria-haspopup="dialog"
+                aria-expanded="false"
+                data-active="false"
+              >
+                Filters
+              </button>
+            </div>
           </div>
         </header>
+        <p class="dashboard-card__quick-filter-empty" id="dashboard-name-filter-empty" hidden>No matching rows</p>
         <div class="dashboard-table-container">
           <div class="dashboard-table-scroll">
             <table id="dashboard-table-name" class="dashboard-table"></table>
@@ -2355,7 +2435,29 @@
             <h2 class="dashboard-card__title">eBay performance snapshot</h2>
             <p class="dashboard-card__subtitle">Main sheet eBay metrics grouped by EBAY owner (Excel dashboard pivot 2)</p>
           </div>
+          <div class="dashboard-card__toolbar">
+            <div class="dashboard-card__quick-filter" data-pivot="ebay" data-active="false">
+              <label class="dashboard-card__quick-filter-label" for="dashboard-ebay-filter">Filter</label>
+              <input
+                type="search"
+                id="dashboard-ebay-filter"
+                class="dashboard-card__quick-filter-input"
+                placeholder="Search rows"
+                aria-label="Filter eBay pivot rows"
+                autocomplete="off"
+              />
+              <button
+                type="button"
+                class="dashboard-card__quick-filter-reset"
+                id="dashboard-ebay-filter-clear"
+                hidden
+              >
+                Clear
+              </button>
+            </div>
+          </div>
         </header>
+        <p class="dashboard-card__quick-filter-empty" id="dashboard-ebay-filter-empty" hidden>No matching rows</p>
         <div class="dashboard-table-container">
           <div class="dashboard-table-scroll">
             <table id="dashboard-table-ebay" class="dashboard-table"></table>
@@ -2368,7 +2470,29 @@
             <h2 class="dashboard-card__title">Website performance snapshot</h2>
             <p class="dashboard-card__subtitle">Website-focused metrics grouped by WEBSITE lead (Excel dashboard pivot 3)</p>
           </div>
+          <div class="dashboard-card__toolbar">
+            <div class="dashboard-card__quick-filter" data-pivot="website" data-active="false">
+              <label class="dashboard-card__quick-filter-label" for="dashboard-website-filter">Filter</label>
+              <input
+                type="search"
+                id="dashboard-website-filter"
+                class="dashboard-card__quick-filter-input"
+                placeholder="Search rows"
+                aria-label="Filter website pivot rows"
+                autocomplete="off"
+              />
+              <button
+                type="button"
+                class="dashboard-card__quick-filter-reset"
+                id="dashboard-website-filter-clear"
+                hidden
+              >
+                Clear
+              </button>
+            </div>
+          </div>
         </header>
+        <p class="dashboard-card__quick-filter-empty" id="dashboard-website-filter-empty" hidden>No matching rows</p>
         <div class="dashboard-table-container">
           <div class="dashboard-table-scroll">
             <table id="dashboard-table-website" class="dashboard-table"></table>
@@ -3340,6 +3464,9 @@
         ],
       },
     ];
+    const dashboardPivotFilterState = new Map();
+    const dashboardPivotFilterTableMap = new Map();
+    let dashboardPivotFiltersInitialised = false;
     const EXCEL_DEFAULT_HEADER_SEARCH_VALUES = EXCEL_KEY_COLUMN_NAMES;
     const EXCEL_MAX_BLANK_ROWS = 2000;
 
@@ -6053,6 +6180,7 @@
       document.documentElement.style.setProperty('--sticky-header-offset', `${offset}px`);
     }
 
+    initializeDashboardPivotFilters();
     setActiveTab('regular');
     NEW_PRODUCT_PIVOT_CONFIGS.forEach((config) => updateNewProductFilterButtonState(config));
     updateStickyOffset();
@@ -9026,6 +9154,144 @@
       }
     }
 
+    function updateDashboardPivotFilterVisualState(state) {
+      if (!state) {
+        return;
+      }
+      const isActive = Boolean(state.query);
+      if (state.container) {
+        state.container.dataset.active = isActive ? 'true' : 'false';
+      }
+      if (state.clearButton) {
+        state.clearButton.hidden = !isActive;
+        if (isActive) {
+          state.clearButton.removeAttribute('disabled');
+        } else {
+          state.clearButton.setAttribute('disabled', 'true');
+        }
+      }
+      if (!isActive && state.messageElement) {
+        state.messageElement.hidden = true;
+      }
+    }
+
+    function applyDashboardPivotFilter(config) {
+      if (!config) {
+        return;
+      }
+      const state = dashboardPivotFilterState.get(config.id);
+      if (!state) {
+        return;
+      }
+      const query = typeof state.query === 'string' ? state.query : '';
+      const tableElement = document.getElementById(config.tableId);
+      if (!tableElement) {
+        if (state.messageElement) {
+          state.messageElement.hidden = true;
+        }
+        updateDashboardPivotFilterVisualState(state);
+        return;
+      }
+      const tbody = tableElement.tBodies && tableElement.tBodies.length ? tableElement.tBodies[0] : null;
+      let visibleRowCount = 0;
+      let dataRowCount = 0;
+      if (tbody) {
+        Array.from(tbody.rows).forEach((row) => {
+          const cellCount = row.cells ? row.cells.length : 0;
+          const messageCell = cellCount === 1 ? row.cells[0] : null;
+          const isMessageRow = Boolean(messageCell && messageCell.classList.contains('dashboard-table__message'));
+          if (isMessageRow) {
+            row.hidden = false;
+            return;
+          }
+          if (!cellCount) {
+            row.hidden = Boolean(query);
+            return;
+          }
+          dataRowCount += 1;
+          if (!query) {
+            row.hidden = false;
+            visibleRowCount += 1;
+            return;
+          }
+          const labelCell = row.cells[0];
+          const labelText = labelCell && labelCell.textContent ? labelCell.textContent : '';
+          const matches = labelText.toLowerCase().includes(query);
+          row.hidden = !matches;
+          if (matches) {
+            visibleRowCount += 1;
+          }
+        });
+      }
+      const tfoot = tableElement.tFoot;
+      if (tfoot) {
+        if (!query || visibleRowCount > 0) {
+          tfoot.style.removeProperty('display');
+        } else {
+          tfoot.style.display = 'none';
+        }
+      }
+      if (state.messageElement) {
+        if (query && dataRowCount > 0 && visibleRowCount === 0) {
+          state.messageElement.hidden = false;
+        } else {
+          state.messageElement.hidden = true;
+        }
+      }
+      updateDashboardPivotFilterVisualState(state);
+    }
+
+    function initializeDashboardPivotFilters() {
+      if (dashboardPivotFiltersInitialised) {
+        return;
+      }
+      DASHBOARD_PIVOT_CONFIGS.forEach((config) => {
+        const container = document.querySelector(`.dashboard-card__quick-filter[data-pivot="${config.id}"]`);
+        const input = document.getElementById(`dashboard-${config.id}-filter`);
+        if (!container || !input) {
+          return;
+        }
+        const clearButton = document.getElementById(`dashboard-${config.id}-filter-clear`);
+        const messageElement = document.getElementById(`dashboard-${config.id}-filter-empty`);
+        const state = {
+          id: config.id,
+          config,
+          container,
+          input,
+          clearButton: clearButton || null,
+          messageElement: messageElement || null,
+          query: '',
+        };
+        dashboardPivotFilterState.set(config.id, state);
+        dashboardPivotFilterTableMap.set(config.tableId, state);
+        container.dataset.active = container.dataset.active || 'false';
+        if (state.clearButton) {
+          state.clearButton.hidden = true;
+          state.clearButton.setAttribute('disabled', 'true');
+        }
+        const handleInput = () => {
+          state.query = (input.value || '').trim().toLowerCase();
+          applyDashboardPivotFilter(config);
+        };
+        input.addEventListener('input', handleInput);
+        input.addEventListener('change', handleInput);
+        input.addEventListener('search', handleInput);
+        if (state.clearButton) {
+          state.clearButton.addEventListener('click', () => {
+            if (input.value) {
+              input.value = '';
+            }
+            state.query = '';
+            applyDashboardPivotFilter(config);
+            if (typeof input.focus === 'function') {
+              input.focus();
+            }
+          });
+        }
+      });
+      dashboardPivotFiltersInitialised = true;
+    }
+
     function setDashboardTableMessage(tableId, message, columnCount = 2) {
       const tableElement = document.getElementById(tableId);
       if (!tableElement) {
@@ -9041,6 +9307,10 @@
       cell.textContent = message;
       row.appendChild(cell);
       tbody.appendChild(row);
+      const pivotFilterState = dashboardPivotFilterTableMap.get(tableId);
+      if (pivotFilterState && pivotFilterState.config) {
+        applyDashboardPivotFilter(pivotFilterState.config);
+      }
     }
 
     function renderDashboardPivotTable(config, pivot) {
@@ -9111,6 +9381,7 @@
         });
         tfoot.appendChild(tr);
       }
+      applyDashboardPivotFilter(config);
     }
 
     function buildDashboardPivot(dataset, config) {
