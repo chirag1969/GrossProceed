@@ -2402,9 +2402,10 @@
               <button
                 type="button"
                 class="filter-clear-button"
-                id="dashboard-filter-clear-button"
-                aria-label="Clear dashboard filters"
+                id="dashboard-name-row-filter-clear"
+                aria-label="Clear Name pivot filters"
                 title="Clear filters"
+                data-pivot="name"
                 hidden
               >
                 <span aria-hidden="true">&times;</span>
@@ -2412,7 +2413,8 @@
               <button
                 type="button"
                 class="filter-button dashboard-card__filter-button"
-                id="dashboard-filter-button"
+                id="dashboard-name-row-filter-button"
+                data-pivot="name"
                 aria-haspopup="dialog"
                 aria-expanded="false"
                 data-active="false"
@@ -2455,6 +2457,30 @@
                 Clear
               </button>
             </div>
+            <div class="filter-actions">
+              <button
+                type="button"
+                class="filter-clear-button"
+                id="dashboard-ebay-row-filter-clear"
+                aria-label="Clear eBay pivot filters"
+                title="Clear filters"
+                data-pivot="ebay"
+                hidden
+              >
+                <span aria-hidden="true">&times;</span>
+              </button>
+              <button
+                type="button"
+                class="filter-button dashboard-card__filter-button"
+                id="dashboard-ebay-row-filter-button"
+                data-pivot="ebay"
+                aria-haspopup="dialog"
+                aria-expanded="false"
+                data-active="false"
+              >
+                Filters
+              </button>
+            </div>
           </div>
         </header>
         <p class="dashboard-card__quick-filter-empty" id="dashboard-ebay-filter-empty" hidden>No matching rows</p>
@@ -2488,6 +2514,30 @@
                 hidden
               >
                 Clear
+              </button>
+            </div>
+            <div class="filter-actions">
+              <button
+                type="button"
+                class="filter-clear-button"
+                id="dashboard-website-row-filter-clear"
+                aria-label="Clear Website pivot filters"
+                title="Clear filters"
+                data-pivot="website"
+                hidden
+              >
+                <span aria-hidden="true">&times;</span>
+              </button>
+              <button
+                type="button"
+                class="filter-button dashboard-card__filter-button"
+                id="dashboard-website-row-filter-button"
+                data-pivot="website"
+                aria-haspopup="dialog"
+                aria-expanded="false"
+                data-active="false"
+              >
+                Filters
               </button>
             </div>
           </div>
@@ -2666,6 +2716,35 @@
       </div>
     </div>
   </div>
+  <div class="regular-filter" id="dashboard-pivot-filter" hidden aria-hidden="true">
+    <div class="regular-filter__backdrop"></div>
+    <div class="regular-filter__dialog" role="dialog" aria-modal="true" aria-labelledby="dashboard-pivot-filter-title">
+      <div class="regular-filter__header">
+        <h3 class="regular-filter__title" id="dashboard-pivot-filter-title">Filter dashboard pivot rows</h3>
+        <button type="button" class="regular-filter__close" aria-label="Close filters">&times;</button>
+      </div>
+      <div class="regular-filter__field">
+        <label class="regular-filter__label" for="dashboard-pivot-filter-search">Search</label>
+        <input
+          id="dashboard-pivot-filter-search"
+          class="regular-filter__search"
+          type="search"
+          placeholder="Search rows"
+          autocomplete="off"
+        />
+      </div>
+      <label class="regular-filter__select-all" for="dashboard-pivot-filter-select-all">
+        <input type="checkbox" id="dashboard-pivot-filter-select-all" />
+        <span>Select all</span>
+      </label>
+      <div class="regular-filter__options" id="dashboard-pivot-filter-options" role="group" aria-label="Filter values"></div>
+      <p class="regular-filter__empty" id="dashboard-pivot-filter-empty" hidden>No matches found</p>
+      <div class="regular-filter__footer">
+        <button type="button" class="regular-filter__reset" id="dashboard-pivot-filter-reset">Reset</button>
+        <button type="button" class="regular-filter__apply" id="dashboard-pivot-filter-apply">Apply</button>
+      </div>
+    </div>
+  </div>
   <div class="regular-filter" id="regular-filter" hidden aria-hidden="true">
     <div class="regular-filter__backdrop"></div>
     <div class="regular-filter__dialog" role="dialog" aria-modal="true" aria-labelledby="regular-filter-title">
@@ -2707,8 +2786,6 @@
     const loFilterClearButtonElement = document.getElementById('lo-filter-clear-button');
     const platformFilterButtonElement = document.getElementById('platform-filter-button');
     const platformFilterClearButtonElement = document.getElementById('platform-filter-clear-button');
-    const dashboardFilterButtonElement = document.getElementById('dashboard-filter-button');
-    const dashboardFilterClearButtonElement = document.getElementById('dashboard-filter-clear-button');
     const newProductStatusElement = document.getElementById('new-product-status');
     const skuFilterClearButtonElement = document.getElementById('sku-filter-clear-button');
     const mainFilterClearButtonElement = document.getElementById('main-filter-clear-button');
@@ -2865,6 +2942,19 @@
     let mainFilterButtons = [];
     let mainFilterClearButtons = [];
     let activeMainFilterTrigger = null;
+    let dashboardPivotRowFilterContainerElement = null;
+    let dashboardPivotRowFilterOptionsElement = null;
+    let dashboardPivotRowFilterSearchInput = null;
+    let dashboardPivotRowFilterEmptyElement = null;
+    let dashboardPivotRowFilterSelectAllInput = null;
+    let dashboardPivotRowFilterApplyButton = null;
+    let dashboardPivotRowFilterResetButton = null;
+    let dashboardPivotRowFilterCloseButton = null;
+    let dashboardPivotRowFilterInitialised = false;
+    let activeDashboardPivotRowFilterState = null;
+    let activeDashboardPivotRowFilterTrigger = null;
+    let dashboardPivotRowFilterPendingSelection = null;
+    let dashboardPivotRowFilterSearchTerm = '';
     let totalColumnIndex = -1;
     let mainTotalColumnIndex = -1;
     let headerMenuElement;
@@ -3467,6 +3557,346 @@
     const dashboardPivotFilterState = new Map();
     const dashboardPivotFilterTableMap = new Map();
     let dashboardPivotFiltersInitialised = false;
+
+    function normalizeDashboardPivotLabel(value) {
+      if (value === null || value === undefined) {
+        return '';
+      }
+      return String(value).trim().toLowerCase();
+    }
+
+    function updateDashboardPivotRowFilterButtonState(state) {
+      if (!state) {
+        return;
+      }
+      const button = state.rowFilterButton || null;
+      const clearButton = state.rowFilterClearButton || null;
+      const availableValues = Array.isArray(state.availableValues) ? state.availableValues : [];
+      const hasOptions = availableValues.length > 0;
+      const hasActiveFilter = state.rowFilterSelection instanceof Set;
+      if (button) {
+        if (hasOptions) {
+          button.removeAttribute('disabled');
+          button.setAttribute('aria-hidden', 'false');
+        } else {
+          button.setAttribute('disabled', 'true');
+          button.setAttribute('aria-hidden', 'true');
+          button.setAttribute('aria-expanded', 'false');
+        }
+        button.dataset.active = hasActiveFilter ? 'true' : 'false';
+      }
+      if (clearButton) {
+        if (hasActiveFilter) {
+          clearButton.hidden = false;
+          clearButton.removeAttribute('disabled');
+          clearButton.setAttribute('aria-hidden', 'false');
+        } else {
+          clearButton.hidden = true;
+          clearButton.setAttribute('disabled', 'true');
+          clearButton.setAttribute('aria-hidden', 'true');
+        }
+      }
+    }
+
+    function updateDashboardPivotRowFilterSelectAllState() {
+      if (!dashboardPivotRowFilterSelectAllInput) {
+        return;
+      }
+      const state = activeDashboardPivotRowFilterState;
+      const options = Array.isArray(state?.availableValues) ? state.availableValues : [];
+      const total = options.length;
+      const selection = dashboardPivotRowFilterPendingSelection;
+      if (!total) {
+        dashboardPivotRowFilterSelectAllInput.checked = false;
+        dashboardPivotRowFilterSelectAllInput.indeterminate = false;
+        dashboardPivotRowFilterSelectAllInput.setAttribute('disabled', 'true');
+        return;
+      }
+      dashboardPivotRowFilterSelectAllInput.removeAttribute('disabled');
+      if (!(selection instanceof Set)) {
+        dashboardPivotRowFilterSelectAllInput.checked = true;
+        dashboardPivotRowFilterSelectAllInput.indeterminate = false;
+        return;
+      }
+      const selectedCount = selection.size;
+      if (selectedCount === 0) {
+        dashboardPivotRowFilterSelectAllInput.checked = false;
+        dashboardPivotRowFilterSelectAllInput.indeterminate = false;
+      } else if (selectedCount >= total) {
+        dashboardPivotRowFilterSelectAllInput.checked = true;
+        dashboardPivotRowFilterSelectAllInput.indeterminate = false;
+        dashboardPivotRowFilterPendingSelection = null;
+      } else {
+        dashboardPivotRowFilterSelectAllInput.checked = false;
+        dashboardPivotRowFilterSelectAllInput.indeterminate = true;
+      }
+    }
+
+    function renderDashboardPivotRowFilterOptions() {
+      if (!dashboardPivotRowFilterOptionsElement || !activeDashboardPivotRowFilterState) {
+        return;
+      }
+      const state = activeDashboardPivotRowFilterState;
+      const options = Array.isArray(state.availableValues) ? state.availableValues : [];
+      const total = options.length;
+      if (dashboardPivotRowFilterPendingSelection instanceof Set) {
+        const sanitized = new Set();
+        const keySet = state.availableValueKeys instanceof Set
+          ? state.availableValueKeys
+          : new Set(options.map((entry) => entry.key));
+        dashboardPivotRowFilterPendingSelection.forEach((key) => {
+          if (keySet.has(key)) {
+            sanitized.add(key);
+          }
+        });
+        if (sanitized.size >= total && total > 0) {
+          dashboardPivotRowFilterPendingSelection = null;
+        } else {
+          dashboardPivotRowFilterPendingSelection = sanitized;
+        }
+      } else if (dashboardPivotRowFilterPendingSelection !== null && !(dashboardPivotRowFilterPendingSelection instanceof Set)) {
+        dashboardPivotRowFilterPendingSelection = null;
+      }
+
+      const searchTerm = dashboardPivotRowFilterSearchTerm.trim().toLowerCase();
+      const filtered = !searchTerm
+        ? options
+        : options.filter((entry) => entry.lower.includes(searchTerm));
+
+      if (!filtered.length) {
+        dashboardPivotRowFilterOptionsElement.innerHTML = '';
+        if (dashboardPivotRowFilterEmptyElement) {
+          dashboardPivotRowFilterEmptyElement.hidden = false;
+        }
+      } else {
+        const optionMarkup = filtered
+          .map((entry) => {
+            const isChecked =
+              !(dashboardPivotRowFilterPendingSelection instanceof Set)
+              || dashboardPivotRowFilterPendingSelection.has(entry.key);
+            return `
+              <label class="regular-filter__option">
+                <input type="checkbox" value="${entry.key}" ${isChecked ? 'checked' : ''} />
+                <span>${escapeHtml(entry.label)}</span>
+              </label>
+            `;
+          })
+          .join('');
+        dashboardPivotRowFilterOptionsElement.innerHTML = optionMarkup;
+        if (dashboardPivotRowFilterEmptyElement) {
+          dashboardPivotRowFilterEmptyElement.hidden = true;
+        }
+      }
+
+      if (dashboardPivotRowFilterApplyButton) {
+        if (total) {
+          dashboardPivotRowFilterApplyButton.removeAttribute('disabled');
+        } else {
+          dashboardPivotRowFilterApplyButton.setAttribute('disabled', 'true');
+        }
+      }
+      if (dashboardPivotRowFilterResetButton) {
+        if (total) {
+          dashboardPivotRowFilterResetButton.removeAttribute('disabled');
+        } else {
+          dashboardPivotRowFilterResetButton.setAttribute('disabled', 'true');
+        }
+      }
+      updateDashboardPivotRowFilterSelectAllState();
+    }
+
+    function openDashboardPivotRowFilter(state, triggerButton = null) {
+      if (!state) {
+        return;
+      }
+      initializeDashboardPivotRowFilterDialog();
+      if (!dashboardPivotRowFilterContainerElement) {
+        return;
+      }
+      activeDashboardPivotRowFilterState = state;
+      activeDashboardPivotRowFilterTrigger = triggerButton || state.rowFilterButton || null;
+      dashboardPivotRowFilterPendingSelection = state.rowFilterSelection instanceof Set
+        ? new Set(state.rowFilterSelection)
+        : null;
+      dashboardPivotRowFilterSearchTerm = '';
+      if (dashboardPivotRowFilterSearchInput) {
+        dashboardPivotRowFilterSearchInput.value = '';
+      }
+      const titleElement = document.getElementById('dashboard-pivot-filter-title');
+      if (titleElement) {
+        const label = state.config && (state.config.displayLabel || state.config.id || 'pivot');
+        titleElement.textContent = `Filter ${label} pivot rows`;
+      }
+      renderDashboardPivotRowFilterOptions();
+      showFilterContainer(dashboardPivotRowFilterContainerElement);
+      if (state.rowFilterButton) {
+        state.rowFilterButton.setAttribute('aria-expanded', 'true');
+      }
+      requestAnimationFrame(() => {
+        if (dashboardPivotRowFilterSearchInput) {
+          dashboardPivotRowFilterSearchInput.focus();
+        }
+      });
+    }
+
+    function closeDashboardPivotRowFilter(options = {}) {
+      if (!dashboardPivotRowFilterContainerElement) {
+        return;
+      }
+      const { returnFocus = true } = options;
+      const previousTrigger = activeDashboardPivotRowFilterTrigger;
+      hideFilterContainer(dashboardPivotRowFilterContainerElement);
+      if (activeDashboardPivotRowFilterState && activeDashboardPivotRowFilterState.rowFilterButton) {
+        activeDashboardPivotRowFilterState.rowFilterButton.setAttribute('aria-expanded', 'false');
+      }
+      activeDashboardPivotRowFilterState = null;
+      activeDashboardPivotRowFilterTrigger = null;
+      dashboardPivotRowFilterPendingSelection = null;
+      dashboardPivotRowFilterSearchTerm = '';
+      if (dashboardPivotRowFilterSearchInput) {
+        dashboardPivotRowFilterSearchInput.value = '';
+      }
+      updateDashboardPivotRowFilterSelectAllState();
+      if (returnFocus && previousTrigger && typeof previousTrigger.focus === 'function') {
+        previousTrigger.focus();
+      }
+    }
+
+    function initializeDashboardPivotRowFilterDialog() {
+      if (dashboardPivotRowFilterInitialised) {
+        return;
+      }
+      dashboardPivotRowFilterContainerElement = document.getElementById('dashboard-pivot-filter');
+      dashboardPivotRowFilterOptionsElement = document.getElementById('dashboard-pivot-filter-options');
+      dashboardPivotRowFilterSearchInput = document.getElementById('dashboard-pivot-filter-search');
+      dashboardPivotRowFilterEmptyElement = document.getElementById('dashboard-pivot-filter-empty');
+      dashboardPivotRowFilterSelectAllInput = document.getElementById('dashboard-pivot-filter-select-all');
+      dashboardPivotRowFilterApplyButton = document.getElementById('dashboard-pivot-filter-apply');
+      dashboardPivotRowFilterResetButton = document.getElementById('dashboard-pivot-filter-reset');
+      dashboardPivotRowFilterCloseButton = dashboardPivotRowFilterContainerElement
+        ? dashboardPivotRowFilterContainerElement.querySelector('.regular-filter__close')
+        : null;
+
+      const elementsReady = [
+        dashboardPivotRowFilterContainerElement,
+        dashboardPivotRowFilterOptionsElement,
+        dashboardPivotRowFilterSearchInput,
+        dashboardPivotRowFilterSelectAllInput,
+        dashboardPivotRowFilterApplyButton,
+        dashboardPivotRowFilterResetButton,
+        dashboardPivotRowFilterCloseButton,
+      ].every(Boolean);
+
+      if (!elementsReady) {
+        return;
+      }
+
+      dashboardPivotRowFilterCloseButton.addEventListener('click', () => closeDashboardPivotRowFilter());
+
+      dashboardPivotRowFilterContainerElement.addEventListener('click', (event) => {
+        const target = event.target;
+        if (
+          target === dashboardPivotRowFilterContainerElement
+          || (target instanceof HTMLElement && target.classList.contains('regular-filter__backdrop'))
+        ) {
+          closeDashboardPivotRowFilter();
+        }
+      });
+
+      dashboardPivotRowFilterSearchInput.addEventListener('input', (event) => {
+        dashboardPivotRowFilterSearchTerm = event.target.value || '';
+        renderDashboardPivotRowFilterOptions();
+      });
+
+      dashboardPivotRowFilterOptionsElement.addEventListener('change', (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLInputElement) || target.type !== 'checkbox') {
+          return;
+        }
+        const state = activeDashboardPivotRowFilterState;
+        if (!state) {
+          return;
+        }
+        const options = Array.isArray(state.availableValues) ? state.availableValues : [];
+        if (target.checked) {
+          if (!(dashboardPivotRowFilterPendingSelection instanceof Set)) {
+            return;
+          }
+          dashboardPivotRowFilterPendingSelection.add(target.value);
+        } else {
+          const allKeys = options.map((entry) => entry.key);
+          if (!(dashboardPivotRowFilterPendingSelection instanceof Set)) {
+            dashboardPivotRowFilterPendingSelection = new Set(allKeys);
+          }
+          dashboardPivotRowFilterPendingSelection.delete(target.value);
+        }
+        renderDashboardPivotRowFilterOptions();
+      });
+
+      dashboardPivotRowFilterSelectAllInput.addEventListener('change', (event) => {
+        const selectAll = event.target.checked;
+        if (selectAll) {
+          dashboardPivotRowFilterPendingSelection = null;
+        } else {
+          dashboardPivotRowFilterPendingSelection = new Set();
+        }
+        renderDashboardPivotRowFilterOptions();
+      });
+
+      dashboardPivotRowFilterApplyButton.addEventListener('click', () => {
+        if (!activeDashboardPivotRowFilterState) {
+          return;
+        }
+        const state = activeDashboardPivotRowFilterState;
+        const options = Array.isArray(state.availableValues) ? state.availableValues : [];
+        const total = options.length;
+        const keySet = state.availableValueKeys instanceof Set
+          ? state.availableValueKeys
+          : new Set(options.map((entry) => entry.key));
+        let selection = null;
+        if (dashboardPivotRowFilterPendingSelection instanceof Set) {
+          const sanitizedSelection = new Set();
+          dashboardPivotRowFilterPendingSelection.forEach((key) => {
+            if (keySet.has(key)) {
+              sanitizedSelection.add(key);
+            }
+          });
+          if (total > 0 && sanitizedSelection.size < total) {
+            selection = sanitizedSelection;
+          }
+        }
+        if (selection instanceof Set) {
+          state.rowFilterSelection = selection;
+        } else {
+          state.rowFilterSelection = null;
+        }
+        flashButtonBusy(dashboardPivotRowFilterApplyButton);
+        applyDashboardPivotFilter(state.config);
+        closeDashboardPivotRowFilter();
+      });
+
+      dashboardPivotRowFilterResetButton.addEventListener('click', () => {
+        if (!activeDashboardPivotRowFilterState) {
+          return;
+        }
+        dashboardPivotRowFilterPendingSelection = null;
+        dashboardPivotRowFilterSearchTerm = '';
+        if (dashboardPivotRowFilterSearchInput) {
+          dashboardPivotRowFilterSearchInput.value = '';
+        }
+        activeDashboardPivotRowFilterState.rowFilterSelection = null;
+        renderDashboardPivotRowFilterOptions();
+        applyDashboardPivotFilter(activeDashboardPivotRowFilterState.config);
+      });
+
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && dashboardPivotRowFilterContainerElement.classList.contains('is-visible')) {
+          closeDashboardPivotRowFilter();
+        }
+      });
+
+      dashboardPivotRowFilterInitialised = true;
+    }
     const EXCEL_DEFAULT_HEADER_SEARCH_VALUES = EXCEL_KEY_COLUMN_NAMES;
     const EXCEL_MAX_BLANK_ROWS = 2000;
 
@@ -7021,8 +7451,8 @@
       mainFilterCloseButton = mainFilterContainerElement
         ? mainFilterContainerElement.querySelector('.regular-filter__close')
         : null;
-      mainFilterButtons = [mainFilterButtonElement, dashboardFilterButtonElement].filter((button) => button);
-      mainFilterClearButtons = [mainFilterClearButtonElement, dashboardFilterClearButtonElement].filter((button) => button);
+      mainFilterButtons = mainFilterButtonElement ? [mainFilterButtonElement] : [];
+      mainFilterClearButtons = mainFilterClearButtonElement ? [mainFilterClearButtonElement] : [];
 
       const handleMainClear = () => {
         const tableInstance = mainTableInitialised && mainTable ? mainTable : null;
@@ -9195,21 +9625,23 @@
       if (!state) {
         return;
       }
-      const isActive = Boolean(state.query);
+      const hasSearch = Boolean(state.query);
+      const hasRowFilter = state.rowFilterSelection instanceof Set;
       if (state.container) {
-        state.container.dataset.active = isActive ? 'true' : 'false';
+        state.container.dataset.active = hasSearch ? 'true' : 'false';
       }
       if (state.clearButton) {
-        state.clearButton.hidden = !isActive;
-        if (isActive) {
+        state.clearButton.hidden = !hasSearch;
+        if (hasSearch) {
           state.clearButton.removeAttribute('disabled');
         } else {
           state.clearButton.setAttribute('disabled', 'true');
         }
       }
-      if (!isActive && state.messageElement) {
+      if (!hasSearch && !hasRowFilter && state.messageElement) {
         state.messageElement.hidden = true;
       }
+      updateDashboardPivotRowFilterButtonState(state);
     }
 
     function applyDashboardPivotFilter(config) {
@@ -9221,6 +9653,8 @@
         return;
       }
       const query = typeof state.query === 'string' ? state.query : '';
+      const rowFilterSelection = state.rowFilterSelection instanceof Set ? state.rowFilterSelection : null;
+      const hasRowFilter = rowFilterSelection instanceof Set;
       const tableElement = document.getElementById(config.tableId);
       if (!tableElement) {
         if (state.messageElement) {
@@ -9242,34 +9676,32 @@
             return;
           }
           if (!cellCount) {
-            row.hidden = Boolean(query);
+            row.hidden = Boolean(query || hasRowFilter);
             return;
           }
           dataRowCount += 1;
-          if (!query) {
-            row.hidden = false;
-            visibleRowCount += 1;
-            return;
-          }
           const labelCell = row.cells[0];
           const labelText = labelCell && labelCell.textContent ? labelCell.textContent : '';
-          const matches = labelText.toLowerCase().includes(query);
-          row.hidden = !matches;
-          if (matches) {
+          const normalizedLabel = normalizeDashboardPivotLabel(labelText);
+          const matchesQuery = !query || labelText.toLowerCase().includes(query);
+          const matchesRowFilter = !hasRowFilter || rowFilterSelection.has(normalizedLabel);
+          const shouldShow = matchesQuery && matchesRowFilter;
+          row.hidden = !shouldShow;
+          if (shouldShow) {
             visibleRowCount += 1;
           }
         });
       }
       const tfoot = tableElement.tFoot;
       if (tfoot) {
-        if (!query || visibleRowCount > 0) {
+        if (!(query || hasRowFilter) || visibleRowCount > 0) {
           tfoot.style.removeProperty('display');
         } else {
           tfoot.style.display = 'none';
         }
       }
       if (state.messageElement) {
-        if (query && dataRowCount > 0 && visibleRowCount === 0) {
+        if ((query || hasRowFilter) && dataRowCount > 0 && visibleRowCount === 0) {
           state.messageElement.hidden = false;
         } else {
           state.messageElement.hidden = true;
@@ -9282,6 +9714,7 @@
       if (dashboardPivotFiltersInitialised) {
         return;
       }
+      initializeDashboardPivotRowFilterDialog();
       DASHBOARD_PIVOT_CONFIGS.forEach((config) => {
         const container = document.querySelector(`.dashboard-card__quick-filter[data-pivot="${config.id}"]`);
         const input = document.getElementById(`dashboard-${config.id}-filter`);
@@ -9290,6 +9723,8 @@
         }
         const clearButton = document.getElementById(`dashboard-${config.id}-filter-clear`);
         const messageElement = document.getElementById(`dashboard-${config.id}-filter-empty`);
+        const rowFilterButton = document.getElementById(`dashboard-${config.id}-row-filter-button`);
+        const rowFilterClearButton = document.getElementById(`dashboard-${config.id}-row-filter-clear`);
         const state = {
           id: config.id,
           config,
@@ -9298,6 +9733,11 @@
           clearButton: clearButton || null,
           messageElement: messageElement || null,
           query: '',
+          rowFilterSelection: null,
+          rowFilterButton: rowFilterButton || null,
+          rowFilterClearButton: rowFilterClearButton || null,
+          availableValues: [],
+          availableValueKeys: new Set(),
         };
         dashboardPivotFilterState.set(config.id, state);
         dashboardPivotFilterTableMap.set(config.tableId, state);
@@ -9305,6 +9745,23 @@
         if (state.clearButton) {
           state.clearButton.hidden = true;
           state.clearButton.setAttribute('disabled', 'true');
+        }
+        if (state.rowFilterButton) {
+          state.rowFilterButton.addEventListener('click', () => {
+            openDashboardPivotRowFilter(state, state.rowFilterButton);
+          });
+        }
+        if (state.rowFilterClearButton) {
+          state.rowFilterClearButton.hidden = true;
+          state.rowFilterClearButton.setAttribute('disabled', 'true');
+          state.rowFilterClearButton.addEventListener('click', () => {
+            state.rowFilterSelection = null;
+            if (activeDashboardPivotRowFilterState === state) {
+              closeDashboardPivotRowFilter({ returnFocus: false });
+            }
+            dashboardPivotRowFilterPendingSelection = null;
+            applyDashboardPivotFilter(config);
+          });
         }
         const handleInput = () => {
           state.query = (input.value || '').trim().toLowerCase();
@@ -9325,6 +9782,7 @@
             }
           });
         }
+        updateDashboardPivotRowFilterButtonState(state);
       });
       dashboardPivotFiltersInitialised = true;
     }
@@ -9346,6 +9804,15 @@
       tbody.appendChild(row);
       const pivotFilterState = dashboardPivotFilterTableMap.get(tableId);
       if (pivotFilterState && pivotFilterState.config) {
+        pivotFilterState.availableValues = [];
+        pivotFilterState.availableValueKeys = new Set();
+        if (pivotFilterState.rowFilterSelection instanceof Set) {
+          pivotFilterState.rowFilterSelection = null;
+        }
+        if (activeDashboardPivotRowFilterState === pivotFilterState) {
+          closeDashboardPivotRowFilter({ returnFocus: false });
+        }
+        updateDashboardPivotRowFilterButtonState(pivotFilterState);
         applyDashboardPivotFilter(pivotFilterState.config);
       }
     }
@@ -9399,6 +9866,62 @@
           });
           tbody.appendChild(tr);
         });
+      }
+
+      const pivotFilterState = dashboardPivotFilterState.get(config.id);
+      if (pivotFilterState) {
+        const valueMap = new Map();
+        rows.forEach((row) => {
+          if (!Array.isArray(row) || !row.length) {
+            return;
+          }
+          const rawLabel = row[0];
+          const label = rawLabel === null || rawLabel === undefined ? '' : String(rawLabel);
+          const key = normalizeDashboardPivotLabel(label);
+          if (!valueMap.has(key)) {
+            valueMap.set(key, { key, label, lower: label.toLowerCase() });
+          }
+        });
+        const availableValues = Array.from(valueMap.values());
+        pivotFilterState.availableValues = availableValues;
+        pivotFilterState.availableValueKeys = new Set(availableValues.map((entry) => entry.key));
+        if (pivotFilterState.rowFilterSelection instanceof Set) {
+          const sanitizedSelection = new Set();
+          pivotFilterState.rowFilterSelection.forEach((key) => {
+            if (pivotFilterState.availableValueKeys.has(key)) {
+              sanitizedSelection.add(key);
+            }
+          });
+          if (sanitizedSelection.size === 0 && pivotFilterState.rowFilterSelection.size > 0) {
+            pivotFilterState.rowFilterSelection = null;
+          } else if (sanitizedSelection.size !== pivotFilterState.rowFilterSelection.size) {
+            pivotFilterState.rowFilterSelection = sanitizedSelection;
+          } else {
+            pivotFilterState.rowFilterSelection = sanitizedSelection;
+          }
+        }
+        if (!availableValues.length) {
+          pivotFilterState.rowFilterSelection = null;
+        }
+        updateDashboardPivotRowFilterButtonState(pivotFilterState);
+        if (activeDashboardPivotRowFilterState === pivotFilterState) {
+          if (dashboardPivotRowFilterPendingSelection instanceof Set) {
+            const sanitizedPending = new Set();
+            dashboardPivotRowFilterPendingSelection.forEach((key) => {
+              if (pivotFilterState.availableValueKeys.has(key)) {
+                sanitizedPending.add(key);
+              }
+            });
+            if (sanitizedPending.size === 0 && dashboardPivotRowFilterPendingSelection.size > 0) {
+              dashboardPivotRowFilterPendingSelection = null;
+            } else {
+              dashboardPivotRowFilterPendingSelection = sanitizedPending;
+            }
+          } else if (dashboardPivotRowFilterPendingSelection !== null) {
+            dashboardPivotRowFilterPendingSelection = null;
+          }
+          renderDashboardPivotRowFilterOptions();
+        }
       }
 
       if (totalRow && totalRow.length === columns.length) {
@@ -9758,12 +10281,6 @@
                 mainFilterButton.setAttribute('aria-expanded', 'false');
                 mainFilterButton.dataset.active = 'false';
               }
-              if (dashboardFilterButtonElement) {
-                dashboardFilterButtonElement.setAttribute('disabled', 'true');
-                dashboardFilterButtonElement.setAttribute('aria-hidden', 'true');
-                dashboardFilterButtonElement.setAttribute('aria-expanded', 'false');
-                dashboardFilterButtonElement.dataset.active = 'false';
-              }
             });
         })
         .finally(() => {
@@ -10110,12 +10627,6 @@
             filterButton.setAttribute('aria-hidden', 'true');
             filterButton.setAttribute('aria-expanded', 'false');
             filterButton.dataset.active = 'false';
-          }
-          if (dashboardFilterButtonElement) {
-            dashboardFilterButtonElement.setAttribute('disabled', 'true');
-            dashboardFilterButtonElement.setAttribute('aria-hidden', 'true');
-            dashboardFilterButtonElement.setAttribute('aria-expanded', 'false');
-            dashboardFilterButtonElement.dataset.active = 'false';
           }
           if (mainFilterContainerElement) {
             closeMainFilter({ returnFocus: false });
