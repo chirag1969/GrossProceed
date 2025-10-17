@@ -2673,6 +2673,10 @@
         </label>
         <select class="regular-filter__select" id="dashboard-pivot-filter-field-options"></select>
       </div>
+      <label class="regular-filter__select-all" for="dashboard-pivot-filter-select-all">
+        <input type="checkbox" id="dashboard-pivot-filter-select-all" />
+        <span>Select all</span>
+      </label>
       <div class="regular-filter__options" id="dashboard-pivot-filter-options" role="group" aria-label="Filter values"></div>
       <p class="regular-filter__empty" id="dashboard-pivot-filter-empty" hidden>No filter values available</p>
       <div class="regular-filter__footer">
@@ -2882,6 +2886,7 @@
     let dashboardPivotRowFilterOptionsElement = null;
     let dashboardPivotRowFilterFieldOptionsElement = null;
     let dashboardPivotRowFilterEmptyElement = null;
+    let dashboardPivotRowFilterSelectAllInput = null;
     let dashboardPivotRowFilterApplyButton = null;
     let dashboardPivotRowFilterResetButton = null;
     let dashboardPivotRowFilterCloseButton = null;
@@ -3884,6 +3889,38 @@
       };
     }
 
+    function updateDashboardPivotRowFilterSelectAllState() {
+      if (!dashboardPivotRowFilterSelectAllInput) {
+        return;
+      }
+      const checkboxes = dashboardPivotRowFilterOptionsElement
+        ? Array.from(dashboardPivotRowFilterOptionsElement.querySelectorAll('input[type="checkbox"]'))
+        : [];
+      if (!checkboxes.length) {
+        dashboardPivotRowFilterSelectAllInput.checked = false;
+        dashboardPivotRowFilterSelectAllInput.indeterminate = false;
+        dashboardPivotRowFilterSelectAllInput.disabled = true;
+        return;
+      }
+      dashboardPivotRowFilterSelectAllInput.disabled = false;
+      let selectedCount = 0;
+      checkboxes.forEach((checkbox) => {
+        if (checkbox.checked) {
+          selectedCount += 1;
+        }
+      });
+      if (selectedCount === 0) {
+        dashboardPivotRowFilterSelectAllInput.checked = false;
+        dashboardPivotRowFilterSelectAllInput.indeterminate = false;
+      } else if (selectedCount === checkboxes.length) {
+        dashboardPivotRowFilterSelectAllInput.checked = true;
+        dashboardPivotRowFilterSelectAllInput.indeterminate = false;
+      } else {
+        dashboardPivotRowFilterSelectAllInput.checked = false;
+        dashboardPivotRowFilterSelectAllInput.indeterminate = true;
+      }
+    }
+
     function renderDashboardPivotRowFilterOptions() {
       if (!dashboardPivotRowFilterOptionsElement || !activeDashboardPivotRowFilterState) {
         return;
@@ -3924,6 +3961,11 @@
         if (dashboardPivotRowFilterResetButton) {
           dashboardPivotRowFilterResetButton.setAttribute('disabled', 'true');
         }
+        if (dashboardPivotRowFilterSelectAllInput) {
+          dashboardPivotRowFilterSelectAllInput.checked = false;
+          dashboardPivotRowFilterSelectAllInput.indeterminate = false;
+          dashboardPivotRowFilterSelectAllInput.disabled = true;
+        }
         return;
       }
 
@@ -3951,6 +3993,7 @@
         .join('');
       dashboardPivotRowFilterOptionsElement.innerHTML = optionMarkup;
       animateOptionList(dashboardPivotRowFilterOptionsElement, '.regular-filter__option');
+      updateDashboardPivotRowFilterSelectAllState();
     }
 
     function openDashboardPivotRowFilter(state, triggerButton = null) {
@@ -4031,6 +4074,7 @@
       dashboardPivotRowFilterOptionsElement = document.getElementById('dashboard-pivot-filter-options');
       dashboardPivotRowFilterFieldOptionsElement = document.getElementById('dashboard-pivot-filter-field-options');
       dashboardPivotRowFilterEmptyElement = document.getElementById('dashboard-pivot-filter-empty');
+      dashboardPivotRowFilterSelectAllInput = document.getElementById('dashboard-pivot-filter-select-all');
       dashboardPivotRowFilterApplyButton = document.getElementById('dashboard-pivot-filter-apply');
       dashboardPivotRowFilterResetButton = document.getElementById('dashboard-pivot-filter-reset');
       dashboardPivotRowFilterCloseButton = dashboardPivotRowFilterContainerElement
@@ -4044,6 +4088,7 @@
         dashboardPivotRowFilterApplyButton,
         dashboardPivotRowFilterResetButton,
         dashboardPivotRowFilterCloseButton,
+        dashboardPivotRowFilterSelectAllInput,
       ].every(Boolean);
 
       if (!elementsReady) {
@@ -4094,6 +4139,30 @@
           dashboardPivotRowFilterPendingSelection = null;
         } else {
           dashboardPivotRowFilterPendingSelection = currentSelection;
+        }
+        renderDashboardPivotRowFilterOptions();
+      });
+
+      dashboardPivotRowFilterSelectAllInput.addEventListener('change', (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLInputElement)) {
+          return;
+        }
+        const state = activeDashboardPivotRowFilterState;
+        if (!state) {
+          return;
+        }
+        ensureDashboardPivotActiveField(state);
+        const activeFieldId = state.activeFieldId || 'row';
+        const entry = getDashboardPivotFieldEntry(state, activeFieldId);
+        const options = Array.isArray(entry.options) ? entry.options : [];
+        if (!options.length) {
+          return;
+        }
+        if (target.checked) {
+          dashboardPivotRowFilterPendingSelection = null;
+        } else {
+          dashboardPivotRowFilterPendingSelection = new Set();
         }
         renderDashboardPivotRowFilterOptions();
       });
