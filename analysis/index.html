@@ -1132,6 +1132,20 @@
       outline: none;
       padding: 0;
     }
+    .dashboard-card__quick-filter-select {
+      border: none;
+      background: transparent;
+      font: inherit;
+      color: var(--tab-text);
+      min-width: 8rem;
+      outline: none;
+      padding: 0;
+      cursor: pointer;
+    }
+    .dashboard-card__quick-filter-select:disabled {
+      cursor: not-allowed;
+      color: var(--tab-text-muted);
+    }
     .dashboard-card__quick-filter-input::placeholder {
       color: var(--tab-text-muted);
     }
@@ -2498,6 +2512,21 @@
             <h2 class="dashboard-card__title">Channel performance summary</h2>
             <p class="dashboard-card__subtitle">Direct table from Dashboard worksheet (cells A41 to O60)</p>
           </div>
+          <div class="dashboard-card__toolbar">
+            <label class="dashboard-card__quick-filter" for="dashboard-summary-store-filter">
+              <span class="dashboard-card__quick-filter-label">Store</span>
+              <select
+                id="dashboard-summary-store-filter"
+                class="dashboard-card__quick-filter-select"
+                disabled
+              >
+                <option value="">All stores</option>
+              </select>
+            </label>
+            <p class="dashboard-card__quick-filter-empty" id="dashboard-summary-store-filter-empty" hidden>
+              No stores available
+            </p>
+          </div>
         </header>
         <div class="dashboard-table-container">
           <div class="dashboard-table-scroll">
@@ -2746,6 +2775,18 @@
     const skuFilterClearButtonElement = document.getElementById('sku-filter-clear-button');
     const mainFilterClearButtonElement = document.getElementById('main-filter-clear-button');
     const regularFilterClearButtonElement = document.getElementById('regular-filter-clear-button');
+    const dashboardSummaryStoreFilterElement = document.getElementById('dashboard-summary-store-filter');
+    const dashboardSummaryStoreFilterEmptyElement = document.getElementById('dashboard-summary-store-filter-empty');
+
+    if (dashboardSummaryStoreFilterElement) {
+      dashboardSummaryStoreFilterElement.addEventListener('change', () => {
+        const value = typeof dashboardSummaryStoreFilterElement.value === 'string'
+          ? dashboardSummaryStoreFilterElement.value
+          : '';
+        dashboardSummaryStoreFilterValue = value;
+        updateDashboardSummaryTable();
+      });
+    }
 
     const reduceMotionQuery = typeof window.matchMedia === 'function' ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
     let shouldReduceMotion = reduceMotionQuery ? reduceMotionQuery.matches : false;
@@ -2842,6 +2883,7 @@
     let dashboardSummaryTableInitialised = false;
     let dashboardSummaryTableCache = null;
     let dashboardSummaryTablePromise = null;
+    let dashboardSummaryStoreFilterValue = '';
     let activeTabId = null;
     let newProductInitialised = false;
     let newProductPivotCache = null;
@@ -2871,6 +2913,7 @@
     });
     const displayDateFormatter = new Intl.DateTimeFormat('en-US', { month: '2-digit', day: '2-digit' });
     const TOTAL_ROW_LABEL = 'Grand Total';
+    const TOTAL_ROW_LABEL_NORMALISED = TOTAL_ROW_LABEL.trim().toLowerCase();
 
     let columnValueOptions = [];
     let columnFilters = {};
@@ -5098,6 +5141,95 @@
       return { columns, rows };
     }
 
+    function normaliseDashboardSummaryStoreKey(value) {
+      if (typeof value === 'string') {
+        return value.trim().toLowerCase();
+      }
+      if (value === null || value === undefined) {
+        return '';
+      }
+      return String(value).trim().toLowerCase();
+    }
+
+    function updateDashboardSummaryStoreFilterOptions(rows) {
+      if (!dashboardSummaryStoreFilterElement) {
+        return;
+      }
+
+      const storeMap = new Map();
+      if (Array.isArray(rows)) {
+        rows.forEach((row) => {
+          if (!Array.isArray(row) || !row.length) {
+            return;
+          }
+          const rawLabel = row[0];
+          const label = typeof rawLabel === 'string'
+            ? rawLabel.trim()
+            : String(rawLabel ?? '').trim();
+          const key = normaliseDashboardSummaryStoreKey(label);
+          if (!label || !key || key === TOTAL_ROW_LABEL_NORMALISED) {
+            return;
+          }
+          if (!storeMap.has(key)) {
+            storeMap.set(key, label);
+          }
+        });
+      }
+
+      const options = Array.from(storeMap.entries())
+        .map(([key, label]) => ({ key, label }))
+        .sort((a, b) => a.label.localeCompare(b.label, undefined, { sensitivity: 'base' }));
+
+      const selectElement = dashboardSummaryStoreFilterElement;
+      const previousValue = dashboardSummaryStoreFilterValue;
+      selectElement.innerHTML = '';
+      const defaultOption = document.createElement('option');
+      defaultOption.value = '';
+      defaultOption.textContent = 'All stores';
+      selectElement.appendChild(defaultOption);
+
+      options.forEach((option) => {
+        const optionElement = document.createElement('option');
+        optionElement.value = option.key;
+        optionElement.textContent = option.label;
+        selectElement.appendChild(optionElement);
+      });
+
+      const hasOptions = options.length > 0;
+      const nextValue = hasOptions && options.some((option) => option.key === previousValue)
+        ? previousValue
+        : '';
+      dashboardSummaryStoreFilterValue = nextValue;
+      selectElement.value = nextValue;
+
+      if (hasOptions) {
+        selectElement.removeAttribute('disabled');
+      } else {
+        selectElement.setAttribute('disabled', 'true');
+      }
+
+      if (dashboardSummaryStoreFilterEmptyElement) {
+        dashboardSummaryStoreFilterEmptyElement.hidden = hasOptions;
+      }
+    }
+
+    function filterDashboardSummaryRowsByStore(rows) {
+      if (!Array.isArray(rows)) {
+        return [];
+      }
+      if (!dashboardSummaryStoreFilterValue) {
+        return rows;
+      }
+      const filterKey = dashboardSummaryStoreFilterValue;
+      return rows.filter((row) => {
+        if (!Array.isArray(row) || !row.length) {
+          return false;
+        }
+        const key = normaliseDashboardSummaryStoreKey(row[0]);
+        return key === filterKey;
+      });
+    }
+
     function fetchDashboardSummaryTable() {
       if (dashboardSummaryTableCache) {
         return Promise.resolve(dashboardSummaryTableCache);
@@ -5162,6 +5294,7 @@
       const columns = Array.isArray(dataset?.columns) ? dataset.columns : [];
       const rows = Array.isArray(dataset?.rows) ? dataset.rows : [];
       if (!columns.length) {
+        updateDashboardSummaryStoreFilterOptions([]);
         setDashboardTableMessage('dashboard-table-summary', 'No data available', 3);
         return;
       }
@@ -5170,7 +5303,8 @@
       let totalRow = null;
       rows.forEach((row) => {
         const label = row && row.length ? row[0] : '';
-        const isGrandTotal = typeof label === 'string' && label.trim().toLowerCase() === 'grand total';
+        const isGrandTotal = typeof label === 'string'
+          && label.trim().toLowerCase() === TOTAL_ROW_LABEL_NORMALISED;
         if (isGrandTotal) {
           totalRow = row;
         } else {
@@ -5179,9 +5313,14 @@
       });
 
       if (!dataRows.length && !totalRow) {
+        updateDashboardSummaryStoreFilterOptions([]);
         setDashboardTableMessage('dashboard-table-summary', 'No data available', Math.max(2, columns.length));
         return;
       }
+
+      updateDashboardSummaryStoreFilterOptions(dataRows);
+      const filteredRows = filterDashboardSummaryRowsByStore(dataRows);
+      const storeFilterActive = Boolean(dashboardSummaryStoreFilterValue);
 
       tableElement.innerHTML = '';
       const thead = tableElement.createTHead();
@@ -5193,25 +5332,38 @@
       });
 
       const tbody = tableElement.createTBody();
-      dataRows.forEach((row) => {
+      if (!filteredRows.length) {
         const tr = tbody.insertRow();
-        columns.forEach((column, columnIndex) => {
-          const cellTag = columnIndex === 0 ? 'th' : 'td';
-          const cell = document.createElement(cellTag);
-          if (columnIndex === 0) {
-            cell.scope = 'row';
-          }
-          const value = columnIndex < row.length ? row[columnIndex] : '';
-          const formatted = formatDashboardSummaryValue(value, column);
-          cell.textContent = formatted;
-          if (columnIndex !== 0 && typeof value === 'number' && value < 0) {
-            cell.classList.add('dashboard-table__value--error');
-          }
-          tr.appendChild(cell);
+        const messageCell = tr.insertCell();
+        messageCell.colSpan = columns.length || 1;
+        messageCell.className = 'dashboard-table__message';
+        messageCell.textContent = storeFilterActive
+          ? 'No rows match the selected store'
+          : 'No data available';
+      } else {
+        filteredRows.forEach((row) => {
+          const tr = tbody.insertRow();
+          columns.forEach((column, columnIndex) => {
+            const cellTag = columnIndex === 0 ? 'th' : 'td';
+            const cell = document.createElement(cellTag);
+            if (columnIndex === 0) {
+              cell.scope = 'row';
+            }
+            const value = columnIndex < row.length ? row[columnIndex] : '';
+            const formatted = formatDashboardSummaryValue(value, column);
+            cell.textContent = formatted;
+            if (columnIndex !== 0 && typeof value === 'number' && value < 0) {
+              cell.classList.add('dashboard-table__value--error');
+            }
+            tr.appendChild(cell);
+          });
         });
-      });
+      }
 
-      if (totalRow && totalRow.length) {
+      const shouldRenderTotal = totalRow
+        && totalRow.length
+        && (!storeFilterActive || filteredRows.length);
+      if (shouldRenderTotal) {
         const tfoot = tableElement.createTFoot();
         const tr = tfoot.insertRow();
         tr.className = 'dashboard-table__total';
@@ -5240,6 +5392,7 @@
       }
       if (dashboardSummaryTableInitialised && !dashboardSummaryTablePromise) {
         setDashboardTableMessage('dashboard-table-summary', 'No data available', 3);
+        updateDashboardSummaryStoreFilterOptions([]);
         return;
       }
       if (!dashboardSummaryTablePromise) {
@@ -5253,6 +5406,7 @@
         .catch((error) => {
           console.error('Failed to load dashboard summary table:', error);
           setDashboardTableMessage('dashboard-table-summary', 'Unable to load summary data', 3);
+          updateDashboardSummaryStoreFilterOptions([]);
         });
     }
 
