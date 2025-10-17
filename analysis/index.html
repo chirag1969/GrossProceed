@@ -2663,13 +2663,16 @@
         <h3 class="regular-filter__title" id="dashboard-pivot-filter-title">Filter dashboard pivot rows</h3>
         <button type="button" class="regular-filter__close" aria-label="Close filters">&times;</button>
       </div>
-      <span class="regular-filter__label" id="dashboard-pivot-filter-field-label">Field</span>
-      <div
-        class="regular-filter__field-options"
-        id="dashboard-pivot-filter-field-options"
-        role="group"
-        aria-labelledby="dashboard-pivot-filter-field-label"
-      ></div>
+      <div class="regular-filter__field">
+        <label
+          class="regular-filter__label"
+          for="dashboard-pivot-filter-field-options"
+          id="dashboard-pivot-filter-field-label"
+        >
+          Field
+        </label>
+        <select class="regular-filter__select" id="dashboard-pivot-filter-field-options"></select>
+      </div>
       <div class="regular-filter__options" id="dashboard-pivot-filter-options" role="group" aria-label="Filter values"></div>
       <p class="regular-filter__empty" id="dashboard-pivot-filter-empty" hidden>No filter values available</p>
       <div class="regular-filter__footer">
@@ -3779,62 +3782,106 @@
       if (!dashboardPivotRowFilterFieldOptionsElement) {
         return;
       }
+      const selectElement = dashboardPivotRowFilterFieldOptionsElement;
       const fallbackDefinitions = Array.isArray(state?.fieldDefinitions) && state.fieldDefinitions.length
         ? state.fieldDefinitions
         : DASHBOARD_PIVOT_FILTER_FIELDS;
+      selectElement.innerHTML = '';
+      selectElement.onchange = null;
+
       if (!state) {
-        const markup = fallbackDefinitions
-          .map((definition) => {
-            const safeLabel = escapeHtml(definition.label || definition.id);
-            return `<button type="button" class="regular-filter__field-button" aria-pressed="false" aria-disabled="true" disabled>${safeLabel}</button>`;
-          })
-          .join('');
-        dashboardPivotRowFilterFieldOptionsElement.innerHTML = markup;
+        fallbackDefinitions.forEach((definition, index) => {
+          const option = document.createElement('option');
+          option.value = definition.id;
+          option.textContent = definition.label || definition.id;
+          option.disabled = true;
+          if (index === 0) {
+            option.selected = true;
+          }
+          selectElement.appendChild(option);
+        });
+        selectElement.setAttribute('disabled', 'true');
+        selectElement.setAttribute('aria-disabled', 'true');
         return;
       }
+
       const definitions = fallbackDefinitions.map((definition) => ({ ...definition }));
       ensureDashboardPivotActiveField(state);
-      const markup = definitions
-        .map((definition) => {
+      let activeFieldId = state.activeFieldId || null;
+      let hasEnabledOption = false;
+
+      definitions.forEach((definition) => {
+        const option = document.createElement('option');
+        option.value = definition.id;
+        option.textContent = definition.label || definition.id;
+        const entry = getDashboardPivotFieldEntry(state, definition.id);
+        const hasValues = Array.isArray(entry.options) && entry.options.length > 0;
+        if (!hasValues) {
+          option.disabled = true;
+          if (activeFieldId === definition.id) {
+            activeFieldId = null;
+          }
+        } else {
+          hasEnabledOption = true;
+        }
+        selectElement.appendChild(option);
+      });
+
+      if (!activeFieldId) {
+        const fallback = definitions.find((definition) => {
           const entry = getDashboardPivotFieldEntry(state, definition.id);
-          const hasValues = Array.isArray(entry.options) && entry.options.length > 0;
-          const isActive = hasValues && state.activeFieldId === definition.id;
-          const pressedAttr = isActive ? ' aria-pressed="true"' : ' aria-pressed="false"';
-          const disabledAttr = hasValues ? '' : ' aria-disabled="true" disabled';
-          const safeLabel = escapeHtml(definition.label || definition.id);
-          return `<button type="button" class="regular-filter__field-button"${pressedAttr}${disabledAttr} data-field-id="${definition.id}">${safeLabel}</button>`;
-        })
-        .join('');
-      dashboardPivotRowFilterFieldOptionsElement.innerHTML = markup;
-      const buttons = dashboardPivotRowFilterFieldOptionsElement.querySelectorAll('button[data-field-id]');
-      buttons.forEach((button) => {
-        button.addEventListener('click', (event) => {
-          event.preventDefault();
-          const fieldId = button.getAttribute('data-field-id');
-          if (!fieldId || state.activeFieldId === fieldId) {
-            return;
-          }
-          const definition = definitions.find((entry) => entry.id === fieldId);
-          const entry = definition ? getDashboardPivotFieldEntry(state, definition.id) : { options: [] };
-          const hasValues = Array.isArray(entry.options) && entry.options.length > 0;
-          if (!hasValues) {
-            return;
-          }
-          state.activeFieldId = fieldId;
-          if (state.fieldSelections instanceof Map) {
-            const storedSelection = state.fieldSelections.get(fieldId);
-            if (storedSelection instanceof Set) {
-              dashboardPivotRowFilterPendingSelection = new Set(storedSelection);
-            } else {
-              dashboardPivotRowFilterPendingSelection = null;
-            }
+          return Array.isArray(entry.options) && entry.options.length > 0;
+        });
+        activeFieldId = fallback ? fallback.id : definitions[0]?.id || null;
+      }
+
+      if (activeFieldId) {
+        state.activeFieldId = activeFieldId;
+        const options = Array.from(selectElement.options);
+        const selectedOption = options.find((option) => option.value === activeFieldId && !option.disabled);
+        if (selectedOption) {
+          selectedOption.selected = true;
+          selectElement.value = selectedOption.value;
+        } else if (options.length) {
+          options[0].selected = true;
+          selectElement.value = options[0].value;
+        }
+      }
+
+      if (hasEnabledOption) {
+        selectElement.removeAttribute('disabled');
+        selectElement.removeAttribute('aria-disabled');
+      } else {
+        selectElement.setAttribute('disabled', 'true');
+        selectElement.setAttribute('aria-disabled', 'true');
+      }
+
+      selectElement.onchange = (event) => {
+        const fieldId = event.target.value;
+        if (!fieldId || state.activeFieldId === fieldId) {
+          return;
+        }
+        const definition = definitions.find((entry) => entry.id === fieldId);
+        const entry = definition ? getDashboardPivotFieldEntry(state, definition.id) : { options: [] };
+        const hasValues = Array.isArray(entry.options) && entry.options.length > 0;
+        if (!hasValues) {
+          renderDashboardPivotRowFilterFieldButtons(state);
+          return;
+        }
+        state.activeFieldId = fieldId;
+        if (state.fieldSelections instanceof Map) {
+          const storedSelection = state.fieldSelections.get(fieldId);
+          if (storedSelection instanceof Set) {
+            dashboardPivotRowFilterPendingSelection = new Set(storedSelection);
           } else {
             dashboardPivotRowFilterPendingSelection = null;
           }
-          renderDashboardPivotRowFilterFieldButtons(state);
-          renderDashboardPivotRowFilterOptions();
-        });
-      });
+        } else {
+          dashboardPivotRowFilterPendingSelection = null;
+        }
+        renderDashboardPivotRowFilterFieldButtons(state);
+        renderDashboardPivotRowFilterOptions();
+      };
     }
 
     function renderDashboardPivotRowFilterOptions() {
