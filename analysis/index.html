@@ -1061,6 +1061,9 @@
       flex-direction: column;
       gap: 1rem;
     }
+    .dashboard-card--full {
+      grid-column: 1 / -1;
+    }
     .dashboard-card__header {
       display: flex;
       justify-content: space-between;
@@ -2489,6 +2492,19 @@
           </div>
         </div>
       </article>
+      <article class="card dashboard-card dashboard-card--full">
+        <header class="dashboard-card__header">
+          <div class="dashboard-card__heading">
+            <h2 class="dashboard-card__title">Channel performance summary</h2>
+            <p class="dashboard-card__subtitle">Direct table from Dashboard worksheet (cells A41 to O60)</p>
+          </div>
+        </header>
+        <div class="dashboard-table-container">
+          <div class="dashboard-table-scroll">
+            <table id="dashboard-table-summary" class="dashboard-table"></table>
+          </div>
+        </div>
+      </article>
     </section>
   </div>
   <div class="tab-panel" id="tab-main" data-tab="main" role="tabpanel" aria-labelledby="tab-main-button" aria-hidden="true">
@@ -2823,6 +2839,9 @@
     let mainDashboardInitialised = false;
     let mainDashboardPivotCache = null;
     let dashboardPivotPromise = null;
+    let dashboardSummaryTableInitialised = false;
+    let dashboardSummaryTableCache = null;
+    let dashboardSummaryTablePromise = null;
     let activeTabId = null;
     let newProductInitialised = false;
     let newProductPivotCache = null;
@@ -2839,6 +2858,17 @@
     const ZERO_DECIMAL_COLUMNS = new Set(['qty', 'order no', 'plain order no', 'order no.', 'order #']);
     const numberFormatter = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const integerFormatter = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 });
+    const currencyFormatter = new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+    const percentFormatter = new Intl.NumberFormat('en-US', {
+      style: 'percent',
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+    });
     const displayDateFormatter = new Intl.DateTimeFormat('en-US', { month: '2-digit', day: '2-digit' });
     const TOTAL_ROW_LABEL = 'Grand Total';
 
@@ -3290,6 +3320,11 @@
     const EXCEL_SALES_GAP_SHEET_CANDIDATES = ['SKUWISE GAP', 'LO WISE GAP', 'LO-wise GAP', 'Sales GAP', 'Sales Gap'];
     const EXCEL_SALES_GAP_HEADER_SEARCH_VALUES = ['Row Labels', 'L.O.', 'SKU'];
     const EXCEL_SALES_GAP_KEY_COLUMN_NAMES = ['L.O.', 'Row Labels', 'SKU'];
+    const EXCEL_DASHBOARD_SHEET_CANDIDATES = ['Dashboard', 'DASHBOARD'];
+    const DASHBOARD_SUMMARY_RANGE = 'A41:O60';
+    const DASHBOARD_SUMMARY_PERCENT_PATTERN = /%|percent/i;
+    const DASHBOARD_SUMMARY_CURRENCY_KEYWORDS = ['revenue', 'ip', 'spend', 'fees', 'gross'];
+    const DASHBOARD_SUMMARY_INTEGER_KEYWORDS = ['qty'];
     const NEW_PRODUCT_FILTER_FIELDS = [
       { id: 'row', label: 'Row labels', type: 'row', columnIndex: 0 },
       { id: 'new-old', label: 'NEW/OLD', type: 'attribute' },
@@ -5020,6 +5055,205 @@
           throw error;
         });
       return dashboardPivotPromise;
+    }
+
+    function normaliseDashboardSummaryDataset(rawRows) {
+      if (!Array.isArray(rawRows) || !rawRows.length) {
+        return { columns: [], rows: [] };
+      }
+      const headerRow = Array.isArray(rawRows[0]) ? rawRows[0] : [];
+      const columns = headerRow.map((cell) => {
+        if (cell === null || cell === undefined) {
+          return '';
+        }
+        return String(cell).trim();
+      });
+      const rowCount = columns.length;
+      const rows = [];
+      for (let index = 1; index < rawRows.length; index += 1) {
+        const sourceRow = Array.isArray(rawRows[index]) ? rawRows[index] : [];
+        const normalised = columns.map((_, columnIndex) => {
+          const value = columnIndex < sourceRow.length ? sourceRow[columnIndex] : '';
+          if (typeof value === 'string') {
+            return value.trim();
+          }
+          if (value === null || value === undefined) {
+            return '';
+          }
+          return value;
+        });
+        const hasValue = normalised.some((value) => {
+          if (typeof value === 'number') {
+            return !Number.isNaN(value);
+          }
+          if (value === null || value === undefined) {
+            return false;
+          }
+          return String(value).trim().length > 0;
+        });
+        if (hasValue) {
+          rows.push(normalised.slice(0, rowCount));
+        }
+      }
+      return { columns, rows };
+    }
+
+    function fetchDashboardSummaryTable() {
+      if (dashboardSummaryTableCache) {
+        return Promise.resolve(dashboardSummaryTableCache);
+      }
+      if (dashboardSummaryTablePromise) {
+        return dashboardSummaryTablePromise;
+      }
+      dashboardSummaryTablePromise = fetchExcelWorkbook()
+        .then((workbook) => {
+          const { worksheet } = findWorksheetFromWorkbook(workbook, {
+            candidates: EXCEL_DASHBOARD_SHEET_CANDIDATES,
+            fallbackPredicate: (name) => normaliseSheetName(name).includes('dashboard'),
+          });
+          if (!worksheet) {
+            throw new Error('Dashboard worksheet not found in workbook');
+          }
+          const rawRows = XLSX.utils.sheet_to_json(worksheet, {
+            header: 1,
+            range: DASHBOARD_SUMMARY_RANGE,
+            blankrows: false,
+            defval: '',
+            raw: true,
+          });
+          const dataset = normaliseDashboardSummaryDataset(rawRows);
+          dashboardSummaryTableCache = dataset;
+          return dataset;
+        })
+        .finally(() => {
+          dashboardSummaryTablePromise = null;
+        });
+      return dashboardSummaryTablePromise;
+    }
+
+    function formatDashboardSummaryValue(value, columnName) {
+      if (value === null || value === undefined || value === '') {
+        return '';
+      }
+      if (typeof value === 'string') {
+        return value;
+      }
+      if (typeof value !== 'number' || Number.isNaN(value)) {
+        return String(value);
+      }
+      const label = typeof columnName === 'string' ? columnName.trim().toLowerCase() : '';
+      if (DASHBOARD_SUMMARY_PERCENT_PATTERN.test(label)) {
+        return percentFormatter.format(value);
+      }
+      if (DASHBOARD_SUMMARY_INTEGER_KEYWORDS.some((keyword) => label.includes(keyword))) {
+        return integerFormatter.format(value);
+      }
+      if (DASHBOARD_SUMMARY_CURRENCY_KEYWORDS.some((keyword) => label.includes(keyword))) {
+        return currencyFormatter.format(value);
+      }
+      return numberFormatter.format(value);
+    }
+
+    function renderDashboardSummaryTable(dataset) {
+      const tableElement = document.getElementById('dashboard-table-summary');
+      if (!tableElement) {
+        return;
+      }
+      const columns = Array.isArray(dataset?.columns) ? dataset.columns : [];
+      const rows = Array.isArray(dataset?.rows) ? dataset.rows : [];
+      if (!columns.length) {
+        setDashboardTableMessage('dashboard-table-summary', 'No data available', 3);
+        return;
+      }
+
+      const dataRows = [];
+      let totalRow = null;
+      rows.forEach((row) => {
+        const label = row && row.length ? row[0] : '';
+        const isGrandTotal = typeof label === 'string' && label.trim().toLowerCase() === 'grand total';
+        if (isGrandTotal) {
+          totalRow = row;
+        } else {
+          dataRows.push(row);
+        }
+      });
+
+      if (!dataRows.length && !totalRow) {
+        setDashboardTableMessage('dashboard-table-summary', 'No data available', Math.max(2, columns.length));
+        return;
+      }
+
+      tableElement.innerHTML = '';
+      const thead = tableElement.createTHead();
+      const headerRow = thead.insertRow();
+      columns.forEach((column) => {
+        const th = document.createElement('th');
+        th.textContent = column || '';
+        headerRow.appendChild(th);
+      });
+
+      const tbody = tableElement.createTBody();
+      dataRows.forEach((row) => {
+        const tr = tbody.insertRow();
+        columns.forEach((column, columnIndex) => {
+          const cellTag = columnIndex === 0 ? 'th' : 'td';
+          const cell = document.createElement(cellTag);
+          if (columnIndex === 0) {
+            cell.scope = 'row';
+          }
+          const value = columnIndex < row.length ? row[columnIndex] : '';
+          const formatted = formatDashboardSummaryValue(value, column);
+          cell.textContent = formatted;
+          if (columnIndex !== 0 && typeof value === 'number' && value < 0) {
+            cell.classList.add('dashboard-table__value--error');
+          }
+          tr.appendChild(cell);
+        });
+      });
+
+      if (totalRow && totalRow.length) {
+        const tfoot = tableElement.createTFoot();
+        const tr = tfoot.insertRow();
+        tr.className = 'dashboard-table__total';
+        columns.forEach((column, columnIndex) => {
+          const cellTag = columnIndex === 0 ? 'th' : 'td';
+          const cell = document.createElement(cellTag);
+          if (columnIndex === 0) {
+            cell.scope = 'row';
+          }
+          const value = columnIndex < totalRow.length ? totalRow[columnIndex] : '';
+          const formatted = formatDashboardSummaryValue(value, column);
+          cell.textContent = formatted;
+          if (columnIndex !== 0 && typeof value === 'number' && value < 0) {
+            cell.classList.add('dashboard-table__value--error');
+          }
+          tr.appendChild(cell);
+        });
+      }
+    }
+
+    function updateDashboardSummaryTable() {
+      if (dashboardSummaryTableCache) {
+        renderDashboardSummaryTable(dashboardSummaryTableCache);
+        dashboardSummaryTableInitialised = true;
+        return;
+      }
+      if (dashboardSummaryTableInitialised && !dashboardSummaryTablePromise) {
+        setDashboardTableMessage('dashboard-table-summary', 'No data available', 3);
+        return;
+      }
+      if (!dashboardSummaryTablePromise) {
+        setDashboardTableMessage('dashboard-table-summary', 'Loading data…', 3);
+      }
+      fetchDashboardSummaryTable()
+        .then((dataset) => {
+          renderDashboardSummaryTable(dataset);
+          dashboardSummaryTableInitialised = true;
+        })
+        .catch((error) => {
+          console.error('Failed to load dashboard summary table:', error);
+          setDashboardTableMessage('dashboard-table-summary', 'Unable to load summary data', 3);
+        });
     }
 
     function fetchRegularDataset() {
@@ -10543,6 +10777,7 @@
       const filtersInitiallyActive = hasActiveColumnFilters(mainColumnFilters);
       if (mainDashboardInitialised && mainDashboardPivotCache instanceof Map) {
         renderMainDashboard(mainDashboardPivotCache);
+        updateDashboardSummaryTable();
         setTabPanelLoading('dashboard', false);
         return;
       }
@@ -10551,6 +10786,7 @@
       DASHBOARD_PIVOT_CONFIGS.forEach((config) => {
         setDashboardTableMessage(config.tableId, 'Loading data…', (config.columns?.length || 0) + 1);
       });
+      updateDashboardSummaryTable();
 
       const loadFromDataset = () => {
         const datasetPromise = mainDatasetCache ? Promise.resolve(mainDatasetCache) : fetchMainDataset();
