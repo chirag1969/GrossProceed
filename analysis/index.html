@@ -2886,6 +2886,8 @@
     let activeDashboardPivotRowFilterState = null;
     let activeDashboardPivotRowFilterTrigger = null;
     let dashboardPivotRowFilterPendingSelection = null;
+    let dashboardPivotSourceDataset = null;
+    let dashboardPivotFieldOptionCache = new Map();
     let totalColumnIndex = -1;
     let mainTotalColumnIndex = -1;
     let headerMenuElement;
@@ -3387,7 +3389,7 @@
     ];
     const newProductTableFilterRegistry = new Map();
     let newProductFilterHookRegistered = false;
-    const DASHBOARD_PIVOT_FILTER_FIELDS = [
+    let DASHBOARD_PIVOT_FILTER_FIELDS = [
       { id: 'row', label: 'Row labels', type: 'row' },
     ];
     const DASHBOARD_PIVOT_CONFIGS = [
@@ -3502,15 +3504,253 @@
       return String(value).trim().toLowerCase();
     }
 
+    function normalizeDashboardFilterValue(value) {
+      if (value === null || value === undefined) {
+        return '';
+      }
+      return String(value).trim().toLowerCase();
+    }
+
+    function getDashboardPivotFieldEntry(state, fieldId) {
+      if (!state) {
+        return { options: [], keySet: new Set() };
+      }
+      if (!(state.fieldValueMap instanceof Map)) {
+        state.fieldValueMap = new Map();
+      }
+      let entry = state.fieldValueMap.get(fieldId);
+      if (!entry || typeof entry !== 'object') {
+        entry = { options: [], keySet: new Set() };
+        state.fieldValueMap.set(fieldId, entry);
+      }
+      if (!Array.isArray(entry.options)) {
+        entry.options = [];
+      }
+      if (!(entry.keySet instanceof Set)) {
+        entry.keySet = new Set(entry.options.map((option) => option.key));
+      }
+      return entry;
+    }
+
+    function setDashboardPivotFieldOptions(state, fieldId, options) {
+      if (!state) {
+        return;
+      }
+      if (!(state.fieldValueMap instanceof Map)) {
+        state.fieldValueMap = new Map();
+      }
+      const normalizedOptions = [];
+      const keySet = new Set();
+      if (Array.isArray(options)) {
+        options.forEach((option) => {
+          const labelValue = option && Object.prototype.hasOwnProperty.call(option, 'label')
+            ? option.label
+            : option;
+          const label = labelValue === null || labelValue === undefined ? '' : String(labelValue);
+          const rawKey = option && typeof option.key === 'string' && option.key.length
+            ? option.key
+            : normalizeDashboardFilterValue(label);
+          if (keySet.has(rawKey)) {
+            return;
+          }
+          keySet.add(rawKey);
+          normalizedOptions.push({
+            key: rawKey,
+            label,
+            lower: option && typeof option.lower === 'string' && option.lower.length
+              ? option.lower
+              : rawKey,
+          });
+        });
+      }
+      state.fieldValueMap.set(fieldId, { options: normalizedOptions, keySet });
+    }
+
+    function sanitizeDashboardPivotFieldSelection(state, fieldId) {
+      if (!state || !(state.fieldSelections instanceof Map)) {
+        return null;
+      }
+      const selection = state.fieldSelections.get(fieldId);
+      if (!(selection instanceof Set) || !selection.size) {
+        state.fieldSelections.set(fieldId, null);
+        return null;
+      }
+      const entry = getDashboardPivotFieldEntry(state, fieldId);
+      const keySet = entry.keySet instanceof Set ? entry.keySet : new Set();
+      if (!keySet.size) {
+        state.fieldSelections.set(fieldId, null);
+        return null;
+      }
+      const sanitized = new Set();
+      selection.forEach((key) => {
+        if (keySet.has(key)) {
+          sanitized.add(key);
+        }
+      });
+      if (sanitized.size) {
+        state.fieldSelections.set(fieldId, sanitized);
+        return sanitized;
+      }
+      state.fieldSelections.set(fieldId, null);
+      return null;
+    }
+
+    function ensureDashboardPivotActiveField(state) {
+      if (!state || !Array.isArray(state.fieldDefinitions) || !state.fieldDefinitions.length) {
+        return;
+      }
+      const currentFieldId = state.activeFieldId;
+      const hasActive = state.fieldDefinitions.some((definition) => {
+        if (definition.id !== currentFieldId) {
+          return false;
+        }
+        const entry = getDashboardPivotFieldEntry(state, definition.id);
+        return Array.isArray(entry.options) && entry.options.length > 0;
+      });
+      if (hasActive) {
+        return;
+      }
+      const fallback = state.fieldDefinitions.find((definition) => {
+        const entry = getDashboardPivotFieldEntry(state, definition.id);
+        return Array.isArray(entry.options) && entry.options.length > 0;
+      });
+      if (fallback) {
+        state.activeFieldId = fallback.id;
+      } else if (state.fieldDefinitions[0]) {
+        state.activeFieldId = state.fieldDefinitions[0].id;
+      } else {
+        state.activeFieldId = null;
+      }
+    }
+
+    function buildDashboardPivotFilterModel(dataset) {
+      const definitions = [{ id: 'row', label: 'Row labels', type: 'row' }];
+      const optionMap = new Map();
+      if (!dataset || !Array.isArray(dataset.columns) || !Array.isArray(dataset.rows)) {
+        return { definitions, optionMap };
+      }
+      const columnValueOptions = buildColumnOptions(dataset);
+      dataset.columns.forEach((columnName, columnIndex) => {
+        if (isPlaceholderColumnName(columnName)) {
+          return;
+        }
+        const label = columnName === null || columnName === undefined ? '' : String(columnName).trim();
+        if (!label.length) {
+          return;
+        }
+        const fieldId = `column-${columnIndex}`;
+        definitions.push({ id: fieldId, label, type: 'column', columnIndex });
+        const rawValues = Array.isArray(columnValueOptions[columnIndex]) ? columnValueOptions[columnIndex] : [];
+        const seen = new Set();
+        const options = [];
+        rawValues.forEach((rawValue) => {
+          const formatted = rawValue === null || rawValue === undefined ? '' : String(rawValue);
+          const normalized = normalizeDashboardFilterValue(formatted);
+          if (seen.has(normalized)) {
+            return;
+          }
+          seen.add(normalized);
+          options.push({ key: normalized, label: formatted, lower: normalized });
+        });
+        optionMap.set(fieldId, options);
+      });
+      return { definitions, optionMap };
+    }
+
+    function updateDashboardPivotFilterModel(dataset) {
+      const model = buildDashboardPivotFilterModel(dataset);
+      DASHBOARD_PIVOT_FILTER_FIELDS = model.definitions;
+      dashboardPivotFieldOptionCache = model.optionMap;
+      dashboardPivotFilterState.forEach((state) => {
+        state.fieldDefinitions = model.definitions.map((definition) => ({ ...definition }));
+        if (!(state.fieldSelections instanceof Map)) {
+          state.fieldSelections = new Map();
+        }
+        state.fieldValueMap = new Map();
+        state.fieldDefinitions.forEach((definition) => {
+          if (definition.id === 'row') {
+            return;
+          }
+          const options = dashboardPivotFieldOptionCache.get(definition.id) || [];
+          const clonedOptions = options.map((entry) => ({ ...entry }));
+          setDashboardPivotFieldOptions(state, definition.id, clonedOptions);
+          sanitizeDashboardPivotFieldSelection(state, definition.id);
+        });
+        if (!state.fieldDefinitions.some((definition) => definition.id === state.activeFieldId)) {
+          state.activeFieldId = state.fieldDefinitions.length ? state.fieldDefinitions[0].id : null;
+        }
+        if (state.activeSelectionFieldId && !state.fieldDefinitions.some((definition) => definition.id === state.activeSelectionFieldId)) {
+          state.activeSelectionFieldId = null;
+          state.rowFilterSelection = null;
+        }
+        if (state.activeSelectionFieldId) {
+          const sanitized = sanitizeDashboardPivotFieldSelection(state, state.activeSelectionFieldId);
+          if (sanitized instanceof Set) {
+            state.rowFilterSelection = new Set(sanitized);
+          } else {
+            state.rowFilterSelection = null;
+            state.activeSelectionFieldId = null;
+          }
+        } else {
+          state.rowFilterSelection = null;
+        }
+        ensureDashboardPivotActiveField(state);
+        updateDashboardPivotRowFilterButtonState(state);
+        if (dashboardPivotFiltersInitialised && state === activeDashboardPivotRowFilterState) {
+          renderDashboardPivotRowFilterFieldButtons(state);
+          renderDashboardPivotRowFilterOptions();
+        }
+      });
+    }
+
+    function doesDashboardPivotRowMatchDatasetFilter(rowMetadata, dataset, columnIndex, selectionSet) {
+      if (!rowMetadata || !dataset || !Array.isArray(dataset.rows) || !Array.isArray(dataset.columns)) {
+        return false;
+      }
+      if (!Number.isInteger(columnIndex) || columnIndex < 0 || columnIndex >= dataset.columns.length) {
+        return false;
+      }
+      if (!(selectionSet instanceof Set) || !selectionSet.size) {
+        return false;
+      }
+      const columnName = dataset.columns[columnIndex] || '';
+      const rowIndexes = Array.isArray(rowMetadata.rowIndexes) ? rowMetadata.rowIndexes : [];
+      if (!rowIndexes.length) {
+        return false;
+      }
+      for (let index = 0; index < rowIndexes.length; index += 1) {
+        const datasetRowIndex = rowIndexes[index];
+        if (!Number.isInteger(datasetRowIndex) || datasetRowIndex < 0 || datasetRowIndex >= dataset.rows.length) {
+          continue;
+        }
+        const datasetRow = dataset.rows[datasetRowIndex];
+        if (!Array.isArray(datasetRow)) {
+          continue;
+        }
+        const rawValue = columnIndex < datasetRow.length ? datasetRow[columnIndex] : '';
+        const formatted = formatCellValue(rawValue, columnName);
+        const normalized = normalizeDashboardFilterValue(formatted);
+        if (selectionSet.has(normalized)) {
+          return true;
+        }
+      }
+      return false;
+    }
+
     function updateDashboardPivotRowFilterButtonState(state) {
       if (!state) {
         return;
       }
       const button = state.rowFilterButton || null;
       const clearButton = state.rowFilterClearButton || null;
-      const availableValues = Array.isArray(state.availableValues) ? state.availableValues : [];
-      const hasOptions = availableValues.length > 0;
-      const hasActiveFilter = state.rowFilterSelection instanceof Set;
+      ensureDashboardPivotActiveField(state);
+      const hasOptions = Array.isArray(state.fieldDefinitions)
+        ? state.fieldDefinitions.some((definition) => {
+            const entry = getDashboardPivotFieldEntry(state, definition.id);
+            return Array.isArray(entry.options) && entry.options.length > 0;
+          })
+        : false;
+      const hasActiveFilter = state.rowFilterSelection instanceof Set && state.rowFilterSelection.size > 0;
       if (button) {
         if (hasOptions) {
           button.removeAttribute('disabled');
@@ -3553,11 +3793,11 @@
         return;
       }
       const definitions = fallbackDefinitions.map((definition) => ({ ...definition }));
+      ensureDashboardPivotActiveField(state);
       const markup = definitions
         .map((definition) => {
-          const hasValues = definition.id === 'row'
-            ? Array.isArray(state.availableValues) && state.availableValues.length > 0
-            : false;
+          const entry = getDashboardPivotFieldEntry(state, definition.id);
+          const hasValues = Array.isArray(entry.options) && entry.options.length > 0;
           const isActive = hasValues && state.activeFieldId === definition.id;
           const pressedAttr = isActive ? ' aria-pressed="true"' : ' aria-pressed="false"';
           const disabledAttr = hasValues ? '' : ' aria-disabled="true" disabled';
@@ -3575,13 +3815,22 @@
             return;
           }
           const definition = definitions.find((entry) => entry.id === fieldId);
-          const hasValues = definition && definition.id === 'row'
-            ? Array.isArray(state.availableValues) && state.availableValues.length > 0
-            : false;
+          const entry = definition ? getDashboardPivotFieldEntry(state, definition.id) : { options: [] };
+          const hasValues = Array.isArray(entry.options) && entry.options.length > 0;
           if (!hasValues) {
             return;
           }
           state.activeFieldId = fieldId;
+          if (state.fieldSelections instanceof Map) {
+            const storedSelection = state.fieldSelections.get(fieldId);
+            if (storedSelection instanceof Set) {
+              dashboardPivotRowFilterPendingSelection = new Set(storedSelection);
+            } else {
+              dashboardPivotRowFilterPendingSelection = null;
+            }
+          } else {
+            dashboardPivotRowFilterPendingSelection = null;
+          }
           renderDashboardPivotRowFilterFieldButtons(state);
           renderDashboardPivotRowFilterOptions();
         });
@@ -3593,13 +3842,15 @@
         return;
       }
       const state = activeDashboardPivotRowFilterState;
+      ensureDashboardPivotActiveField(state);
       const activeFieldId = state.activeFieldId || 'row';
-      const options = activeFieldId === 'row' && Array.isArray(state.availableValues) ? state.availableValues : [];
+      const entry = getDashboardPivotFieldEntry(state, activeFieldId);
+      const options = Array.isArray(entry.options) ? entry.options : [];
+      const keySet = entry.keySet instanceof Set
+        ? entry.keySet
+        : new Set(options.map((option) => option.key));
       const total = options.length;
       if (dashboardPivotRowFilterPendingSelection instanceof Set) {
-        const keySet = state.availableValueKeys instanceof Set
-          ? state.availableValueKeys
-          : new Set(options.map((entry) => entry.key));
         const sanitized = new Set();
         dashboardPivotRowFilterPendingSelection.forEach((key) => {
           if (keySet.has(key)) {
@@ -3647,7 +3898,7 @@
           const checkboxId = `dashboard-pivot-filter-option-${state.id}-${index}`;
           const isChecked = selection === null || selection.has(entry.key);
           const safeValue = escapeHtml(entry.key);
-          const safeLabel = escapeHtml(entry.label);
+          const safeLabel = escapeHtml(optionLabel(entry.label));
           return `<label class="regular-filter__option" for="${checkboxId}"><input type="checkbox" id="${checkboxId}" value="${safeValue}" ${isChecked ? 'checked' : ''}><span>${safeLabel}</span></label>`;
         })
         .join('');
@@ -3665,9 +3916,19 @@
       }
       activeDashboardPivotRowFilterState = state;
       activeDashboardPivotRowFilterTrigger = triggerButton || state.rowFilterButton || null;
-      dashboardPivotRowFilterPendingSelection = state.rowFilterSelection instanceof Set
-        ? new Set(state.rowFilterSelection)
-        : null;
+      ensureDashboardPivotActiveField(state);
+      const initialFieldId = state.activeFieldId || 'row';
+      let pendingSelection = null;
+      if (state.fieldSelections instanceof Map) {
+        const storedSelection = state.fieldSelections.get(initialFieldId);
+        if (storedSelection instanceof Set) {
+          pendingSelection = new Set(storedSelection);
+        }
+      }
+      if (!pendingSelection && state.activeSelectionFieldId === initialFieldId && state.rowFilterSelection instanceof Set) {
+        pendingSelection = new Set(state.rowFilterSelection);
+      }
+      dashboardPivotRowFilterPendingSelection = pendingSelection;
       const definitions = Array.isArray(state.fieldDefinitions) && state.fieldDefinitions.length
         ? state.fieldDefinitions
         : DASHBOARD_PIVOT_FILTER_FIELDS;
@@ -3763,8 +4024,17 @@
         if (!state) {
           return;
         }
-        const options = Array.isArray(state.availableValues) ? state.availableValues : [];
-        const allKeys = options.map((entry) => entry.key);
+        ensureDashboardPivotActiveField(state);
+        const activeFieldId = state.activeFieldId || 'row';
+        const entry = getDashboardPivotFieldEntry(state, activeFieldId);
+        const options = Array.isArray(entry.options) ? entry.options : [];
+        const keySet = entry.keySet instanceof Set
+          ? entry.keySet
+          : new Set(options.map((option) => option.key));
+        if (!keySet.has(target.value) && target.checked) {
+          return;
+        }
+        const allKeys = Array.from(keySet);
         const currentSelection = dashboardPivotRowFilterPendingSelection instanceof Set
           ? new Set(dashboardPivotRowFilterPendingSelection)
           : new Set(allKeys);
@@ -3786,11 +4056,14 @@
           return;
         }
         const state = activeDashboardPivotRowFilterState;
-        const options = Array.isArray(state.availableValues) ? state.availableValues : [];
-        const total = options.length;
-        const keySet = state.availableValueKeys instanceof Set
-          ? state.availableValueKeys
-          : new Set(options.map((entry) => entry.key));
+        ensureDashboardPivotActiveField(state);
+        const activeFieldId = state.activeFieldId || 'row';
+        const entry = getDashboardPivotFieldEntry(state, activeFieldId);
+        const options = Array.isArray(entry.options) ? entry.options : [];
+        const keySet = entry.keySet instanceof Set
+          ? entry.keySet
+          : new Set(options.map((option) => option.key));
+        const total = keySet.size;
         let selection = null;
         if (dashboardPivotRowFilterPendingSelection instanceof Set) {
           const sanitizedSelection = new Set();
@@ -3799,14 +4072,25 @@
               sanitizedSelection.add(key);
             }
           });
-          if (total > 0 && sanitizedSelection.size < total) {
+          if (total > 0 && sanitizedSelection.size > 0 && sanitizedSelection.size < total) {
             selection = sanitizedSelection;
           }
         }
         if (selection instanceof Set) {
-          state.rowFilterSelection = selection;
+          state.rowFilterSelection = new Set(selection);
+          state.activeSelectionFieldId = activeFieldId;
+          if (!(state.fieldSelections instanceof Map)) {
+            state.fieldSelections = new Map();
+          }
+          state.fieldSelections.set(activeFieldId, new Set(selection));
         } else {
           state.rowFilterSelection = null;
+          if (state.fieldSelections instanceof Map) {
+            state.fieldSelections.set(activeFieldId, null);
+          }
+          if (state.activeSelectionFieldId === activeFieldId) {
+            state.activeSelectionFieldId = null;
+          }
         }
         flashButtonBusy(dashboardPivotRowFilterApplyButton);
         applyDashboardPivotFilter(state.config);
@@ -3818,9 +4102,20 @@
           return;
         }
         dashboardPivotRowFilterPendingSelection = null;
-        activeDashboardPivotRowFilterState.rowFilterSelection = null;
+        const state = activeDashboardPivotRowFilterState;
+        if (!(state.fieldSelections instanceof Map)) {
+          state.fieldSelections = new Map();
+        }
+        ensureDashboardPivotActiveField(state);
+        const activeFieldId = state.activeFieldId || 'row';
+        state.fieldSelections.set(activeFieldId, null);
+        if (state.activeSelectionFieldId === activeFieldId) {
+          state.activeSelectionFieldId = null;
+          state.rowFilterSelection = null;
+        }
+        state.rowFilterSelection = null;
         renderDashboardPivotRowFilterOptions();
-        applyDashboardPivotFilter(activeDashboardPivotRowFilterState.config);
+        applyDashboardPivotFilter(state.config);
       });
 
       document.addEventListener('keydown', (event) => {
@@ -9571,7 +9866,8 @@
         return;
       }
       const rowFilterSelection = state.rowFilterSelection instanceof Set ? state.rowFilterSelection : null;
-      const hasRowFilter = rowFilterSelection instanceof Set;
+      const activeFieldId = state.activeSelectionFieldId || null;
+      const hasRowFilter = rowFilterSelection instanceof Set && rowFilterSelection.size > 0 && activeFieldId;
       const tableElement = document.getElementById(config.tableId);
       if (!tableElement) {
         updateDashboardPivotFilterVisualState(state);
@@ -9580,8 +9876,12 @@
       const tbody = tableElement.tBodies && tableElement.tBodies.length ? tableElement.tBodies[0] : null;
       let visibleRowCount = 0;
       let dataRowCount = 0;
+      const rowAttributes = Array.isArray(state.rowAttributes) ? state.rowAttributes : [];
+      const dataset = state.dataset || dashboardPivotSourceDataset;
+      const fieldDefinition = hasRowFilter ? state.fieldDefinitions.find((definition) => definition.id === activeFieldId) : null;
+      const columnIndex = fieldDefinition && Number.isInteger(fieldDefinition.columnIndex) ? fieldDefinition.columnIndex : null;
       if (tbody) {
-        Array.from(tbody.rows).forEach((row) => {
+        Array.from(tbody.rows).forEach((row, rowIndex) => {
           const cellCount = row.cells ? row.cells.length : 0;
           const messageCell = cellCount === 1 ? row.cells[0] : null;
           const isMessageRow = Boolean(messageCell && messageCell.classList.contains('dashboard-table__message'));
@@ -9596,9 +9896,20 @@
           dataRowCount += 1;
           const labelCell = row.cells[0];
           const labelText = labelCell && labelCell.textContent ? labelCell.textContent : '';
-          const normalizedLabel = normalizeDashboardPivotLabel(labelText);
-          const matchesRowFilter = !hasRowFilter || rowFilterSelection.has(normalizedLabel);
-          const shouldShow = matchesRowFilter;
+          let shouldShow = true;
+          if (hasRowFilter) {
+            if (activeFieldId === 'row') {
+              const normalizedLabel = normalizeDashboardPivotLabel(labelText);
+              shouldShow = rowFilterSelection.has(normalizedLabel);
+            } else {
+              const metadata = rowAttributes[rowIndex] || null;
+              if (!metadata || !dataset || columnIndex === null) {
+                shouldShow = false;
+              } else {
+                shouldShow = doesDashboardPivotRowMatchDatasetFilter(metadata, dataset, columnIndex, rowFilterSelection);
+              }
+            }
+          }
           row.hidden = !shouldShow;
           if (shouldShow) {
             visibleRowCount += 1;
@@ -9632,10 +9943,13 @@
           id: config.id,
           config,
           rowFilterSelection: null,
+          activeSelectionFieldId: null,
+          fieldSelections: new Map(),
+          fieldValueMap: new Map(),
+          rowAttributes: [],
+          dataset: null,
           rowFilterButton: rowFilterButton || null,
           rowFilterClearButton: rowFilterClearButton || null,
-          availableValues: [],
-          availableValueKeys: new Set(),
           fieldDefinitions,
           activeFieldId: fieldDefinitions.length ? fieldDefinitions[0].id : null,
         };
@@ -9651,6 +9965,10 @@
           state.rowFilterClearButton.setAttribute('disabled', 'true');
           state.rowFilterClearButton.addEventListener('click', () => {
             state.rowFilterSelection = null;
+            state.activeSelectionFieldId = null;
+            if (state.fieldSelections instanceof Map) {
+              state.fieldSelections.clear();
+            }
             if (activeDashboardPivotRowFilterState === state) {
               closeDashboardPivotRowFilter({ returnFocus: false });
             }
@@ -9680,11 +9998,12 @@
       tbody.appendChild(row);
       const pivotFilterState = dashboardPivotFilterTableMap.get(tableId);
       if (pivotFilterState && pivotFilterState.config) {
-        pivotFilterState.availableValues = [];
-        pivotFilterState.availableValueKeys = new Set();
-        if (pivotFilterState.rowFilterSelection instanceof Set) {
-          pivotFilterState.rowFilterSelection = null;
-        }
+        pivotFilterState.fieldValueMap = new Map();
+        pivotFilterState.fieldSelections = new Map();
+        pivotFilterState.rowAttributes = [];
+        pivotFilterState.dataset = null;
+        pivotFilterState.rowFilterSelection = null;
+        pivotFilterState.activeSelectionFieldId = null;
         if (activeDashboardPivotRowFilterState === pivotFilterState) {
           closeDashboardPivotRowFilter({ returnFocus: false });
         }
@@ -9759,37 +10078,41 @@
           }
         });
         const availableValues = Array.from(valueMap.values());
-        pivotFilterState.availableValues = availableValues;
-        pivotFilterState.availableValueKeys = new Set(availableValues.map((entry) => entry.key));
-        if (pivotFilterState.rowFilterSelection instanceof Set) {
-          const sanitizedSelection = new Set();
-          pivotFilterState.rowFilterSelection.forEach((key) => {
-            if (pivotFilterState.availableValueKeys.has(key)) {
-              sanitizedSelection.add(key);
-            }
-          });
-          if (sanitizedSelection.size === 0 && pivotFilterState.rowFilterSelection.size > 0) {
+        setDashboardPivotFieldOptions(pivotFilterState, 'row', availableValues);
+        if (!(pivotFilterState.fieldSelections instanceof Map)) {
+          pivotFilterState.fieldSelections = new Map();
+        }
+        const sanitizedRowSelection = sanitizeDashboardPivotFieldSelection(pivotFilterState, 'row');
+        if (sanitizedRowSelection instanceof Set) {
+          pivotFilterState.fieldSelections.set('row', new Set(sanitizedRowSelection));
+          if (pivotFilterState.activeSelectionFieldId === 'row') {
+            pivotFilterState.rowFilterSelection = new Set(sanitizedRowSelection);
+          }
+        } else {
+          pivotFilterState.fieldSelections.set('row', null);
+          if (pivotFilterState.activeSelectionFieldId === 'row') {
+            pivotFilterState.activeSelectionFieldId = null;
             pivotFilterState.rowFilterSelection = null;
-          } else if (sanitizedSelection.size !== pivotFilterState.rowFilterSelection.size) {
-            pivotFilterState.rowFilterSelection = sanitizedSelection;
-          } else {
-            pivotFilterState.rowFilterSelection = sanitizedSelection;
           }
         }
-        if (!availableValues.length) {
-          pivotFilterState.rowFilterSelection = null;
-        }
+        pivotFilterState.rowAttributes = Array.isArray(pivot?.rowAttributes)
+          ? pivot.rowAttributes.map((entry) => ({ ...entry }))
+          : [];
+        pivotFilterState.dataset = dashboardPivotSourceDataset || null;
         updateDashboardPivotRowFilterButtonState(pivotFilterState);
         if (activeDashboardPivotRowFilterState === pivotFilterState) {
           if (dashboardPivotRowFilterPendingSelection instanceof Set) {
+            const entry = getDashboardPivotFieldEntry(pivotFilterState, pivotFilterState.activeFieldId || 'row');
+            const keySet = entry.keySet instanceof Set
+              ? entry.keySet
+              : new Set(entry.options.map((option) => option.key));
             const sanitizedPending = new Set();
             dashboardPivotRowFilterPendingSelection.forEach((key) => {
-              if (pivotFilterState.availableValueKeys.has(key)) {
+              if (keySet.has(key)) {
                 sanitizedPending.add(key);
               }
             });
-            const total = availableValues.length;
-            if (total > 0 && sanitizedPending.size >= total) {
+            if (keySet.size > 0 && sanitizedPending.size >= keySet.size) {
               dashboardPivotRowFilterPendingSelection = null;
             } else {
               dashboardPivotRowFilterPendingSelection = sanitizedPending;
@@ -9893,7 +10216,7 @@
       const groupLookup = new Map();
       const normalizedTotal = TOTAL_ROW_LABEL.toLowerCase();
 
-      dataset.rows.forEach((row) => {
+      dataset.rows.forEach((row, rowIndex) => {
         const rawLabel = row[groupIndex];
         if (isPlaceholderValue(rawLabel)) {
           return;
@@ -9918,10 +10241,12 @@
               }
               return { sum: 0, hasValue: false, hasError: false, errorValue: '', textValue: '' };
             }),
+            rowIndexes: new Set(),
           };
           groupLookup.set(key, entry);
           groups.push(entry);
         }
+        entry.rowIndexes.add(rowIndex);
         includedColumns.forEach((column, columnIndex) => {
           const descriptor = columnDescriptors[columnIndex];
           if (!descriptor) {
@@ -10062,10 +10387,18 @@
         });
       }
 
-      return { columns, rows, totalRow };
+      const rowAttributes = groups.map((entry) => ({
+        label: entry.label,
+        key: entry.label ? entry.label.toLowerCase() : '',
+        rowIndexes: entry.rowIndexes instanceof Set ? Array.from(entry.rowIndexes) : [],
+      }));
+
+      return { columns, rows, totalRow, rowAttributes };
     }
 
     function buildDashboardPivotResultsFromDataset(dataset) {
+      dashboardPivotSourceDataset = dataset || null;
+      updateDashboardPivotFilterModel(dataset || null);
       const results = new Map();
       DASHBOARD_PIVOT_CONFIGS.forEach((config) => {
         try {
