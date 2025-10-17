@@ -1099,7 +1099,7 @@
       color: var(--muted);
       font-size: 0.95rem;
     }
-    .dashboard-card__quick-filter {
+    .dashboard-card__quick-filter { 
       display: inline-flex;
       align-items: center;
       gap: 0.5rem;
@@ -1111,6 +1111,12 @@
         border-color var(--transition-snappy) ease,
         background var(--transition-snappy) ease,
         box-shadow var(--transition-snappy) ease;
+    }
+    .dashboard-card__quick-filter-group {
+      position: relative;
+      display: inline-flex;
+      flex-direction: column;
+      align-items: stretch;
     }
     .dashboard-card__quick-filter[data-active="true"] {
       border-color: rgba(20, 90, 252, 0.55);
@@ -1132,6 +1138,20 @@
       outline: none;
       padding: 0;
     }
+    .dashboard-card__quick-filter-toggle {
+      border: none;
+      background: none;
+      font: inherit;
+      color: var(--tab-text);
+      min-width: 8.75rem;
+      text-align: left;
+      padding: 0;
+      cursor: pointer;
+    }
+    .dashboard-card__quick-filter-toggle[disabled] {
+      cursor: not-allowed;
+      color: var(--tab-text-muted);
+    }
     .dashboard-card__quick-filter-select {
       border: none;
       background: transparent;
@@ -1145,6 +1165,86 @@
     .dashboard-card__quick-filter-select:disabled {
       cursor: not-allowed;
       color: var(--tab-text-muted);
+    }
+    .dashboard-card__quick-filter-menu {
+      position: absolute;
+      top: calc(100% + 0.5rem);
+      right: 0;
+      min-width: 16rem;
+      border-radius: 0.75rem;
+      border: 1px solid rgba(27, 30, 40, 0.1);
+      background: #fff;
+      box-shadow: 0 18px 45px rgba(15, 23, 42, 0.16);
+      z-index: 50;
+      overflow: hidden;
+    }
+    .dashboard-card__quick-filter-menu-inner {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      padding: 1rem;
+      max-height: 18rem;
+      overflow: auto;
+    }
+    .dashboard-card__quick-filter-select-all {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--tab-text);
+    }
+    .dashboard-card__quick-filter-options {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .dashboard-card__quick-filter-option {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.9rem;
+      color: var(--tab-text);
+      cursor: pointer;
+    }
+    .dashboard-card__quick-filter-option input[type="checkbox"] {
+      width: 1rem;
+      height: 1rem;
+    }
+    .dashboard-card__quick-filter-menu-empty {
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+    .dashboard-card__quick-filter-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+      margin-top: 0.25rem;
+    }
+    .dashboard-card__quick-filter-action {
+      border: none;
+      background: none;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--accent);
+      cursor: pointer;
+      padding: 0.35rem 0.85rem;
+      border-radius: 0.5rem;
+      transition: background var(--transition-snappy) ease, color var(--transition-snappy) ease;
+    }
+    .dashboard-card__quick-filter-action:hover,
+    .dashboard-card__quick-filter-action:focus-visible {
+      background: var(--accent-soft);
+      outline: none;
+    }
+    .dashboard-card__quick-filter-action--primary {
+      background: var(--accent);
+      color: #fff;
+    }
+    .dashboard-card__quick-filter-action--primary:hover,
+    .dashboard-card__quick-filter-action--primary:focus-visible {
+      background: #0f43c9;
     }
     .dashboard-card__quick-filter-input::placeholder {
       color: var(--tab-text-muted);
@@ -2513,16 +2613,53 @@
             <p class="dashboard-card__subtitle">Direct table from Dashboard worksheet (cells A41 to O60)</p>
           </div>
           <div class="dashboard-card__toolbar">
-            <label class="dashboard-card__quick-filter" for="dashboard-summary-store-filter">
-              <span class="dashboard-card__quick-filter-label">Store</span>
-              <select
+            <div class="dashboard-card__quick-filter-group" id="dashboard-summary-store-filter-group">
+              <div
+                class="dashboard-card__quick-filter"
                 id="dashboard-summary-store-filter"
-                class="dashboard-card__quick-filter-select"
-                disabled
+                data-active="false"
               >
-                <option value="">All stores</option>
-              </select>
-            </label>
+                <span class="dashboard-card__quick-filter-label">Store</span>
+                <button
+                  type="button"
+                  class="dashboard-card__quick-filter-toggle"
+                  id="dashboard-summary-store-filter-toggle"
+                  aria-haspopup="true"
+                  aria-expanded="false"
+                  disabled
+                >
+                  All stores
+                </button>
+              </div>
+              <div class="dashboard-card__quick-filter-menu" id="dashboard-summary-store-filter-menu" hidden>
+                <div class="dashboard-card__quick-filter-menu-inner">
+                  <label class="dashboard-card__quick-filter-select-all" for="dashboard-summary-store-filter-select-all">
+                    <input type="checkbox" id="dashboard-summary-store-filter-select-all" />
+                    <span>Select all</span>
+                  </label>
+                  <div class="dashboard-card__quick-filter-options" id="dashboard-summary-store-filter-options"></div>
+                  <p class="dashboard-card__quick-filter-menu-empty" id="dashboard-summary-store-filter-menu-empty" hidden>
+                    No stores available
+                  </p>
+                  <div class="dashboard-card__quick-filter-actions">
+                    <button
+                      type="button"
+                      class="dashboard-card__quick-filter-action"
+                      id="dashboard-summary-store-filter-reset"
+                    >
+                      Reset
+                    </button>
+                    <button
+                      type="button"
+                      class="dashboard-card__quick-filter-action dashboard-card__quick-filter-action--primary"
+                      id="dashboard-summary-store-filter-apply"
+                    >
+                      Apply
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
             <p class="dashboard-card__quick-filter-empty" id="dashboard-summary-store-filter-empty" hidden>
               No stores available
             </p>
@@ -2775,16 +2912,69 @@
     const skuFilterClearButtonElement = document.getElementById('sku-filter-clear-button');
     const mainFilterClearButtonElement = document.getElementById('main-filter-clear-button');
     const regularFilterClearButtonElement = document.getElementById('regular-filter-clear-button');
-    const dashboardSummaryStoreFilterElement = document.getElementById('dashboard-summary-store-filter');
+    const dashboardSummaryStoreFilterGroupElement = document.getElementById('dashboard-summary-store-filter-group');
+    const dashboardSummaryStoreFilterContainerElement = document.getElementById('dashboard-summary-store-filter');
+    const dashboardSummaryStoreFilterToggleElement = document.getElementById('dashboard-summary-store-filter-toggle');
+    const dashboardSummaryStoreFilterMenuElement = document.getElementById('dashboard-summary-store-filter-menu');
+    const dashboardSummaryStoreFilterOptionsElement = document.getElementById('dashboard-summary-store-filter-options');
+    const dashboardSummaryStoreFilterSelectAllElement = document.getElementById('dashboard-summary-store-filter-select-all');
+    const dashboardSummaryStoreFilterApplyElement = document.getElementById('dashboard-summary-store-filter-apply');
+    const dashboardSummaryStoreFilterResetElement = document.getElementById('dashboard-summary-store-filter-reset');
+    const dashboardSummaryStoreFilterMenuEmptyElement = document.getElementById('dashboard-summary-store-filter-menu-empty');
     const dashboardSummaryStoreFilterEmptyElement = document.getElementById('dashboard-summary-store-filter-empty');
 
-    if (dashboardSummaryStoreFilterElement) {
-      dashboardSummaryStoreFilterElement.addEventListener('change', () => {
-        const value = typeof dashboardSummaryStoreFilterElement.value === 'string'
-          ? dashboardSummaryStoreFilterElement.value
-          : '';
-        dashboardSummaryStoreFilterValue = value;
+    if (dashboardSummaryStoreFilterToggleElement) {
+      dashboardSummaryStoreFilterToggleElement.addEventListener('click', () => {
+        if (!dashboardSummaryStoreFilterMenuElement) {
+          return;
+        }
+        if (dashboardSummaryStoreFilterMenuElement.hidden) {
+          openDashboardSummaryStoreFilterMenu();
+        } else {
+          closeDashboardSummaryStoreFilterMenu();
+        }
+      });
+    }
+
+    if (dashboardSummaryStoreFilterOptionsElement) {
+      dashboardSummaryStoreFilterOptionsElement.addEventListener('change', (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLInputElement) || target.type !== 'checkbox') {
+          return;
+        }
+        handleDashboardSummaryStoreFilterOptionToggle(target.value, target.checked);
+      });
+    }
+
+    if (dashboardSummaryStoreFilterSelectAllElement) {
+      dashboardSummaryStoreFilterSelectAllElement.addEventListener('change', (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLInputElement)) {
+          return;
+        }
+        if (target.checked) {
+          dashboardSummaryStoreFilterPendingSelection = null;
+        } else {
+          dashboardSummaryStoreFilterPendingSelection = new Set();
+        }
+        renderDashboardSummaryStoreFilterOptions();
+      });
+    }
+
+    if (dashboardSummaryStoreFilterApplyElement) {
+      dashboardSummaryStoreFilterApplyElement.addEventListener('click', () => {
+        applyDashboardSummaryStoreFilterSelection();
+      });
+    }
+
+    if (dashboardSummaryStoreFilterResetElement) {
+      dashboardSummaryStoreFilterResetElement.addEventListener('click', () => {
+        dashboardSummaryStoreFilterSelection = null;
+        dashboardSummaryStoreFilterPendingSelection = null;
+        updateDashboardSummaryStoreFilterSummaryLabel();
+        renderDashboardSummaryStoreFilterOptions();
         updateDashboardSummaryTable();
+        closeDashboardSummaryStoreFilterMenu();
       });
     }
 
@@ -2883,7 +3073,11 @@
     let dashboardSummaryTableInitialised = false;
     let dashboardSummaryTableCache = null;
     let dashboardSummaryTablePromise = null;
-    let dashboardSummaryStoreFilterValue = '';
+    let dashboardSummaryStoreFilterSelection = null;
+    let dashboardSummaryStoreFilterPendingSelection = null;
+    let dashboardSummaryStoreFilterOptions = [];
+    let dashboardSummaryStoreFilterMenuVisible = false;
+    let dashboardSummaryStoreFilterMenuDocumentHandlerRegistered = false;
     let activeTabId = null;
     let newProductInitialised = false;
     let newProductPivotCache = null;
@@ -5151,11 +5345,146 @@
       return String(value).trim().toLowerCase();
     }
 
-    function updateDashboardSummaryStoreFilterOptions(rows) {
-      if (!dashboardSummaryStoreFilterElement) {
+    function updateDashboardSummaryStoreFilterSummaryLabel() {
+      if (!dashboardSummaryStoreFilterToggleElement) {
+        return;
+      }
+      const selection = dashboardSummaryStoreFilterSelection instanceof Set
+        ? dashboardSummaryStoreFilterSelection
+        : null;
+      let label = 'All stores';
+      if (selection instanceof Set) {
+        if (selection.size === 0) {
+          label = 'No stores selected';
+        } else if (selection.size === 1) {
+          const [firstKey] = selection;
+          const match = dashboardSummaryStoreFilterOptions.find((option) => option.key === firstKey);
+          label = match ? match.label : '1 store';
+        } else {
+          label = `${selection.size} stores`;
+        }
+      }
+      dashboardSummaryStoreFilterToggleElement.textContent = label;
+      if (dashboardSummaryStoreFilterContainerElement) {
+        dashboardSummaryStoreFilterContainerElement.dataset.active = selection instanceof Set ? 'true' : 'false';
+      }
+      dashboardSummaryStoreFilterToggleElement.setAttribute('aria-expanded', dashboardSummaryStoreFilterMenuVisible ? 'true' : 'false');
+    }
+
+    function updateDashboardSummaryStoreFilterSelectAllState() {
+      if (!dashboardSummaryStoreFilterSelectAllElement) {
+        return;
+      }
+      const options = Array.isArray(dashboardSummaryStoreFilterOptions)
+        ? dashboardSummaryStoreFilterOptions
+        : [];
+      const total = options.length;
+      if (!total) {
+        dashboardSummaryStoreFilterSelectAllElement.checked = false;
+        dashboardSummaryStoreFilterSelectAllElement.indeterminate = false;
+        dashboardSummaryStoreFilterSelectAllElement.disabled = true;
+        return;
+      }
+      dashboardSummaryStoreFilterSelectAllElement.disabled = false;
+      const selection = dashboardSummaryStoreFilterPendingSelection instanceof Set
+        ? dashboardSummaryStoreFilterPendingSelection
+        : dashboardSummaryStoreFilterSelection instanceof Set
+          ? dashboardSummaryStoreFilterSelection
+          : null;
+      if (!(selection instanceof Set)) {
+        dashboardSummaryStoreFilterSelectAllElement.checked = true;
+        dashboardSummaryStoreFilterSelectAllElement.indeterminate = false;
+        return;
+      }
+      if (selection.size === 0) {
+        dashboardSummaryStoreFilterSelectAllElement.checked = false;
+        dashboardSummaryStoreFilterSelectAllElement.indeterminate = false;
+        return;
+      }
+      if (selection.size >= total) {
+        dashboardSummaryStoreFilterSelectAllElement.checked = true;
+        dashboardSummaryStoreFilterSelectAllElement.indeterminate = false;
+        dashboardSummaryStoreFilterPendingSelection = null;
+        return;
+      }
+      dashboardSummaryStoreFilterSelectAllElement.checked = false;
+      dashboardSummaryStoreFilterSelectAllElement.indeterminate = true;
+    }
+
+    function renderDashboardSummaryStoreFilterOptions() {
+      if (!dashboardSummaryStoreFilterOptionsElement) {
+        return;
+      }
+      const options = Array.isArray(dashboardSummaryStoreFilterOptions)
+        ? dashboardSummaryStoreFilterOptions
+        : [];
+      const keySet = new Set(options.map((option) => option.key));
+
+      if (dashboardSummaryStoreFilterPendingSelection instanceof Set) {
+        const sanitizedPending = new Set();
+        dashboardSummaryStoreFilterPendingSelection.forEach((key) => {
+          if (keySet.has(key)) {
+            sanitizedPending.add(key);
+          }
+        });
+        if (sanitizedPending.size >= keySet.size && keySet.size > 0) {
+          dashboardSummaryStoreFilterPendingSelection = null;
+        } else {
+          dashboardSummaryStoreFilterPendingSelection = sanitizedPending;
+        }
+      } else if (dashboardSummaryStoreFilterPendingSelection !== null && !(dashboardSummaryStoreFilterPendingSelection instanceof Set)) {
+        dashboardSummaryStoreFilterPendingSelection = null;
+      }
+
+      const selection = dashboardSummaryStoreFilterPendingSelection instanceof Set
+        ? dashboardSummaryStoreFilterPendingSelection
+        : dashboardSummaryStoreFilterSelection instanceof Set
+          ? dashboardSummaryStoreFilterSelection
+          : null;
+
+      if (dashboardSummaryStoreFilterApplyElement) {
+        if (options.length) {
+          dashboardSummaryStoreFilterApplyElement.removeAttribute('disabled');
+        } else {
+          dashboardSummaryStoreFilterApplyElement.setAttribute('disabled', 'true');
+        }
+      }
+      if (dashboardSummaryStoreFilterResetElement) {
+        if (options.length) {
+          dashboardSummaryStoreFilterResetElement.removeAttribute('disabled');
+        } else {
+          dashboardSummaryStoreFilterResetElement.setAttribute('disabled', 'true');
+        }
+      }
+
+      if (!options.length) {
+        dashboardSummaryStoreFilterOptionsElement.innerHTML = '';
+        if (dashboardSummaryStoreFilterMenuEmptyElement) {
+          dashboardSummaryStoreFilterMenuEmptyElement.hidden = false;
+        }
+        updateDashboardSummaryStoreFilterSelectAllState();
         return;
       }
 
+      if (dashboardSummaryStoreFilterMenuEmptyElement) {
+        dashboardSummaryStoreFilterMenuEmptyElement.hidden = true;
+      }
+
+      const optionMarkup = options
+        .map((option, index) => {
+          const optionId = `dashboard-summary-store-filter-option-${index}`;
+          const isChecked = !(selection instanceof Set) || selection.has(option.key);
+          const safeValue = escapeHtml(option.key);
+          const safeLabel = escapeHtml(option.label);
+          return `<label class="dashboard-card__quick-filter-option" for="${optionId}"><input type="checkbox" id="${optionId}" value="${safeValue}" ${isChecked ? 'checked' : ''}><span>${safeLabel}</span></label>`;
+        })
+        .join('');
+      dashboardSummaryStoreFilterOptionsElement.innerHTML = optionMarkup;
+      animateOptionList(dashboardSummaryStoreFilterOptionsElement, '.dashboard-card__quick-filter-option');
+      updateDashboardSummaryStoreFilterSelectAllState();
+    }
+
+    function updateDashboardSummaryStoreFilterOptions(rows) {
       const storeMap = new Map();
       if (Array.isArray(rows)) {
         rows.forEach((row) => {
@@ -5176,40 +5505,216 @@
         });
       }
 
-      const options = Array.from(storeMap.entries())
+      dashboardSummaryStoreFilterOptions = Array.from(storeMap.entries())
         .map(([key, label]) => ({ key, label }))
         .sort((a, b) => a.label.localeCompare(b.label, undefined, { sensitivity: 'base' }));
 
-      const selectElement = dashboardSummaryStoreFilterElement;
-      const previousValue = dashboardSummaryStoreFilterValue;
-      selectElement.innerHTML = '';
-      const defaultOption = document.createElement('option');
-      defaultOption.value = '';
-      defaultOption.textContent = 'All stores';
-      selectElement.appendChild(defaultOption);
-
-      options.forEach((option) => {
-        const optionElement = document.createElement('option');
-        optionElement.value = option.key;
-        optionElement.textContent = option.label;
-        selectElement.appendChild(optionElement);
-      });
-
-      const hasOptions = options.length > 0;
-      const nextValue = hasOptions && options.some((option) => option.key === previousValue)
-        ? previousValue
-        : '';
-      dashboardSummaryStoreFilterValue = nextValue;
-      selectElement.value = nextValue;
-
-      if (hasOptions) {
-        selectElement.removeAttribute('disabled');
-      } else {
-        selectElement.setAttribute('disabled', 'true');
+      const availableKeys = new Set(dashboardSummaryStoreFilterOptions.map((option) => option.key));
+      if (dashboardSummaryStoreFilterSelection instanceof Set) {
+        const sanitizedSelection = new Set();
+        dashboardSummaryStoreFilterSelection.forEach((key) => {
+          if (availableKeys.has(key)) {
+            sanitizedSelection.add(key);
+          }
+        });
+        if (sanitizedSelection.size >= availableKeys.size && availableKeys.size > 0) {
+          dashboardSummaryStoreFilterSelection = null;
+        } else {
+          dashboardSummaryStoreFilterSelection = sanitizedSelection;
+        }
       }
+
+      if (dashboardSummaryStoreFilterPendingSelection instanceof Set) {
+        const sanitizedPending = new Set();
+        dashboardSummaryStoreFilterPendingSelection.forEach((key) => {
+          if (availableKeys.has(key)) {
+            sanitizedPending.add(key);
+          }
+        });
+        if (sanitizedPending.size === 0) {
+          dashboardSummaryStoreFilterPendingSelection = new Set();
+        } else if (sanitizedPending.size >= availableKeys.size && availableKeys.size > 0) {
+          dashboardSummaryStoreFilterPendingSelection = null;
+        } else {
+          dashboardSummaryStoreFilterPendingSelection = sanitizedPending;
+        }
+      }
+
+      const hasOptions = dashboardSummaryStoreFilterOptions.length > 0;
+      if (dashboardSummaryStoreFilterToggleElement) {
+        if (hasOptions) {
+          dashboardSummaryStoreFilterToggleElement.removeAttribute('disabled');
+        } else {
+          dashboardSummaryStoreFilterToggleElement.setAttribute('disabled', 'true');
+        }
+      }
+
+      if (!hasOptions) {
+        dashboardSummaryStoreFilterSelection = null;
+      }
+
+      if (!hasOptions && dashboardSummaryStoreFilterMenuVisible) {
+        closeDashboardSummaryStoreFilterMenu();
+      }
+
+      renderDashboardSummaryStoreFilterOptions();
+      updateDashboardSummaryStoreFilterSummaryLabel();
 
       if (dashboardSummaryStoreFilterEmptyElement) {
         dashboardSummaryStoreFilterEmptyElement.hidden = hasOptions;
+      }
+    }
+
+    function handleDashboardSummaryStoreFilterOptionToggle(optionKey, isChecked) {
+      const options = Array.isArray(dashboardSummaryStoreFilterOptions)
+        ? dashboardSummaryStoreFilterOptions
+        : [];
+      if (!options.length) {
+        return;
+      }
+      const keySet = new Set(options.map((option) => option.key));
+      if (!keySet.has(optionKey)) {
+        return;
+      }
+      const allKeys = Array.from(keySet);
+      const baseSelection = dashboardSummaryStoreFilterPendingSelection instanceof Set
+        ? new Set(dashboardSummaryStoreFilterPendingSelection)
+        : dashboardSummaryStoreFilterSelection instanceof Set
+          ? new Set(dashboardSummaryStoreFilterSelection)
+          : new Set(allKeys);
+      if (isChecked) {
+        baseSelection.add(optionKey);
+      } else {
+        baseSelection.delete(optionKey);
+      }
+      if (baseSelection.size >= allKeys.length) {
+        dashboardSummaryStoreFilterPendingSelection = null;
+      } else {
+        dashboardSummaryStoreFilterPendingSelection = baseSelection;
+      }
+      renderDashboardSummaryStoreFilterOptions();
+    }
+
+    function applyDashboardSummaryStoreFilterSelection() {
+      const options = Array.isArray(dashboardSummaryStoreFilterOptions)
+        ? dashboardSummaryStoreFilterOptions
+        : [];
+      const keySet = new Set(options.map((option) => option.key));
+      let nextSelection = null;
+      if (dashboardSummaryStoreFilterPendingSelection instanceof Set) {
+        const sanitizedSelection = new Set();
+        dashboardSummaryStoreFilterPendingSelection.forEach((key) => {
+          if (keySet.has(key)) {
+            sanitizedSelection.add(key);
+          }
+        });
+        if (sanitizedSelection.size === 0) {
+          nextSelection = new Set();
+        } else if (sanitizedSelection.size >= keySet.size && keySet.size > 0) {
+          nextSelection = null;
+        } else {
+          nextSelection = sanitizedSelection;
+        }
+      } else if (dashboardSummaryStoreFilterPendingSelection === null) {
+        nextSelection = null;
+      }
+
+      if (nextSelection === null) {
+        dashboardSummaryStoreFilterSelection = null;
+      } else {
+        dashboardSummaryStoreFilterSelection = nextSelection;
+      }
+
+      dashboardSummaryStoreFilterPendingSelection = null;
+      updateDashboardSummaryStoreFilterSummaryLabel();
+      renderDashboardSummaryStoreFilterOptions();
+      updateDashboardSummaryTable();
+      closeDashboardSummaryStoreFilterMenu();
+    }
+
+    function handleDashboardSummaryStoreFilterDocumentClick(event) {
+      if (!dashboardSummaryStoreFilterMenuVisible) {
+        return;
+      }
+      const target = event.target;
+      if (!(target instanceof Node)) {
+        return;
+      }
+      if (dashboardSummaryStoreFilterGroupElement && dashboardSummaryStoreFilterGroupElement.contains(target)) {
+        return;
+      }
+      closeDashboardSummaryStoreFilterMenu();
+    }
+
+    function handleDashboardSummaryStoreFilterKeydown(event) {
+      if (!dashboardSummaryStoreFilterMenuVisible) {
+        return;
+      }
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeDashboardSummaryStoreFilterMenu(true);
+      }
+    }
+
+    function registerDashboardSummaryStoreFilterDismissListeners() {
+      if (dashboardSummaryStoreFilterMenuDocumentHandlerRegistered) {
+        return;
+      }
+      document.addEventListener('click', handleDashboardSummaryStoreFilterDocumentClick, true);
+      document.addEventListener('keydown', handleDashboardSummaryStoreFilterKeydown, true);
+      dashboardSummaryStoreFilterMenuDocumentHandlerRegistered = true;
+    }
+
+    function unregisterDashboardSummaryStoreFilterDismissListeners() {
+      if (!dashboardSummaryStoreFilterMenuDocumentHandlerRegistered) {
+        return;
+      }
+      document.removeEventListener('click', handleDashboardSummaryStoreFilterDocumentClick, true);
+      document.removeEventListener('keydown', handleDashboardSummaryStoreFilterKeydown, true);
+      dashboardSummaryStoreFilterMenuDocumentHandlerRegistered = false;
+    }
+
+    function openDashboardSummaryStoreFilterMenu() {
+      if (!dashboardSummaryStoreFilterMenuElement || dashboardSummaryStoreFilterMenuVisible) {
+        return;
+      }
+      if (!Array.isArray(dashboardSummaryStoreFilterOptions) || !dashboardSummaryStoreFilterOptions.length) {
+        return;
+      }
+      dashboardSummaryStoreFilterPendingSelection = dashboardSummaryStoreFilterSelection instanceof Set
+        ? new Set(dashboardSummaryStoreFilterSelection)
+        : null;
+      renderDashboardSummaryStoreFilterOptions();
+      dashboardSummaryStoreFilterMenuElement.hidden = false;
+      dashboardSummaryStoreFilterMenuVisible = true;
+      updateDashboardSummaryStoreFilterSummaryLabel();
+      registerDashboardSummaryStoreFilterDismissListeners();
+      setTimeout(() => {
+        if (!dashboardSummaryStoreFilterMenuVisible) {
+          return;
+        }
+        const firstCheckbox = dashboardSummaryStoreFilterOptionsElement
+          ? dashboardSummaryStoreFilterOptionsElement.querySelector('input[type="checkbox"]')
+          : null;
+        if (firstCheckbox instanceof HTMLElement) {
+          firstCheckbox.focus();
+        } else if (dashboardSummaryStoreFilterSelectAllElement) {
+          dashboardSummaryStoreFilterSelectAllElement.focus();
+        }
+      }, 0);
+    }
+
+    function closeDashboardSummaryStoreFilterMenu(focusToggle = false) {
+      if (!dashboardSummaryStoreFilterMenuElement || dashboardSummaryStoreFilterMenuElement.hidden) {
+        return;
+      }
+      dashboardSummaryStoreFilterMenuElement.hidden = true;
+      dashboardSummaryStoreFilterMenuVisible = false;
+      dashboardSummaryStoreFilterPendingSelection = null;
+      unregisterDashboardSummaryStoreFilterDismissListeners();
+      updateDashboardSummaryStoreFilterSummaryLabel();
+      if (focusToggle && dashboardSummaryStoreFilterToggleElement) {
+        dashboardSummaryStoreFilterToggleElement.focus();
       }
     }
 
@@ -5217,17 +5722,53 @@
       if (!Array.isArray(rows)) {
         return [];
       }
-      if (!dashboardSummaryStoreFilterValue) {
+      if (!(dashboardSummaryStoreFilterSelection instanceof Set)) {
         return rows;
       }
-      const filterKey = dashboardSummaryStoreFilterValue;
+      if (dashboardSummaryStoreFilterSelection.size === 0) {
+        return [];
+      }
       return rows.filter((row) => {
         if (!Array.isArray(row) || !row.length) {
           return false;
         }
         const key = normaliseDashboardSummaryStoreKey(row[0]);
-        return key === filterKey;
+        return dashboardSummaryStoreFilterSelection.has(key);
       });
+    }
+
+    function buildDashboardSummaryTotalRow(rows, columns, fallbackTotalRow) {
+      if (!Array.isArray(rows) || !rows.length || !Array.isArray(columns) || !columns.length) {
+        return null;
+      }
+      const totalLength = columns.length;
+      const totals = new Array(totalLength);
+      for (let columnIndex = 0; columnIndex < totalLength; columnIndex += 1) {
+        if (columnIndex === 0) {
+          const fallbackLabel = Array.isArray(fallbackTotalRow) && fallbackTotalRow.length
+            ? fallbackTotalRow[0]
+            : 'Grand Total';
+          totals[columnIndex] = fallbackLabel || 'Grand Total';
+          continue;
+        }
+        let sum = 0;
+        let hasNumeric = false;
+        rows.forEach((row) => {
+          const value = columnIndex < row.length ? row[columnIndex] : null;
+          if (typeof value === 'number' && !Number.isNaN(value)) {
+            sum += value;
+            hasNumeric = true;
+          }
+        });
+        if (hasNumeric) {
+          totals[columnIndex] = sum;
+        } else if (Array.isArray(fallbackTotalRow) && columnIndex < fallbackTotalRow.length) {
+          totals[columnIndex] = fallbackTotalRow[columnIndex];
+        } else {
+          totals[columnIndex] = '';
+        }
+      }
+      return totals;
     }
 
     function fetchDashboardSummaryTable() {
@@ -5320,7 +5861,7 @@
 
       updateDashboardSummaryStoreFilterOptions(dataRows);
       const filteredRows = filterDashboardSummaryRowsByStore(dataRows);
-      const storeFilterActive = Boolean(dashboardSummaryStoreFilterValue);
+      const storeFilterActive = dashboardSummaryStoreFilterSelection instanceof Set;
 
       tableElement.innerHTML = '';
       const thead = tableElement.createTHead();
@@ -5364,6 +5905,10 @@
         && totalRow.length
         && (!storeFilterActive || filteredRows.length);
       if (shouldRenderTotal) {
+        const computedTotalRow = storeFilterActive && filteredRows.length
+          ? buildDashboardSummaryTotalRow(filteredRows, columns, totalRow)
+          : totalRow;
+        const finalTotalRow = Array.isArray(computedTotalRow) ? computedTotalRow : totalRow;
         const tfoot = tableElement.createTFoot();
         const tr = tfoot.insertRow();
         tr.className = 'dashboard-table__total';
@@ -5373,7 +5918,7 @@
           if (columnIndex === 0) {
             cell.scope = 'row';
           }
-          const value = columnIndex < totalRow.length ? totalRow[columnIndex] : '';
+          const value = columnIndex < finalTotalRow.length ? finalTotalRow[columnIndex] : '';
           const formatted = formatDashboardSummaryValue(value, column);
           cell.textContent = formatted;
           if (columnIndex !== 0 && typeof value === 'number' && value < 0) {
