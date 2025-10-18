@@ -1,3 +1,2 @@
 analysis/*.json
 !analysis/workbook-config.json
-__pycache__/
