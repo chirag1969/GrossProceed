@@ -10926,6 +10926,31 @@
       updateDashboardPivotRowFilterButtonState(state);
     }
 
+    function renderBaseDashboardPivot(state, config) {
+      if (!state || !config) {
+        return false;
+      }
+      const baseDataset = state.dataset || dashboardPivotSourceDataset || null;
+      const pivotMap = mainDashboardPivotCache instanceof Map ? mainDashboardPivotCache : null;
+      let basePivot = pivotMap ? pivotMap.get(config.id) : null;
+      if (!basePivot || basePivot.error) {
+        try {
+          basePivot = buildDashboardPivot(baseDataset, config);
+        } catch (error) {
+          console.error(`Failed to rebuild dashboard pivot for ${config.id}:`, error);
+          basePivot = null;
+        }
+      }
+      if (!basePivot) {
+        return false;
+      }
+      renderDashboardPivotTable(config, basePivot, {
+        datasetOverride: state.activeDataset || baseDataset,
+        skipFilterApplication: true,
+      });
+      return true;
+    }
+
     function applyDashboardPivotFilter(config) {
       if (!config) {
         return;
@@ -10937,18 +10962,65 @@
       const rowFilterSelection = state.rowFilterSelection instanceof Set ? state.rowFilterSelection : null;
       const activeFieldId = state.activeSelectionFieldId || null;
       const hasRowFilter = rowFilterSelection instanceof Set && rowFilterSelection.size > 0 && activeFieldId;
-      const tableElement = document.getElementById(config.tableId);
+      const fieldDefinition = hasRowFilter
+        ? state.fieldDefinitions.find((definition) => definition.id === activeFieldId)
+        : null;
+      const columnIndex = fieldDefinition && Number.isInteger(fieldDefinition.columnIndex) ? fieldDefinition.columnIndex : null;
+      const isColumnFilter = Boolean(
+        hasRowFilter
+          && fieldDefinition
+          && fieldDefinition.type === 'column'
+          && columnIndex !== null
+      );
+      let tableElement = document.getElementById(config.tableId);
       if (!tableElement) {
         updateDashboardPivotFilterVisualState(state);
         return;
+      }
+      if (!hasRowFilter) {
+        if (state.filteredDataset) {
+          state.filteredDataset = null;
+          state.activeDataset = state.dataset || dashboardPivotSourceDataset || null;
+          renderBaseDashboardPivot(state, config);
+        }
+        updateDashboardPivotFilterVisualState(state);
+        return;
+      }
+      if (isColumnFilter) {
+        const baseDataset = state.dataset || dashboardPivotSourceDataset || null;
+        const filteredDataset = filterDashboardDatasetBySelection(baseDataset, columnIndex, rowFilterSelection);
+        state.filteredDataset = filteredDataset;
+        state.activeDataset = filteredDataset;
+        let filteredPivot = null;
+        try {
+          filteredPivot = buildDashboardPivot(filteredDataset, config);
+        } catch (error) {
+          console.error(`Failed to apply dashboard filter for ${config.id}:`, error);
+          filteredPivot = { columns: [], rows: [], totalRow: [] };
+        }
+        renderDashboardPivotTable(config, filteredPivot, {
+          datasetOverride: filteredDataset,
+          skipFilterApplication: true,
+        });
+        updateDashboardPivotFilterVisualState(state);
+        return;
+      }
+      const hadFilteredDataset = Boolean(state.filteredDataset);
+      state.filteredDataset = null;
+      state.activeDataset = state.dataset || dashboardPivotSourceDataset || null;
+      if (hadFilteredDataset) {
+        renderBaseDashboardPivot(state, config);
+        tableElement = document.getElementById(config.tableId);
+        if (!tableElement) {
+          updateDashboardPivotFilterVisualState(state);
+          return;
+        }
       }
       const tbody = tableElement.tBodies && tableElement.tBodies.length ? tableElement.tBodies[0] : null;
       let visibleRowCount = 0;
       let dataRowCount = 0;
       const rowAttributes = Array.isArray(state.rowAttributes) ? state.rowAttributes : [];
-      const dataset = state.dataset || dashboardPivotSourceDataset;
-      const fieldDefinition = hasRowFilter ? state.fieldDefinitions.find((definition) => definition.id === activeFieldId) : null;
-      const columnIndex = fieldDefinition && Number.isInteger(fieldDefinition.columnIndex) ? fieldDefinition.columnIndex : null;
+      const dataset = state.activeDataset || state.dataset || dashboardPivotSourceDataset;
       if (tbody) {
         Array.from(tbody.rows).forEach((row, rowIndex) => {
           const cellCount = row.cells ? row.cells.length : 0;
@@ -11017,6 +11089,8 @@
           fieldValueMap: new Map(),
           rowAttributes: [],
           dataset: null,
+          activeDataset: null,
+          filteredDataset: null,
           rowFilterButton: rowFilterButton || null,
           rowFilterClearButton: rowFilterClearButton || null,
           fieldDefinitions,
@@ -11081,7 +11155,8 @@
       }
     }
 
-    function renderDashboardPivotTable(config, pivot) {
+    function renderDashboardPivotTable(config, pivot, options = {}) {
+      const { datasetOverride = null, skipFilterApplication = false } = options;
       const tableElement = document.getElementById(config.tableId);
       if (!tableElement) {
         return;
@@ -11167,7 +11242,13 @@
         pivotFilterState.rowAttributes = Array.isArray(pivot?.rowAttributes)
           ? pivot.rowAttributes.map((entry) => ({ ...entry }))
           : [];
-        pivotFilterState.dataset = dashboardPivotSourceDataset || null;
+        const baseDataset = dashboardPivotSourceDataset || null;
+        pivotFilterState.dataset = baseDataset;
+        if (datasetOverride) {
+          pivotFilterState.activeDataset = datasetOverride;
+        } else if (!pivotFilterState.filteredDataset) {
+          pivotFilterState.activeDataset = baseDataset;
+        }
         updateDashboardPivotRowFilterButtonState(pivotFilterState);
         if (activeDashboardPivotRowFilterState === pivotFilterState) {
           if (dashboardPivotRowFilterPendingSelection instanceof Set) {
@@ -11211,7 +11292,13 @@
         });
         tfoot.appendChild(tr);
       }
-      applyDashboardPivotFilter(config);
+      if (skipFilterApplication) {
+        if (pivotFilterState) {
+          updateDashboardPivotFilterVisualState(pivotFilterState);
+        }
+      } else {
+        applyDashboardPivotFilter(config);
+      }
     }
 
     function buildDashboardPivot(dataset, config) {
@@ -11463,6 +11550,40 @@
       }));
 
       return { columns, rows, totalRow, rowAttributes };
+    }
+
+    function filterDashboardDatasetBySelection(dataset, columnIndex, selectionSet) {
+      if (!dataset || !Array.isArray(dataset.columns) || !Array.isArray(dataset.rows)) {
+        return dataset;
+      }
+      if (!(selectionSet instanceof Set) || selectionSet.size === 0) {
+        return dataset;
+      }
+      if (!Number.isInteger(columnIndex) || columnIndex < 0 || columnIndex >= dataset.columns.length) {
+        return dataset;
+      }
+      const normalizedSelection = new Set();
+      selectionSet.forEach((value) => {
+        const normalizedValue = normalizeDashboardFilterValue(value);
+        normalizedSelection.add(normalizedValue);
+      });
+      if (!normalizedSelection.size) {
+        return dataset;
+      }
+      const columnName = dataset.columns[columnIndex] || '';
+      const filteredRows = dataset.rows.filter((row) => {
+        if (!Array.isArray(row)) {
+          return false;
+        }
+        const rawValue = columnIndex < row.length ? row[columnIndex] : '';
+        const formattedValue = formatCellValue(rawValue, columnName);
+        const normalizedValue = normalizeDashboardFilterValue(formattedValue);
+        return normalizedSelection.has(normalizedValue);
+      });
+      return {
+        ...dataset,
+        rows: filteredRows,
+      };
     }
 
     function buildDashboardPivotResultsFromDataset(dataset) {
