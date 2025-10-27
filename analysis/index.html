@@ -69,10 +69,45 @@
       box-sizing: border-box;
       overflow-x: auto;
       scrollbar-gutter: stable both-edges;
+      scrollbar-width: none;
+      scroll-padding-inline: 1.5rem;
       --indicator-left: 0px;
       --indicator-top: 0px;
       --indicator-width: 0px;
       --indicator-height: 0px;
+    }
+    .tab-nav::-webkit-scrollbar {
+      display: none;
+    }
+    .tab-nav::before,
+    .tab-nav::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: clamp(1.25rem, 4vw, 2.75rem);
+      pointer-events: none;
+      z-index: 4;
+      opacity: 0;
+      transition: opacity var(--transition-snappy) ease;
+    }
+    .tab-nav::before {
+      left: 0;
+      border-bottom-left-radius: inherit;
+      border-top-left-radius: inherit;
+      background: linear-gradient(90deg, rgba(244, 247, 255, 1) 0%, rgba(244, 247, 255, 0) 100%);
+    }
+    .tab-nav::after {
+      right: 0;
+      border-bottom-right-radius: inherit;
+      border-top-right-radius: inherit;
+      background: linear-gradient(270deg, rgba(244, 247, 255, 1) 0%, rgba(244, 247, 255, 0) 100%);
+    }
+    .tab-nav.tab-nav--show-start-shadow::before {
+      opacity: 1;
+    }
+    .tab-nav.tab-nav--show-end-shadow::after {
+      opacity: 1;
     }
     .tab-button {
       position: relative;
@@ -92,6 +127,9 @@
       flex: 0 0 auto;
       z-index: 1;
       transform: translateY(0);
+      -webkit-appearance: none;
+      appearance: none;
+      white-space: nowrap;
       transition:
         color var(--transition-snappy) ease,
         background var(--transition-snappy) ease,
@@ -2989,6 +3027,7 @@
     const tabNavElement = document.querySelector('.tab-nav');
     const tabNavIndicatorElement = tabNavElement ? tabNavElement.querySelector('.tab-nav__indicator') : null;
     let indicatorPreviousLeft = null;
+    const TAB_NAV_SCROLL_EPSILON = 1;
     const loSubTabButtons = document.querySelectorAll('.lo-sub-tab-button');
     const loSubTabPanels = document.querySelectorAll('.lo-sub-tab-panel');
     const platformSubTabButtons = document.querySelectorAll('.platform-tab-button');
@@ -3070,6 +3109,36 @@
     const reduceMotionQuery = typeof window.matchMedia === 'function' ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
     let shouldReduceMotion = reduceMotionQuery ? reduceMotionQuery.matches : false;
 
+    function updateTabNavScrollShadows() {
+      if (!tabNavElement) {
+        return;
+      }
+      const maxScrollLeft = tabNavElement.scrollWidth - tabNavElement.clientWidth;
+      const isScrollable = maxScrollLeft > TAB_NAV_SCROLL_EPSILON;
+      const showStartShadow = tabNavElement.scrollLeft > TAB_NAV_SCROLL_EPSILON;
+      const showEndShadow = tabNavElement.scrollLeft < maxScrollLeft - TAB_NAV_SCROLL_EPSILON;
+      tabNavElement.classList.toggle('tab-nav--scrollable', isScrollable);
+      tabNavElement.classList.toggle('tab-nav--show-start-shadow', showStartShadow);
+      tabNavElement.classList.toggle('tab-nav--show-end-shadow', showEndShadow);
+    }
+
+    function scrollActiveTabIntoView(targetTab) {
+      if (!tabNavElement || !targetTab) {
+        return;
+      }
+      const activeButton = Array.from(tabButtons).find((button) => button.dataset.tab === targetTab);
+      if (!activeButton) {
+        return;
+      }
+      const behavior = shouldReduceMotion ? 'auto' : 'smooth';
+      activeButton.scrollIntoView({ block: 'nearest', inline: 'center', behavior });
+      if (typeof requestAnimationFrame === 'function') {
+        requestAnimationFrame(updateTabNavScrollShadows);
+      } else {
+        updateTabNavScrollShadows();
+      }
+    }
+
     const animatedCards = Array.from(document.querySelectorAll('.card'));
     let cardObserver = null;
 
@@ -3120,6 +3189,8 @@
             }
           });
         }
+        scrollActiveTabIntoView(activeTabId);
+        updateTabIndicator(activeTabId);
       };
       if (typeof reduceMotionQuery.addEventListener === 'function') {
         reduceMotionQuery.addEventListener('change', handleReduceMotionChange);
@@ -4677,6 +4748,7 @@
         tabNavIndicatorElement.style.setProperty('--indicator-height', `${buttonRect.height}px`);
         tabNavElement.classList.add('has-active-indicator');
         indicatorPreviousLeft = left;
+        updateTabNavScrollShadows();
       };
       if (typeof requestAnimationFrame === 'function') {
         requestAnimationFrame(applyPosition);
@@ -7851,6 +7923,7 @@
         button.classList.toggle('active', isActive);
         button.setAttribute('aria-selected', String(isActive));
       });
+      scrollActiveTabIntoView(targetTab);
       updateTabIndicator(targetTab);
       const nextPanel = getTabPanelElement(targetTab);
       const previousPanel = previousTab ? getTabPanelElement(previousTab) : null;
@@ -8019,9 +8092,12 @@
     NEW_PRODUCT_PIVOT_CONFIGS.forEach((config) => updateNewProductFilterButtonState(config));
     updateStickyOffset();
     updateTabIndicator(activeTabId);
+    updateTabNavScrollShadows();
     window.addEventListener('resize', () => {
       updateStickyOffset();
       updateTabIndicator(activeTabId);
+      scrollActiveTabIntoView(activeTabId);
+      updateTabNavScrollShadows();
       resizeLoTableContainers();
       if (regularTableInitialised && regularTable) {
         applyTableHeight(regularTable);
@@ -8030,6 +8106,16 @@
         applyTableHeight(mainTable);
       }
     });
+
+    if (tabNavElement) {
+      tabNavElement.addEventListener(
+        'scroll',
+        () => {
+          updateTabNavScrollShadows();
+        },
+        { passive: true },
+      );
+    }
 
     function ensureHeaderMenu() {
       if (!headerMenuElement) {
