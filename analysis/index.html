@@ -57,16 +57,22 @@
       flex-wrap: nowrap;
       gap: 0.6rem;
       margin: 0 0 1.1rem;
-      padding: 0.75rem 2rem 1.25rem;
+      padding: 0.9rem 2.25rem 1.35rem;
       min-height: 3.25rem;
-      border-radius: 0;
-      background: var(--tab-bar-bg);
-      border-bottom: 1px solid var(--tab-border);
-      box-shadow: 0 18px 32px rgba(20, 90, 252, 0.05);
-      backdrop-filter: blur(12px);
+      border-radius: 0 0 1.25rem 1.25rem;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(241, 244, 255, 0.88) 100%);
+      border: 1px solid var(--tab-border);
+      border-top-color: rgba(20, 90, 252, 0.08);
+      box-shadow: 0 22px 38px rgba(20, 90, 252, 0.08);
+      backdrop-filter: blur(14px);
+      isolation: isolate;
       box-sizing: border-box;
       overflow-x: auto;
       scrollbar-gutter: stable both-edges;
+      --indicator-left: 0px;
+      --indicator-top: 0px;
+      --indicator-width: 0px;
+      --indicator-height: 0px;
     }
     .tab-button {
       position: relative;
@@ -124,8 +130,67 @@
       border-color: rgba(255, 255, 255, 0.8);
       opacity: 1;
     }
-    .tab-nav__indicator {
+    .tab-nav.has-active-indicator .tab-button {
+      background: transparent;
+      border-color: transparent;
+      box-shadow: none;
+    }
+    .tab-nav.has-active-indicator .tab-button::after {
       display: none;
+    }
+    .tab-nav.has-active-indicator .tab-button:hover,
+    .tab-nav.has-active-indicator .tab-button:focus-visible {
+      background: rgba(20, 90, 252, 0.08);
+      box-shadow: none;
+    }
+    .tab-nav.has-active-indicator .tab-button.active {
+      color: var(--tab-active-text);
+      transform: translateY(-1px);
+      text-shadow: 0 1px 0 rgba(13, 45, 128, 0.26);
+    }
+    .tab-nav__indicator {
+      position: absolute;
+      top: 0;
+      left: 0;
+      transform: translate3d(var(--indicator-left, 0), var(--indicator-top, 0), 0)
+        scaleX(var(--indicator-scale-x, 1))
+        rotate(var(--indicator-tilt, 0deg));
+      width: var(--indicator-width, 0);
+      height: var(--indicator-height, 0);
+      border-radius: 999px;
+      background: var(--tab-active-bg);
+      box-shadow:
+        0 20px 45px rgba(20, 90, 252, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.6);
+      opacity: 0;
+      pointer-events: none;
+      z-index: 0;
+      transition:
+        transform var(--transition-gentle) ease,
+        width var(--transition-gentle) ease,
+        height var(--transition-gentle) ease,
+        opacity var(--transition-snappy) ease;
+      transform-origin: center;
+    }
+    .tab-nav__indicator::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.42), transparent 70%);
+      mix-blend-mode: screen;
+      opacity: 0.85;
+    }
+    .tab-nav__indicator[data-direction='left'] {
+      --indicator-scale-x: 1.025;
+      --indicator-tilt: -0.65deg;
+    }
+    .tab-nav__indicator[data-direction='right'] {
+      --indicator-scale-x: 1.025;
+      --indicator-tilt: 0.65deg;
+    }
+    .tab-nav.has-active-indicator .tab-nav__indicator {
+      opacity: 1;
     }
     .tab-panel {
       position: relative;
@@ -2255,6 +2320,10 @@
         animation-duration: 0.01ms !important;
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
+      }
+      .tab-nav__indicator {
+        --indicator-scale-x: 1 !important;
+        --indicator-tilt: 0deg !important;
       }
       .card[data-animate='true'],
       .regular-filter__option,
