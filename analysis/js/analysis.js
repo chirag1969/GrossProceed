@@ -192,6 +192,7 @@ const tabButtons = document.querySelectorAll('.tab-button');
     let regularDatasetCache = null;
     let regularDatasetPromise = null;
     let regularSheetHeader = null;
+    let regularCheckoutColumnIndex = -1;
     let mainTable;
     let mainTableInitialised = false;
     let mainTableFooterValues = [];
@@ -2941,40 +2942,72 @@ const tabButtons = document.querySelectorAll('.tab-button');
         });
     }
 
-    async function loadRegularSheetData(arrayBuffer) {
-      const wb = XLSX.read(arrayBuffer, { type: 'array', cellDates: true, cellNF: false, cellText: false });
-
-      const sheetName = wb.SheetNames.find((name) => /regular/i.test(String(name))) || null;
-      if (!sheetName) {
-        console.error('No sheet with name containing "REGULAR" found in workbook:', wb.SheetNames);
-        regularSheetHeader = null;
-        return [];
-      }
-      const ws = wb.Sheets[sheetName];
-
-      const matrix = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: null, blankrows: false });
-
-      if (!matrix || matrix.length < 3) {
-        console.error('REGULAR sheet: Expected headers on row 2 and data from row 3. Found rows:', matrix ? matrix.length : 0);
-        regularSheetHeader = null;
-        return [];
+    function buildRegularDatasetFromWorkbook(workbook) {
+      if (!workbook || typeof workbook !== 'object') {
+        throw new Error('Regular: Workbook is unavailable');
       }
 
-      const header = (matrix[1] || []).map((value) => String(value ?? '').trim());
-      regularSheetHeader = header;
-      const dataRows = matrix.slice(2);
+      const sheetNames = Array.isArray(workbook.SheetNames) ? workbook.SheetNames : [];
+      const targetSheetName = sheetNames.find((name) => /regular/i.test(String(name))) || null;
+      if (!targetSheetName) {
+        console.error('No sheet with name containing "REGULAR" found in workbook:', sheetNames);
+        const error = new Error('Regular sheet not found in workbook');
+        error.availableSheets = sheetNames;
+        throw error;
+      }
 
-      const rows = dataRows
-        .map((row) => {
-          const safeRow = Array.isArray(row) ? row : [];
-          const entry = {};
-          header.forEach((columnName, index) => {
-            const key = columnName || `col_${index + 1}`;
-            entry[key] = safeRow[index];
-          });
-          return entry;
-        })
-        .filter((entry) => Object.values(entry).some((value) => {
+      const worksheet = workbook.Sheets[targetSheetName];
+      if (!worksheet) {
+        const error = new Error(`Regular worksheet "${targetSheetName}" is missing in workbook`);
+        error.availableSheets = sheetNames;
+        throw error;
+      }
+
+      const matrix = XLSX.utils.sheet_to_json(worksheet, {
+        header: 1,
+        raw: true,
+        defval: null,
+        blankrows: true,
+      });
+
+      if (!Array.isArray(matrix) || matrix.length < 2) {
+        console.error('[Regular] REGULAR sheet: Expected header on row 2. Found rows:', Array.isArray(matrix) ? matrix.length : 0);
+        const error = new Error('Regular sheet is missing header row 2.');
+        error.sheetName = targetSheetName;
+        throw error;
+      }
+
+      const headerRowIndex = 1;
+      const dataRowStartIndex = 2;
+
+      const rawHeaderRow = Array.isArray(matrix[headerRowIndex]) ? matrix[headerRowIndex] : [];
+      const headerLog = rawHeaderRow.map((value) => {
+        if (value === null || value === undefined) {
+          return '';
+        }
+        return String(value).trim();
+      });
+
+      const columnCount = matrix.slice(headerRowIndex).reduce((max, row) => {
+        if (!Array.isArray(row)) {
+          return max;
+        }
+        return Math.max(max, row.length);
+      }, rawHeaderRow.length);
+
+      const header = new Array(columnCount).fill('').map((_, index) => {
+        const rawValue = index < headerLog.length ? headerLog[index] : '';
+        return rawValue && rawValue.length ? rawValue : `Column ${index + 1}`;
+      });
+
+      const dataRows = [];
+      for (let rowIndex = dataRowStartIndex; rowIndex < matrix.length; rowIndex += 1) {
+        const sourceRow = Array.isArray(matrix[rowIndex]) ? matrix[rowIndex] : [];
+        const normalisedRow = [];
+        for (let columnIndex = 0; columnIndex < columnCount; columnIndex += 1) {
+          normalisedRow.push(columnIndex < sourceRow.length ? sourceRow[columnIndex] : null);
+        }
+        const hasValue = normalisedRow.some((value) => {
           if (value === null || value === undefined) {
             return false;
           }
@@ -2982,70 +3015,74 @@ const tabButtons = document.querySelectorAll('.tab-button');
             return value.trim().length > 0;
           }
           return true;
-        }));
+        });
+        if (hasValue) {
+          dataRows.push(normalisedRow);
+        }
+      }
 
-      console.log('[Regular] sheet:', sheetName);
-      console.log('[Regular] header:', header);
-      console.log('[Regular] rows:', rows.length);
-      return rows;
+      regularSheetHeader = header.slice();
+      console.log('[Regular] sheet:', targetSheetName);
+      console.log('[Regular] header:', headerLog);
+      console.log('[Regular] rows:', dataRows.length);
+
+      if (matrix.length < 3) {
+        const error = new Error('Regular sheet does not contain data rows starting from row 3.');
+        error.sheetName = targetSheetName;
+        throw error;
+      }
+
+      return {
+        sheetName: targetSheetName,
+        columns: header,
+        rows: dataRows,
+      };
     }
 
-    function fetchRegularDataset() {
-      if (regularDatasetCache) {
+    function fetchRegularDataset(options = {}) {
+      const forceReload = Boolean(options && options.forceReload);
+      if (!forceReload && regularDatasetCache) {
         return Promise.resolve(regularDatasetCache);
       }
       if (regularDatasetPromise) {
         return regularDatasetPromise;
       }
 
-      const fetchOptions = {
-        cache: 'no-store',
-        credentials: 'same-origin',
-        headers: {
-          'Cache-Control': 'no-store',
-          Pragma: 'no-cache',
-        },
-      };
-      if (typeof navigator !== 'undefined' && navigator && navigator.serviceWorker) {
-        fetchOptions.headers['x-sw-bypass'] = '1';
+      if (forceReload) {
+        regularDatasetCache = null;
       }
 
-      console.log('[Regular] using workbook:', WORKBOOK_URL);
+      if (typeof window !== 'object' || typeof window.loadExcelData !== 'function') {
+        return Promise.reject(new Error('Regular: Excel loader is unavailable.'));
+      }
 
-      regularDatasetPromise = fetch(`${WORKBOOK_URL}?t=${Date.now()}`, fetchOptions)
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error(`Regular workbook request failed with status ${response.status}`);
-          }
-          return response.arrayBuffer();
-        })
-        .then((buffer) => loadRegularSheetData(buffer))
-        .then((rows) => {
-          const header = Array.isArray(regularSheetHeader) ? regularSheetHeader.slice() : [];
-          if (!header.length && rows.length) {
-            const firstRow = rows[0];
-            if (firstRow && typeof firstRow === 'object') {
-              header.push(...Object.keys(firstRow));
-            }
+      const loadOptions = { includeWorkbook: true };
+      if (forceReload) {
+        loadOptions.forceReload = true;
+      }
+
+      regularDatasetPromise = window.loadExcelData(loadOptions)
+        .then((payload) => {
+          if (!payload || typeof payload !== 'object' || !payload.workbook) {
+            throw new Error('Regular: Workbook payload is invalid.');
           }
 
-          if (!header.length) {
-            throw new Error('Regular: Expected headers on row 2 and data from row 3.');
-          }
+          const workbookUrl = payload.version && typeof payload.version.finalUrl === 'string' && payload.version.finalUrl.length
+            ? payload.version.finalUrl
+            : (typeof WORKBOOK_URL === 'string' ? `${WORKBOOK_URL}` : '');
+          console.log('[Regular] using workbook:', workbookUrl);
 
-          const matrixRows = rows.map((entry) => header.map((columnName, index) => {
-            const key = columnName || `col_${index + 1}`;
-            return entry && Object.prototype.hasOwnProperty.call(entry, key) ? entry[key] : null;
-          }));
-
-          const dataset = { columns: header, rows: matrixRows };
-          regularDatasetCache = dataset;
-          return dataset;
+          const dataset = buildRegularDatasetFromWorkbook(payload.workbook);
+          regularDatasetCache = { columns: dataset.columns, rows: dataset.rows };
+          return regularDatasetCache;
         })
         .catch((error) => {
-          regularDatasetPromise = null;
           console.error('Failed to load dataset from Excel:', error);
+          regularDatasetCache = null;
           throw error;
+        })
+        .finally(() => {
+          regularDatasetPromise = null;
         });
       return regularDatasetPromise;
     }
@@ -5793,6 +5830,80 @@ const tabButtons = document.querySelectorAll('.tab-button');
       if (firstColumn) {
         setRegularFilterColumn(firstColumn.index);
       }
+    }
+
+    function refreshRegularFilterOptions(augmentedDataset) {
+      if (!regularFilterInitialised) {
+        return;
+      }
+      const columns = Array.isArray(augmentedDataset?.columns)
+        ? augmentedDataset.columns
+            .map((title, index) => ({
+              title: title || `Column ${index + 1}`,
+              index,
+              options: columnValueOptions[index] || [],
+            }))
+            .filter((entry) => entry.options.length > 0 && entry.options.length <= REGULAR_FILTER_MAX_UNIQUE_VALUES)
+        : [];
+
+      regularFilterEligibleColumns = columns;
+
+      const filterTargets = regularFilterButtons.length
+        ? regularFilterButtons
+        : (regularFilterButtonElement ? [regularFilterButtonElement] : []);
+
+      if (!columns.length) {
+        filterTargets.forEach((button) => {
+          if (button) {
+            button.setAttribute('aria-disabled', 'true');
+            button.disabled = true;
+          }
+        });
+        if (regularFilterColumnSelect) {
+          regularFilterColumnSelect.innerHTML = '';
+        }
+        regularFilterActiveColumnIndex = null;
+        renderRegularFilterOptions();
+        updateRegularFilterButtonState();
+        return;
+      }
+
+      filterTargets.forEach((button) => {
+        if (button) {
+          button.removeAttribute('aria-disabled');
+          button.disabled = false;
+        }
+      });
+
+      if (regularFilterColumnSelect) {
+        const previousValue = Number(regularFilterColumnSelect.value);
+        const optionsMarkup = columns
+          .map((entry) => `<option value="${entry.index}">${escapeHtml(entry.title)}</option>`)
+          .join('');
+        regularFilterColumnSelect.innerHTML = optionsMarkup;
+        if (Number.isFinite(previousValue) && columns.some((entry) => entry.index === previousValue)) {
+          regularFilterColumnSelect.value = String(previousValue);
+          regularFilterActiveColumnIndex = previousValue;
+        } else {
+          regularFilterActiveColumnIndex = columns[0].index;
+          regularFilterColumnSelect.value = String(regularFilterActiveColumnIndex);
+        }
+      } else {
+        regularFilterActiveColumnIndex = columns[0].index;
+      }
+
+      if (Number.isFinite(regularFilterActiveColumnIndex)) {
+        syncRegularFilterSelectionFromFilters(regularFilterActiveColumnIndex);
+      }
+
+      regularFilterSearchTerm = '';
+      if (regularFilterSearchInput) {
+        regularFilterSearchInput.value = '';
+      }
+
+      renderRegularFilterOptions();
+      updateRegularFilterSelectAllState();
+      updateRegularFilterButtonState();
     }
 
     function initializeMainFilterControls(augmentedDataset) {
@@ -8853,25 +8964,26 @@ const tabButtons = document.querySelectorAll('.tab-button');
     }
 
     function loadRegularTable() {
-      if (regularTableInitialised) {
-        return Promise.resolve();
-      }
-      setTabPanelLoading('regular', true, 'Loading regular data…');
-      return fetchRegularDataset()
+      const isRefresh = regularTableInitialised;
+      const loadingMessage = isRefresh ? 'Refreshing regular data…' : 'Loading regular data…';
+      setTabPanelLoading('regular', true, loadingMessage);
+      return fetchRegularDataset({ forceReload: isRefresh })
         .then((dataset) => {
           updateStickyOffset();
 
           const augmentedDataset = augmentDatasetWithTotals(dataset);
           regularTableAugmentedDataset = augmentedDataset;
           totalColumnIndex = augmentedDataset.totalColumnIndex;
-          const checkoutColumnIndex = augmentedDataset.columns.findIndex((column) => column && column.trim().toLowerCase() === 'checkout');
+          regularCheckoutColumnIndex = augmentedDataset.columns.findIndex((column) => column && column.trim().toLowerCase() === 'checkout');
+
           const columns = augmentedDataset.columns.map((title, columnIndex) => ({
             title,
             data: columnIndex,
             render(data, type) {
+              const datasetRef = regularTableAugmentedDataset || augmentedDataset;
               const value = data === undefined || data === null ? '' : data;
-              const columnName = augmentedDataset.columns[columnIndex];
-              const isCheckoutColumn = columnIndex === checkoutColumnIndex;
+              const columnName = datasetRef.columns[columnIndex];
+              const isCheckoutColumn = columnIndex === regularCheckoutColumnIndex;
               const isDateColumn = isCheckoutColumn || isDateColumnName(columnName);
               if (type === 'sort') {
                 if (isDateColumn) {
@@ -8896,6 +9008,7 @@ const tabButtons = document.querySelectorAll('.tab-button');
               return value;
             },
           }));
+
           const tableData = augmentedDataset.rows;
           const productColumnIndex = augmentedDataset.columns.indexOf('Product');
           const quantityColumnIndex = augmentedDataset.columns.findIndex((column) => column && column.trim().toLowerCase() === 'qty');
@@ -8920,101 +9033,123 @@ const tabButtons = document.querySelectorAll('.tab-button');
             }
           }
 
-          const columnClassMap = new Map();
-          const addColumnClass = (columnIndex, className) => {
-            if (columnIndex < 0) {
+          const ensureCheckoutAssertion = () => {
+            if (!regularTable || regularCheckoutColumnIndex < 0) {
               return;
             }
-            if (!columnClassMap.has(columnIndex)) {
-              columnClassMap.set(columnIndex, new Set());
-            }
-            columnClassMap.get(columnIndex).add(className);
-          };
-
-          addColumnClass(productColumnIndex, 'cell-product');
-          addColumnClass(quantityColumnIndex, 'cell-qty');
-          numericColumnIndices.forEach((columnIndex) => addColumnClass(columnIndex, 'cell-numeric'));
-
-          const columnDefs = Array.from(columnClassMap.entries()).map(([columnIndex, classSet]) => ({
-            targets: Number(columnIndex),
-            className: Array.from(classSet).join(' '),
-          }));
-          columnDefs.push({ targets: '_all', type: 'string' });
-
-          const initialRowCount = Math.min(augmentedDataset.rows.length, REGULAR_TABLE_PAGE_LENGTH);
-          const initialReservedSpace = calculateRegularTableReservedSpace();
-          const initialScrollHeight = `${calculateScrollBodyHeight(initialRowCount, undefined, initialReservedSpace)}px`;
-          regularTable = $('#regularTable').DataTable({
-            data: tableData,
-            columns,
-            columnDefs,
-            scrollX: true,
-            scrollY: initialScrollHeight,
-            scrollCollapse: true,
-            deferRender: true,
-            autoWidth: true,
-            order: [],
-            ordering: true,
-            paging: true,
-            pageLength: REGULAR_TABLE_PAGE_LENGTH,
-            lengthChange: false,
-            info: false,
-            dom: 't<"regular-table__footer"p>'
-          });
-
-          moveRegularTablePagination();
-          const runCheckoutFormatAssertion = () => {
-            if (checkoutColumnIndex < 0) {
+            const tableNode = typeof regularTable.table === 'function' ? regularTable.table().node() : null;
+            if (!tableNode) {
               return;
             }
-            const currentRows = regularTable.rows({ page: 'current' }).data().toArray();
-            const limit = Math.min(5, currentRows.length);
-            for (let index = 0; index < limit; index += 1) {
-              const source = currentRows[index][checkoutColumnIndex];
-              const formatted = formatDateValue(source);
-              if (formatted) {
-                console.assert(/^[0-9]{2}-[0-9]{2}-[0-9]{4}$/.test(formatted), 'Regular checkout date format mismatch', {
-                  rowIndex: index,
-                  value: source,
-                  formatted,
-                });
-              }
+            const rows = tableNode.querySelectorAll('tbody tr');
+            if (!rows || rows.length === 0) {
+              return;
             }
-            console.assert(/^[0-9]{2}-[0-9]{2}-[0-9]{4}$/.test($('#regularTable tbody tr:eq(0) td:eq(2)').text().trim()), 'Checkout not dd-mm-yyyy');
+            const firstRow = rows[0];
+            const checkoutCell = firstRow && regularCheckoutColumnIndex < firstRow.cells.length
+              ? firstRow.cells[regularCheckoutColumnIndex]
+              : null;
+            if (!checkoutCell) {
+              return;
+            }
+            const text = (checkoutCell.textContent || '').trim();
+            console.assert(/^[0-9]{2}-[0-9]{2}-[0-9]{4}$/.test(text), 'Checkout not dd-mm-yyyy');
           };
-          runCheckoutFormatAssertion();
+
           columnValueOptions = buildColumnOptions(augmentedDataset);
-          initializeRegularFilterControls(augmentedDataset);
-          wireHeaderEvents(regularTable, { allowSorting: true });
-          applyTableHeight(regularTable);
-          if (SHOW_REGULAR_TOTAL_ROW) {
-            updateRegularTableFooter(regularTable);
+          if (!regularFilterInitialised) {
+            initializeRegularFilterControls(augmentedDataset);
+          } else {
+            refreshRegularFilterOptions(augmentedDataset);
           }
-          regularTable.on('draw.dt', () => {
+
+          if (!regularTableInitialised) {
+            const columnClassMap = new Map();
+            const addColumnClass = (columnIndex, className) => {
+              if (columnIndex < 0) {
+                return;
+              }
+              if (!columnClassMap.has(columnIndex)) {
+                columnClassMap.set(columnIndex, new Set());
+              }
+              columnClassMap.get(columnIndex).add(className);
+            };
+
+            addColumnClass(productColumnIndex, 'cell-product');
+            addColumnClass(quantityColumnIndex, 'cell-qty');
+            numericColumnIndices.forEach((columnIndex) => addColumnClass(columnIndex, 'cell-numeric'));
+
+            const columnDefs = Array.from(columnClassMap.entries()).map(([columnIndex, classSet]) => ({
+              targets: Number(columnIndex),
+              className: Array.from(classSet).join(' '),
+            }));
+
+            const initialRowCount = Math.min(augmentedDataset.rows.length, REGULAR_TABLE_PAGE_LENGTH);
+            const initialReservedSpace = calculateRegularTableReservedSpace();
+            const initialScrollHeight = `${calculateScrollBodyHeight(initialRowCount, undefined, initialReservedSpace)}px`;
+            regularTable = $('#regularTable').DataTable({
+              data: tableData,
+              columns,
+              columnDefs,
+              scrollX: true,
+              scrollY: initialScrollHeight,
+              scrollCollapse: true,
+              pageLength: REGULAR_TABLE_PAGE_LENGTH,
+              lengthChange: false,
+              order: [],
+              info: false,
+              language: {
+                emptyTable: 'No regular data available',
+              },
+              dom: 't<"regular-table__footer"p>'
+            });
             wireHeaderEvents(regularTable, { allowSorting: true });
             applyTableHeight(regularTable);
             if (SHOW_REGULAR_TOTAL_ROW) {
               updateRegularTableFooter(regularTable);
             }
-            moveRegularTablePagination();
-            // Regression check: ensure freshly rendered rows retain checkout formatting.
-            runCheckoutFormatAssertion();
-          });
+            regularTable.on('draw.dt', () => {
+              wireHeaderEvents(regularTable, { allowSorting: true });
+              applyTableHeight(regularTable);
+              if (SHOW_REGULAR_TOTAL_ROW) {
+                updateRegularTableFooter(regularTable);
+              }
+              moveRegularTablePagination();
+              ensureCheckoutAssertion();
+            });
 
-          regularTableInitialised = true;
-          requestAnimationFrame(() => refreshRegularTableLayout());
-          console.assert($('#regularTable').length, 'Regular table not found');
-          setTimeout(() => {
-            const text = $('#regularTable tbody tr:eq(0) td:eq(2)').text().trim();
-            console.log('First checkout:', text);
-            console.assert(/^[0-9]{2}-[0-9]{2}-[0-9]{4}$/.test(text), 'Checkout not dd-mm-yyyy');
-          }, 500);
+            regularTableInitialised = true;
+            requestAnimationFrame(() => refreshRegularTableLayout());
+            console.assert($('#regularTable').length, 'Regular table not found');
+            moveRegularTablePagination();
+          } else if (regularTable) {
+            regularTable.clear();
+            regularTable.rows.add(tableData);
+            augmentedDataset.columns.forEach((title, index) => {
+              const headerCell = regularTable.column(index).header();
+              if (headerCell) {
+                headerCell.textContent = title || `Column ${index + 1}`;
+              }
+            });
+            regularTable.columns.adjust();
+            regularTable.draw(false);
+            if (SHOW_REGULAR_TOTAL_ROW) {
+              updateRegularTableFooter(regularTable);
+            }
+            requestAnimationFrame(() => refreshRegularTableLayout());
+          }
+
+          ensureCheckoutAssertion();
+          if (!isRefresh) {
+            setTimeout(ensureCheckoutAssertion, 500);
+          }
         })
         .catch((error) => {
           const tableElement = document.getElementById('regularTable');
-          if (tableElement) {
+          if (!regularTableInitialised && tableElement) {
             tableElement.outerHTML = `<p style="color: var(--muted);">${error.message}</p>`;
           }
+          console.error('Regular tab load failed:', error);
         })
         .finally(() => {
           setTabPanelLoading('regular', false);
