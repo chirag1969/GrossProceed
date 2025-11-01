@@ -243,7 +243,17 @@ const tabButtons = document.querySelectorAll('.tab-button');
       minimumFractionDigits: 1,
       maximumFractionDigits: 1,
     });
-    const displayDateFormatter = new Intl.DateTimeFormat('en-US', { month: '2-digit', day: '2-digit' });
+    const displayDateFormatter = {
+      format(date) {
+        if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+          return '';
+        }
+        const day = String(date.getUTCDate()).padStart(2, '0');
+        const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+        const year = date.getUTCFullYear();
+        return `${day}-${month}-${year}`;
+      },
+    };
     const TOTAL_ROW_LABEL = 'Grand Total';
     const TOTAL_ROW_LABEL_NORMALISED = TOTAL_ROW_LABEL.trim().toLowerCase();
 
@@ -2887,6 +2897,7 @@ const tabButtons = document.querySelectorAll('.tab-button');
           return normalised.includes('regular');
         },
         errorMessage: `${getRegularDisplayName()} worksheet not found in workbook`,
+        headerRowIndex: 1,
       })
         .then((data) => {
           regularDatasetCache = data;
@@ -6114,7 +6125,63 @@ const tabButtons = document.querySelectorAll('.tab-button');
       return null;
     }
 
+    function createUTCDate(year, month, day) {
+      const y = Number(year);
+      const m = Number(month);
+      const d = Number(day);
+      if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) {
+        return null;
+      }
+      if (m < 1 || m > 12 || d < 1 || d > 31) {
+        return null;
+      }
+      const timestamp = Date.UTC(y, m - 1, d);
+      const date = new Date(timestamp);
+      if (Number.isNaN(date.getTime())) {
+        return null;
+      }
+      if (date.getUTCFullYear() !== y || date.getUTCMonth() !== m - 1 || date.getUTCDate() !== d) {
+        return null;
+      }
+      return date;
+    }
+
+    function parseDateString(value) {
+      if (typeof value !== 'string') {
+        return null;
+      }
+      const trimmed = value.trim();
+      if (!trimmed.length) {
+        return null;
+      }
+      const normalised = trimmed.replace(/[./]/g, '-');
+      const isoMatch = normalised.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:\D.*)?$/);
+      if (isoMatch) {
+        const [, year, month, day] = isoMatch;
+        const result = createUTCDate(year, month, day);
+        if (result) {
+          return result;
+        }
+      }
+      const dmyMatch = normalised.match(/^(\d{1,2})-(\d{1,2})-(\d{4})(?:\D.*)?$/);
+      if (dmyMatch) {
+        const [, day, month, year] = dmyMatch;
+        const result = createUTCDate(year, month, day);
+        if (result) {
+          return result;
+        }
+      }
+      return null;
+    }
+
     function parseExcelSerialToDate(value) {
+      if (value instanceof Date && !Number.isNaN(value.getTime())) {
+        return createUTCDate(value.getUTCFullYear(), value.getUTCMonth() + 1, value.getUTCDate());
+      }
+      const parsedFromString = typeof value === 'string' ? parseDateString(value) : null;
+      if (parsedFromString) {
+        return parsedFromString;
+      }
       const numeric = parseNumericValue(value);
       if (numeric === null) {
         return null;
