@@ -5,42 +5,8 @@
 
   const WORKBOOK_PATH = '/GrossProceed/analysis/data/daily.xlsx';
   const RAW_BASE_URL = 'https://raw.githubusercontent.com/chirag1969/GrossProceed/main/analysis/data/daily.xlsx';
-  const DEFAULT_SHEET_CACHE_KEY = '__default__';
-  const SHARED_STATE_KEY = '__EXCEL_SHARED_STATE__';
-  const PUBLIC_DATA_KEY = '__DATA';
 
-  function initializeSharedState() {
-    const existing = typeof global[SHARED_STATE_KEY] === 'object' && global[SHARED_STATE_KEY] !== null
-      ? global[SHARED_STATE_KEY]
-      : {};
-    if (!(existing.sheetCache instanceof Map)) {
-      existing.sheetCache = new Map();
-    }
-    if (!Array.isArray(existing.sheetNames)) {
-      existing.sheetNames = [];
-    }
-    global[SHARED_STATE_KEY] = existing;
-    return existing;
-  }
-
-  function initializePublicDataContainer() {
-    const existing = typeof global[PUBLIC_DATA_KEY] === 'object' && global[PUBLIC_DATA_KEY] !== null
-      ? global[PUBLIC_DATA_KEY]
-      : {};
-    if (typeof existing.sheets !== 'object' || existing.sheets === null) {
-      existing.sheets = {};
-    }
-    global[PUBLIC_DATA_KEY] = existing;
-    return existing;
-  }
-
-  const sharedState = initializeSharedState();
-  const publicDataContainer = initializePublicDataContainer();
-
-  let cachedWorkbookPromise = sharedState.promise || null;
-  let cachedWorkbook = sharedState.workbook || null;
-  let cachedWorkbookOptions = sharedState.workbookOptions || null;
-  let cachedMetadata = sharedState.version || null;
+  let cachedPromise = null;
   let serviceWorkerUnregistered = false;
 
   function ensureServiceWorkerUnregistered() {
@@ -74,87 +40,6 @@
       return {};
     }
     return options;
-  }
-
-  function getSheetCacheKey(sheetName) {
-    if (typeof sheetName === 'string' && sheetName.trim().length) {
-      return sheetName.trim();
-    }
-    return DEFAULT_SHEET_CACHE_KEY;
-  }
-
-  function freezeRow(row) {
-    if (!Array.isArray(row)) {
-      return Object.freeze([]);
-    }
-    return Object.freeze(row.map((value) => value));
-  }
-
-  function freezeRows(rows) {
-    if (!Array.isArray(rows)) {
-      return Object.freeze([]);
-    }
-    const clones = rows.map((row) => freezeRow(Array.isArray(row) ? row.slice() : []));
-    return Object.freeze(clones);
-  }
-
-  function freezeRecord(record) {
-    if (!record || typeof record !== 'object') {
-      return Object.freeze({});
-    }
-    const clone = Object.create(null);
-    Object.keys(record).forEach((key) => {
-      clone[key] = record[key];
-    });
-    return Object.freeze(clone);
-  }
-
-  function freezeRecords(records) {
-    if (!Array.isArray(records)) {
-      return Object.freeze([]);
-    }
-    const clones = records.map((record) => freezeRecord(record));
-    return Object.freeze(clones);
-  }
-
-  function storeSheetData(sheetName, rows, records, metadata) {
-    const key = getSheetCacheKey(sheetName);
-    const frozenRows = freezeRows(rows);
-    const frozenRecords = freezeRecords(records);
-    const cacheEntry = Object.freeze({
-      key,
-      sheetName: sheetName || null,
-      rows: frozenRows,
-      records: frozenRecords,
-      version: metadata || null,
-      updatedAt: Date.now(),
-    });
-    sharedState.sheetCache.set(key, cacheEntry);
-    sharedState.rows = frozenRows;
-    sharedState.records = frozenRecords;
-    sharedState.sheetName = sheetName || null;
-    publicDataContainer.sheets[key] = cacheEntry;
-    publicDataContainer.rows = frozenRows;
-    publicDataContainer.records = frozenRecords;
-    publicDataContainer.sheetName = sheetName || null;
-    publicDataContainer.version = metadata || null;
-    return cacheEntry;
-  }
-
-  function resetWorkbookCache() {
-    cachedWorkbookPromise = null;
-    cachedWorkbook = null;
-    cachedWorkbookOptions = null;
-    cachedMetadata = null;
-    sharedState.promise = null;
-    sharedState.workbook = null;
-    sharedState.version = null;
-    sharedState.workbookOptions = null;
-    sharedState.sheetNames = [];
-    if (sharedState.sheetCache instanceof Map) {
-      sharedState.sheetCache.clear();
-    }
-    publicDataContainer.promise = null;
   }
 
   function pad(number) {
@@ -307,46 +192,6 @@
     return records;
   }
 
-  function getWorkbookPromise(forceReload) {
-    if (forceReload) {
-      resetWorkbookCache();
-    }
-    if (cachedWorkbookPromise) {
-      return cachedWorkbookPromise;
-    }
-    ensureServiceWorkerUnregistered();
-    if (typeof XLSX === 'undefined') {
-      return Promise.reject(new Error('Excel parser library is not available'));
-    }
-    cachedWorkbookPromise = (async () => {
-      const { buffer, metadata } = await fetchWorkbookBuffer();
-      const workbook = XLSX.read(buffer, {
-        type: 'array',
-        cellDates: true,
-        cellNF: false,
-        cellText: false,
-      });
-      const workbookOptions = {
-        date1904: !!(workbook && workbook.Workbook && workbook.Workbook.WBProps && workbook.Workbook.WBProps.date1904),
-      };
-      cachedWorkbook = workbook;
-      cachedWorkbookOptions = workbookOptions;
-      cachedMetadata = metadata;
-      sharedState.workbook = workbook;
-      sharedState.version = metadata;
-      sharedState.workbookOptions = workbookOptions;
-      sharedState.sheetNames = Array.isArray(workbook?.SheetNames) ? workbook.SheetNames.slice() : [];
-      publicDataContainer.version = metadata || null;
-      return { workbook, workbookOptions, metadata };
-    })().catch((error) => {
-      resetWorkbookCache();
-      throw error;
-    });
-    sharedState.promise = cachedWorkbookPromise;
-    publicDataContainer.promise = cachedWorkbookPromise;
-    return cachedWorkbookPromise;
-  }
-
   function resolveSheetName(workbook, options) {
     const sheetNames = Array.isArray(workbook.SheetNames) ? workbook.SheetNames : [];
     if (!sheetNames.length) {
@@ -487,61 +332,47 @@
 
   async function loadExcelData(options = {}) {
     const normalisedOptions = normaliseOptions(options);
-    const workbookPayload = await getWorkbookPromise(normalisedOptions.forceReload === true);
-    const workbook = workbookPayload.workbook || cachedWorkbook;
-    const workbookOptions = workbookPayload.workbookOptions || cachedWorkbookOptions || {};
-    const metadata = workbookPayload.metadata || cachedMetadata || null;
-    const sheetName = resolveSheetName(workbook, normalisedOptions);
-    const sheetKey = getSheetCacheKey(sheetName);
-
-    let cacheEntry = sharedState.sheetCache instanceof Map ? sharedState.sheetCache.get(sheetKey) : null;
-    let rows;
-    let records;
-
-    if (cacheEntry && normalisedOptions.forceReload !== true) {
-      rows = cacheEntry.rows;
-      records = cacheEntry.records;
-      sharedState.rows = rows;
-      sharedState.records = records;
-      sharedState.sheetName = sheetName || null;
-      publicDataContainer.rows = rows;
-      publicDataContainer.records = records;
-      publicDataContainer.sheetName = sheetName || null;
-      publicDataContainer.version = metadata || null;
-    } else {
-      const worksheet = sheetName ? workbook.Sheets[sheetName] : null;
-      const normalisedRows = [];
-      if (worksheet) {
-        const rawRows = extractWorksheetRows(worksheet);
-        rawRows.forEach((row) => {
-          const safeRow = Array.isArray(row) ? row : [];
-          normalisedRows.push(normaliseRow(safeRow, workbookOptions));
-        });
-      }
-      rows = normalisedRows;
-      records = buildRecords(normalisedRows);
-      cacheEntry = storeSheetData(sheetName, normalisedRows, records, metadata);
-      rows = cacheEntry.rows;
-      records = cacheEntry.records;
+    if (cachedPromise && normalisedOptions.forceReload !== true) {
+      return cachedPromise;
+    }
+    if (typeof XLSX === 'undefined') {
+      return Promise.reject(new Error('Excel parser library is not available'));
     }
 
-    sharedState.workbook = workbook;
-    sharedState.version = metadata;
-    sharedState.workbookOptions = workbookOptions;
+    ensureServiceWorkerUnregistered();
 
-    return {
-      workbook,
-      sheetName,
-      rows,
-      records,
-      version: metadata,
-    };
-  }
-
-  if (!sharedState.promise) {
-    getWorkbookPromise(false).catch((error) => {
-      console.error('Initial Excel load failed:', error);
+    cachedPromise = (async () => {
+      const { buffer, metadata } = await fetchWorkbookBuffer();
+      const workbook = XLSX.read(buffer, {
+        type: 'array',
+        cellDates: true,
+        cellNF: false,
+        cellText: false,
+      });
+      const workbookOptions = {
+        date1904: !!(workbook && workbook.Workbook && workbook.Workbook.WBProps && workbook.Workbook.WBProps.date1904),
+      };
+      const sheetName = resolveSheetName(workbook, normalisedOptions);
+      const worksheet = sheetName ? workbook.Sheets[sheetName] : null;
+      let rows = [];
+      if (worksheet) {
+        const rawRows = extractWorksheetRows(worksheet);
+        rows = rawRows.map((row) => (Array.isArray(row) ? normaliseRow(row, workbookOptions) : []));
+      }
+      const records = buildRecords(rows);
+      return {
+        workbook,
+        sheetName,
+        rows,
+        records,
+        version: metadata,
+      };
+    })().catch((error) => {
+      cachedPromise = null;
+      throw error;
     });
+
+    return cachedPromise;
   }
 
   global.loadExcelData = loadExcelData;
