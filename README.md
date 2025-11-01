@@ -5,12 +5,12 @@ The analysis dashboard hosted on GitHub Pages reads its data directly from the E
 ## Data source
 - Excel file: `analysis/data/daily.xlsx`
 - Parsed client-side in the browser using [SheetJS](https://sheetjs.com/) (`xlsx` library).
-- The loader automatically requests the most recent version of the workbook from the `main` branch.
+- The loader first requests the workbook from the same origin at `/GrossProceed/analysis/data/daily.xlsx` and automatically falls back to `https://raw.githubusercontent.com/chirag1969/GrossProceed/main/analysis/data/daily.xlsx` if the primary URL is unavailable.
 
-## Versioning and cache busting
-- `analysis/js/dataLoader.js` calls the GitHub commits API to determine the latest commit touching the workbook.
-- The commit SHA and a timestamp are appended to the raw file request to prevent CDN or browser caches from serving stale content.
-- The short SHA and commit date are surfaced in the UI (see the “Data version” text near the top of the dashboard).
+## Freshness and cache busting
+- Each request appends a timestamp cache-buster query parameter and uses `cache: "no-store"` to bypass intermediary caches.
+- Any registered service workers are unregistered on load to avoid stale cached responses.
+- The UI data banner shows which source responded ("same-origin" or "raw.githubusercontent.com") together with the fetch timestamp.
 
 ## Updating worksheets or columns
 - The main dashboard logic lives in `analysis/js/analysis.js`.

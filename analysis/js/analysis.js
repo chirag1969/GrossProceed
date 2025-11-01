@@ -329,27 +329,45 @@ const tabButtons = document.querySelectorAll('.tab-button');
       if (!dataVersionElement) {
         return;
       }
-      if (!version || !version.shortSha) {
+      if (!version || !version.sourceLabel) {
         dataVersionElement.textContent = '';
         dataVersionElement.hidden = true;
         dataVersionElement.removeAttribute('title');
-        dataVersionElement.removeAttribute('data-version');
+        dataVersionElement.removeAttribute('data-source');
+        dataVersionElement.removeAttribute('data-cache-buster');
         return;
       }
-      const parts = [`${version.shortSha}`];
-      if (version.committedDateDisplay) {
-        parts.push(version.committedDateDisplay);
+      const parts = [`Data source: ${version.sourceLabel}`];
+      if (version.fetchTimestampDisplay) {
+        parts.push(`fetched ${version.fetchTimestampDisplay}`);
+      } else if (version.lastModifiedDisplay) {
+        parts.push(`last modified ${version.lastModifiedDisplay}`);
       }
-      dataVersionElement.textContent = `Data version: ${parts.join(' • ')}`;
-      if (version.committedDateISO) {
-        dataVersionElement.title = `Last updated ${version.committedDateISO}`;
+      dataVersionElement.textContent = parts.join(' • ');
+      const titleParts = [];
+      if (version.finalUrl) {
+        titleParts.push(`URL: ${version.finalUrl}`);
+      }
+      if (version.fetchTimestampISO) {
+        titleParts.push(`Fetched: ${version.fetchTimestampISO}`);
+      }
+      if (version.lastModifiedISO) {
+        titleParts.push(`Last-Modified: ${version.lastModifiedISO}`);
+      }
+      if (titleParts.length) {
+        dataVersionElement.title = titleParts.join('\n');
       } else {
         dataVersionElement.removeAttribute('title');
       }
-      if (version.sha) {
-        dataVersionElement.setAttribute('data-version', version.sha);
+      if (version.sourceType) {
+        dataVersionElement.setAttribute('data-source', version.sourceType);
       } else {
-        dataVersionElement.removeAttribute('data-version');
+        dataVersionElement.removeAttribute('data-source');
+      }
+      if (version.cacheBuster) {
+        dataVersionElement.setAttribute('data-cache-buster', version.cacheBuster);
+      } else {
+        dataVersionElement.removeAttribute('data-cache-buster');
       }
       dataVersionElement.hidden = false;
     }
