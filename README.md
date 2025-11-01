@@ -6,6 +6,8 @@ The analysis dashboard hosted on GitHub Pages reads its data directly from the E
 - Excel file: `analysis/data/daily.xlsx`
 - Parsed client-side in the browser using [SheetJS](https://sheetjs.com/) (`xlsx` library).
 - The loader first requests the workbook from the same origin at `/GrossProceed/analysis/data/daily.xlsx` and automatically falls back to `https://raw.githubusercontent.com/chirag1969/GrossProceed/main/analysis/data/daily.xlsx` if the primary URL is unavailable.
+- Every page load reads the entire used range of the active worksheet without imposing row caps; only rows that are completely empty are skipped during record construction.
+- Regular tab visuals render numeric Excel dates as `dd-mm-yyyy` strings while preserving any textual date values verbatim to avoid timezone shifts or locale mutations.
 
 ## Freshness and cache busting
 - Each request appends a timestamp cache-buster query parameter and uses `cache: "no-store"` to bypass intermediary caches.

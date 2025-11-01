@@ -92,6 +92,69 @@
     return row.map((cell) => normaliseCellValue(cell, workbookOptions));
   }
 
+  function buildMergeLookup(worksheet) {
+    const merges = Array.isArray(worksheet && worksheet['!merges']) ? worksheet['!merges'] : [];
+    if (!merges.length) {
+      return new Map();
+    }
+    const lookup = new Map();
+    const encodeKey = (row, column) => `${row}:${column}`;
+    merges.forEach((merge) => {
+      if (!merge || typeof merge !== 'object') {
+        return;
+      }
+      const start = merge.s || merge.start || {};
+      const end = merge.e || merge.end || start;
+      const startRow = Number.isFinite(start.r) ? start.r : 0;
+      const startCol = Number.isFinite(start.c) ? start.c : 0;
+      const endRow = Number.isFinite(end.r) ? end.r : startRow;
+      const endCol = Number.isFinite(end.c) ? end.c : startCol;
+      for (let row = startRow; row <= endRow; row += 1) {
+        for (let column = startCol; column <= endCol; column += 1) {
+          if (row === startRow && column === startCol) {
+            continue;
+          }
+          lookup.set(encodeKey(row, column), { row: startRow, column: startCol });
+        }
+      }
+    });
+    return lookup;
+  }
+
+  function extractWorksheetRows(worksheet) {
+    if (!worksheet || typeof worksheet !== 'object') {
+      return [];
+    }
+    const ref = worksheet['!ref'];
+    if (typeof ref !== 'string' || !ref.length) {
+      return [];
+    }
+    const range = XLSX.utils.decode_range(ref);
+    if (!range || !Number.isFinite(range.s.r) || !Number.isFinite(range.s.c)) {
+      return [];
+    }
+    const rows = [];
+    const mergeLookup = buildMergeLookup(worksheet);
+    const encodeKey = (row, column) => `${row}:${column}`;
+    for (let rowIndex = range.s.r; rowIndex <= range.e.r; rowIndex += 1) {
+      const row = [];
+      for (let columnIndex = range.s.c; columnIndex <= range.e.c; columnIndex += 1) {
+        const cellAddress = { r: rowIndex, c: columnIndex };
+        let cell = worksheet[XLSX.utils.encode_cell(cellAddress)];
+        if ((!cell || cell.v === undefined) && mergeLookup.size) {
+          const source = mergeLookup.get(encodeKey(rowIndex, columnIndex));
+          if (source) {
+            cell = worksheet[XLSX.utils.encode_cell({ r: source.row, c: source.column })];
+          }
+        }
+        const value = cell && cell.v !== undefined ? cell.v : '';
+        row.push(value);
+      }
+      rows.push(row);
+    }
+    return rows;
+  }
+
   function buildRecords(rows) {
     if (!Array.isArray(rows) || rows.length === 0) {
       return [];
@@ -108,6 +171,22 @@
         }
         record[normalisedKey] = keyIndex < sourceRow.length ? sourceRow[keyIndex] : '';
       });
+      const hasValue = header.some((_key, keyIndex) => {
+        if (keyIndex >= sourceRow.length) {
+          return false;
+        }
+        const value = sourceRow[keyIndex];
+        if (value === null || value === undefined) {
+          return false;
+        }
+        if (typeof value === 'string') {
+          return value.trim().length > 0;
+        }
+        return true;
+      });
+      if (!hasValue) {
+        continue;
+      }
       records.push(record);
     }
     return records;
@@ -277,12 +356,7 @@
       const worksheet = sheetName ? workbook.Sheets[sheetName] : null;
       let rows = [];
       if (worksheet) {
-        const rawRows = XLSX.utils.sheet_to_json(worksheet, {
-          header: 1,
-          blankrows: false,
-          defval: '',
-          raw: true,
-        });
+        const rawRows = extractWorksheetRows(worksheet);
         rows = rawRows.map((row) => (Array.isArray(row) ? normaliseRow(row, workbookOptions) : []));
       }
       const records = buildRecords(rows);

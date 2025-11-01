@@ -1384,7 +1384,6 @@ const tabButtons = document.querySelectorAll('.tab-button');
       dashboardPivotRowFilterInitialised = true;
     }
     const EXCEL_DEFAULT_HEADER_SEARCH_VALUES = EXCEL_KEY_COLUMN_NAMES;
-    const EXCEL_MAX_BLANK_ROWS = 2000;
 
     function getTabPanelElement(tabId) {
       if (!tabId) {
@@ -1717,16 +1716,74 @@ const tabButtons = document.querySelectorAll('.tab-button');
       return { worksheet: workbook.Sheets[firstName], sheetName: firstName };
     }
 
+    function buildMergeLookup(worksheet) {
+      const merges = Array.isArray(worksheet && worksheet['!merges']) ? worksheet['!merges'] : [];
+      if (!merges.length) {
+        return new Map();
+      }
+      const lookup = new Map();
+      const encodeKey = (row, column) => `${row}:${column}`;
+      merges.forEach((merge) => {
+        if (!merge || typeof merge !== 'object') {
+          return;
+        }
+        const start = merge.s || merge.start || {};
+        const end = merge.e || merge.end || start;
+        const startRow = Number.isFinite(start.r) ? start.r : 0;
+        const startCol = Number.isFinite(start.c) ? start.c : 0;
+        const endRow = Number.isFinite(end.r) ? end.r : startRow;
+        const endCol = Number.isFinite(end.c) ? end.c : startCol;
+        for (let row = startRow; row <= endRow; row += 1) {
+          for (let column = startCol; column <= endCol; column += 1) {
+            if (row === startRow && column === startCol) {
+              continue;
+            }
+            lookup.set(encodeKey(row, column), { row: startRow, column: startCol });
+          }
+        }
+      });
+      return lookup;
+    }
+
+    function extractWorksheetRows(worksheet) {
+      if (!worksheet || typeof worksheet !== 'object') {
+        return [];
+      }
+      const ref = worksheet['!ref'];
+      if (typeof ref !== 'string' || !ref.length) {
+        return [];
+      }
+      const range = XLSX.utils.decode_range(ref);
+      if (!range || !Number.isFinite(range.s.r) || !Number.isFinite(range.s.c)) {
+        return [];
+      }
+      const rows = [];
+      const mergeLookup = buildMergeLookup(worksheet);
+      const encodeKey = (row, column) => `${row}:${column}`;
+      for (let rowIndex = range.s.r; rowIndex <= range.e.r; rowIndex += 1) {
+        const row = [];
+        for (let columnIndex = range.s.c; columnIndex <= range.e.c; columnIndex += 1) {
+          const address = { r: rowIndex, c: columnIndex };
+          let cell = worksheet[XLSX.utils.encode_cell(address)];
+          if ((!cell || cell.v === undefined) && mergeLookup.size) {
+            const source = mergeLookup.get(encodeKey(rowIndex, columnIndex));
+            if (source) {
+              cell = worksheet[XLSX.utils.encode_cell({ r: source.row, c: source.column })];
+            }
+          }
+          const value = cell && cell.v !== undefined ? cell.v : '';
+          row.push(value);
+        }
+        rows.push(row);
+      }
+      return rows;
+    }
+
     function buildDatasetFromWorksheet(worksheet, options = {}) {
       if (!worksheet) {
         throw new Error('Worksheet not found in workbook');
       }
-      const rawRows = XLSX.utils.sheet_to_json(worksheet, {
-        header: 1,
-        blankrows: false,
-        defval: '',
-        raw: true,
-      });
+      const rawRows = extractWorksheetRows(worksheet);
       if (!Array.isArray(rawRows) || !rawRows.length) {
         throw new Error('Worksheet is empty');
       }
@@ -1844,17 +1901,12 @@ const tabButtons = document.querySelectorAll('.tab-button');
           };
         }
       }
-      let blankRun = 0;
       const rows = [];
       for (let i = headerIndex + 1; i < rawRows.length; i += 1) {
         const sourceRow = Array.isArray(rawRows[i]) ? rawRows[i] : [];
         const normalisedRow = columns.map((_, columnIndex) => coerceCellValue(sourceRow[columnIndex]));
         const isBlankRow = normalisedRow.every((value) => value === '');
         if (isBlankRow) {
-          blankRun += 1;
-          if (blankRun > EXCEL_MAX_BLANK_ROWS) {
-            break;
-          }
           continue;
         }
         const hasKey = keyColumnIndexes.some((index) => {
@@ -1869,14 +1921,9 @@ const tabButtons = document.querySelectorAll('.tab-button');
           return trimmed !== '' && trimmed !== '-' && trimmed !== '--';
         });
         if (!hasKey) {
-          blankRun += 1;
-          if (blankRun > EXCEL_MAX_BLANK_ROWS) {
-            break;
-          }
           continue;
         }
         rows.push(normalisedRow);
-        blankRun = 0;
       }
       const dataset = { columns, rows };
       if (headerPreamble) {
@@ -6127,7 +6174,7 @@ const tabButtons = document.querySelectorAll('.tab-button');
         return typeof value === 'string' ? value.trim() : '';
       }
       const normalizedColumn = columnName ? columnName.trim().toLowerCase() : '';
-      if (normalizedColumn === 'checkout') {
+      if (normalizedColumn === 'checkout' || normalizedColumn === 'date') {
         const formattedDate = formatExcelSerialDate(value);
         if (formattedDate) {
           return formattedDate;
