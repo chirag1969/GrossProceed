@@ -18,6 +18,7 @@ const tabButtons = document.querySelectorAll('.tab-button');
     const skuFilterClearButtonElement = document.getElementById('sku-filter-clear-button');
     const mainFilterClearButtonElement = document.getElementById('main-filter-clear-button');
     const regularFilterClearButtonElement = document.getElementById('regular-filter-clear-button');
+    const regularStatusElement = document.getElementById('regular-data-status');
     const dashboardSummaryStoreFilterGroupElement = document.getElementById('dashboard-summary-store-filter-group');
     const dashboardSummaryStoreFilterContainerElement = document.getElementById('dashboard-summary-store-filter');
     const dashboardSummaryStoreFilterToggleElement = document.getElementById('dashboard-summary-store-filter-toggle');
@@ -319,6 +320,8 @@ const tabButtons = document.querySelectorAll('.tab-button');
     const REGULAR_TABLE_PAGE_LENGTH = 200;
     const SHOW_REGULAR_TOTAL_ROW = true;
     const REGULAR_FILTER_MAX_UNIQUE_VALUES = 350;
+    const REGULAR_REQUIRED_COLUMN_KEYS = ['product'];
+    const REGULAR_DATE_COLUMN_CANDIDATES = ['checkout', 'date'];
     let EXCEL_REGULAR_SHEET_CANDIDATES = [
       'REGULAR',
       'Regular',
@@ -391,6 +394,45 @@ const tabButtons = document.querySelectorAll('.tab-button');
       dataErrorElement.textContent = text;
       dataErrorElement.hidden = false;
       dataErrorElement.setAttribute('role', 'alert');
+    }
+
+    function clearRegularStatus() {
+      if (!regularStatusElement) {
+        return;
+      }
+      regularStatusElement.textContent = '';
+      regularStatusElement.hidden = true;
+      regularStatusElement.removeAttribute('role');
+      regularStatusElement.removeAttribute('data-state');
+    }
+
+    function showRegularErrorStatus(details = {}) {
+      if (!regularStatusElement) {
+        return;
+      }
+      const parts = [];
+      const step = typeof details.step === 'string' && details.step.trim().length ? details.step.trim() : '';
+      const message = typeof details.message === 'string' && details.message.trim().length
+        ? details.message.trim()
+        : 'Unable to render regular data';
+      if (step) {
+        parts.push(`[${step}]`);
+      }
+      parts.push(message);
+      const missingColumns = Array.isArray(details.missingColumns) ? details.missingColumns : [];
+      if (missingColumns.length) {
+        parts.push(`Missing columns: ${missingColumns.join(', ')}`);
+      }
+      if (typeof details.rowsBefore === 'number' && Number.isFinite(details.rowsBefore)) {
+        parts.push(`Rows before filters: ${details.rowsBefore}`);
+      }
+      if (typeof details.rowsAfter === 'number' && Number.isFinite(details.rowsAfter)) {
+        parts.push(`Rows after filters: ${details.rowsAfter}`);
+      }
+      regularStatusElement.textContent = parts.join(' • ');
+      regularStatusElement.hidden = false;
+      regularStatusElement.setAttribute('role', 'alert');
+      regularStatusElement.dataset.state = 'error';
     }
 
     function applyWorkbookDisplayName(displayName) {
@@ -2873,6 +2915,20 @@ const tabButtons = document.querySelectorAll('.tab-button');
         });
     }
 
+    function logRegularDatasetDiagnostics(stage, dataset, extra = {}) {
+      const columns = Array.isArray(dataset?.columns) ? dataset.columns : [];
+      const rows = Array.isArray(dataset?.rows) ? dataset.rows : [];
+      const diagnostics = {
+        stage,
+        rowCount: rows.length,
+        columnCount: columns.length,
+        columns,
+        ...extra,
+      };
+      console.info('[Regular] dataset diagnostics:', diagnostics);
+      return diagnostics;
+    }
+
     function fetchRegularDataset() {
       if (regularDatasetCache) {
         return Promise.resolve(regularDatasetCache);
@@ -2880,21 +2936,25 @@ const tabButtons = document.querySelectorAll('.tab-button');
       if (regularDatasetPromise) {
         return regularDatasetPromise;
       }
-      regularDatasetPromise = loadDatasetFromExcel({
-        sheetCandidates: EXCEL_REGULAR_SHEET_CANDIDATES,
-        fallbackPredicate: (name) => {
-          const normalised = normaliseSheetName(name);
-          return normalised.includes('regular');
-        },
-        errorMessage: `${getRegularDisplayName()} worksheet not found in workbook`,
-      })
-        .then((data) => {
-          regularDatasetCache = data;
-          return data;
+      const datasetSource = mainDatasetCache
+        ? Promise.resolve(mainDatasetCache)
+        : mainDatasetPromise
+          ? mainDatasetPromise
+          : fetchMainDataset();
+      regularDatasetPromise = datasetSource
+        .then((dataset) => {
+          if (!dataset || typeof dataset !== 'object') {
+            throw new Error('Shared dataset is unavailable');
+          }
+          const frozen = freezeDataset(dataset);
+          regularDatasetCache = frozen;
+          logRegularDatasetDiagnostics('shared-load', frozen);
+          return frozen;
         })
         .catch((error) => {
           regularDatasetPromise = null;
-          console.error('Failed to load dataset from Excel:', error);
+          regularDatasetCache = null;
+          console.error('Failed to obtain shared dataset for Regular tab:', error);
           throw error;
         });
       return regularDatasetPromise;
@@ -2920,8 +2980,11 @@ const tabButtons = document.querySelectorAll('.tab-button');
         includeHeaderPreamble: true,
       })
         .then((data) => {
-          mainDatasetCache = data;
-          return data;
+          const frozen = freezeDataset(data);
+          mainDatasetCache = frozen;
+          regularDatasetCache = frozen;
+          regularDatasetPromise = Promise.resolve(frozen);
+          return frozen;
         })
         .catch((error) => {
           mainDatasetPromise = null;
@@ -6188,6 +6251,39 @@ const tabButtons = document.querySelectorAll('.tab-button');
       return typeof value === 'string' ? value : String(value ?? '');
     }
 
+    function freezeDataset(dataset) {
+      if (!dataset || typeof dataset !== 'object' || Object.isFrozen(dataset)) {
+        return dataset;
+      }
+      const frozenColumns = Array.isArray(dataset.columns)
+        ? Object.freeze(dataset.columns.map((value) => value))
+        : Object.freeze([]);
+      const frozenRows = Array.isArray(dataset.rows)
+        ? Object.freeze(dataset.rows.map((row) => Object.freeze(Array.isArray(row) ? row.slice() : [])))
+        : Object.freeze([]);
+      const frozenDataset = {
+        ...dataset,
+        columns: frozenColumns,
+        rows: frozenRows,
+      };
+      if (Array.isArray(dataset.totalsRow)) {
+        frozenDataset.totalsRow = Object.freeze(dataset.totalsRow.map((value) => value));
+      }
+      if (Array.isArray(dataset.numericColumnIndices)) {
+        frozenDataset.numericColumnIndices = Object.freeze(dataset.numericColumnIndices.slice());
+      }
+      if (dataset.headerPreamble && typeof dataset.headerPreamble === 'object') {
+        const headerRows = Array.isArray(dataset.headerPreamble.rows)
+          ? Object.freeze(dataset.headerPreamble.rows.map((row) => Object.freeze(Array.isArray(row) ? row.slice() : [])))
+          : Object.freeze([]);
+        const headerMerges = Array.isArray(dataset.headerPreamble.merges)
+          ? Object.freeze(dataset.headerPreamble.merges.map((merge) => (merge ? { ...merge } : merge)))
+          : Object.freeze([]);
+        frozenDataset.headerPreamble = Object.freeze({ rows: headerRows, merges: headerMerges });
+      }
+      return Object.freeze(frozenDataset);
+    }
+
     const RATIO_EPSILON = 1e-9;
 
     function getRatioMultiplier(computedConfig) {
@@ -8716,105 +8812,178 @@ const tabButtons = document.querySelectorAll('.tab-button');
         return Promise.resolve();
       }
       setTabPanelLoading('regular', true, 'Loading regular data…');
+      clearRegularStatus();
       return fetchRegularDataset()
         .then((dataset) => {
+          if (!dataset || !Array.isArray(dataset.columns)) {
+            const validationError = new Error('Shared dataset is empty or unavailable');
+            validationError.step = 'validate-shared-dataset';
+            validationError.rowsBefore = Array.isArray(dataset?.rows) ? dataset.rows.length : 0;
+            throw validationError;
+          }
+
           updateStickyOffset();
+
+          const rowsBefore = Array.isArray(dataset.rows) ? dataset.rows.length : 0;
+          const columnLookup = buildDatasetColumnLookup(dataset.columns);
+          const missingColumns = [];
+          REGULAR_REQUIRED_COLUMN_KEYS.forEach((key) => {
+            if (!columnLookup.has(key)) {
+              missingColumns.push(key);
+            }
+          });
+          const dateColumnIndexes = REGULAR_DATE_COLUMN_CANDIDATES
+            .map((candidate) => columnLookup.get(candidate))
+            .filter((index) => typeof index === 'number');
+          if (!dateColumnIndexes.length) {
+            missingColumns.push('checkout/date');
+          }
+          if (missingColumns.length) {
+            const validationError = new Error(`Shared dataset missing required columns: ${missingColumns.join(', ')}`);
+            validationError.step = 'validate-columns';
+            validationError.missingColumns = missingColumns;
+            validationError.rowsBefore = rowsBefore;
+            throw validationError;
+          }
+
+          logRegularDatasetDiagnostics('regular-pre-augment', dataset, {
+            rowsBeforeFilters: rowsBefore,
+            dateColumnIndexes,
+          });
 
           const augmentedDataset = augmentDatasetWithTotals(dataset);
           regularTableAugmentedDataset = augmentedDataset;
           totalColumnIndex = augmentedDataset.totalColumnIndex;
-          const columns = augmentedDataset.columns.map((title) => ({ title }));
-          const formattedRows = augmentedDataset.rows.map((row) => row.map((value, index) => formatCellValue(value, augmentedDataset.columns[index])));
-          const productColumnIndex = augmentedDataset.columns.indexOf('Product');
-          const quantityColumnIndex = augmentedDataset.columns.findIndex((column) => column && column.trim().toLowerCase() === 'qty');
-          const numericColumnIndices = augmentedDataset.numericColumnIndices;
+          const rowsAfter = Array.isArray(augmentedDataset.rows) ? augmentedDataset.rows.length : 0;
 
-          regularTableFooterValues = SHOW_REGULAR_TOTAL_ROW
-            ? buildFormattedFooterValues(augmentedDataset)
-            : [];
-          regularTableNumericColumnSet = SHOW_REGULAR_TOTAL_ROW
-            ? new Set(numericColumnIndices)
-            : new Set();
-
-          if (SHOW_REGULAR_TOTAL_ROW) {
-            const tableElement = document.getElementById('regular-table');
-            if (tableElement) {
-              ensureTableFooter(
-                tableElement,
-                augmentedDataset.columns.length,
-                regularTableFooterValues,
-                regularTableNumericColumnSet
-              );
-            }
-          }
-
-          const columnClassMap = new Map();
-          const addColumnClass = (columnIndex, className) => {
-            if (columnIndex < 0) {
-              return;
-            }
-            if (!columnClassMap.has(columnIndex)) {
-              columnClassMap.set(columnIndex, new Set());
-            }
-            columnClassMap.get(columnIndex).add(className);
-          };
-
-          addColumnClass(productColumnIndex, 'cell-product');
-          addColumnClass(quantityColumnIndex, 'cell-qty');
-          numericColumnIndices.forEach((columnIndex) => addColumnClass(columnIndex, 'cell-numeric'));
-
-          const columnDefs = Array.from(columnClassMap.entries()).map(([columnIndex, classSet]) => ({
-            targets: Number(columnIndex),
-            className: Array.from(classSet).join(' '),
-          }));
-
-          const initialRowCount = Math.min(augmentedDataset.rows.length, REGULAR_TABLE_PAGE_LENGTH);
-          const initialReservedSpace = calculateRegularTableReservedSpace();
-          const initialScrollHeight = `${calculateScrollBodyHeight(initialRowCount, undefined, initialReservedSpace)}px`;
-          regularTable = $('#regular-table').DataTable({
-            data: formattedRows,
-            columns,
-            columnDefs,
-            scrollX: true,
-            scrollY: initialScrollHeight,
-            scrollCollapse: true,
-            deferRender: true,
-            autoWidth: true,
-            aaSorting: [],
-            order: [],
-            ordering: false,
-            paging: true,
-            pageLength: REGULAR_TABLE_PAGE_LENGTH,
-            lengthChange: false,
-            info: false,
-            dom: 't<"regular-table__footer"p>'
+          logRegularDatasetDiagnostics('regular-pre-render', dataset, {
+            rowsBeforeFilters: rowsBefore,
+            rowsAfterFilters: rowsAfter,
+            totalColumnIndex,
           });
 
-          moveRegularTablePagination();
-          columnValueOptions = buildColumnOptions(augmentedDataset);
-          initializeRegularFilterControls(augmentedDataset);
-          wireHeaderEvents(regularTable, { allowSorting: false });
-          applyTableHeight(regularTable);
-          if (SHOW_REGULAR_TOTAL_ROW) {
-            updateRegularTableFooter(regularTable);
-          }
-          regularTable.on('draw.dt', () => {
+          const columns = augmentedDataset.columns.map((title) => ({ title }));
+          const formattedRows = augmentedDataset.rows.map((row) => row.map((value, index) => formatCellValue(value, augmentedDataset.columns[index])));
+          const productColumnIndex = columnLookup.get('product') ?? augmentedDataset.columns.findIndex((column) => column && column.trim().toLowerCase() === 'product');
+          const quantityColumnIndex = columnLookup.get('qty') ?? augmentedDataset.columns.findIndex((column) => column && column.trim().toLowerCase() === 'qty');
+          const numericColumnIndices = augmentedDataset.numericColumnIndices;
+
+          console.info('[Regular] column mapping resolved', {
+            productColumnIndex,
+            quantityColumnIndex,
+            dateColumnIndexes,
+            rowsBeforeFilters: rowsBefore,
+            rowsAfterFilters: rowsAfter,
+          });
+
+          try {
+            regularTableFooterValues = SHOW_REGULAR_TOTAL_ROW
+              ? buildFormattedFooterValues(augmentedDataset)
+              : [];
+            regularTableNumericColumnSet = SHOW_REGULAR_TOTAL_ROW
+              ? new Set(numericColumnIndices)
+              : new Set();
+
+            if (SHOW_REGULAR_TOTAL_ROW) {
+              const tableElement = document.getElementById('regular-table');
+              if (tableElement) {
+                ensureTableFooter(
+                  tableElement,
+                  augmentedDataset.columns.length,
+                  regularTableFooterValues,
+                  regularTableNumericColumnSet
+                );
+              }
+            }
+
+            const columnClassMap = new Map();
+            const addColumnClass = (columnIndex, className) => {
+              if (columnIndex < 0) {
+                return;
+              }
+              if (!columnClassMap.has(columnIndex)) {
+                columnClassMap.set(columnIndex, new Set());
+              }
+              columnClassMap.get(columnIndex).add(className);
+            };
+
+            addColumnClass(productColumnIndex, 'cell-product');
+            addColumnClass(quantityColumnIndex, 'cell-qty');
+            numericColumnIndices.forEach((columnIndex) => addColumnClass(columnIndex, 'cell-numeric'));
+
+            const columnDefs = Array.from(columnClassMap.entries()).map(([columnIndex, classSet]) => ({
+              targets: Number(columnIndex),
+              className: Array.from(classSet).join(' '),
+            }));
+
+            const initialRowCount = Math.min(augmentedDataset.rows.length, REGULAR_TABLE_PAGE_LENGTH);
+            const initialReservedSpace = calculateRegularTableReservedSpace();
+            const initialScrollHeight = `${calculateScrollBodyHeight(initialRowCount, undefined, initialReservedSpace)}px`;
+            regularTable = $('#regular-table').DataTable({
+              data: formattedRows,
+              columns,
+              columnDefs,
+              scrollX: true,
+              scrollY: initialScrollHeight,
+              scrollCollapse: true,
+              deferRender: true,
+              autoWidth: true,
+              aaSorting: [],
+              order: [],
+              ordering: false,
+              paging: true,
+              pageLength: REGULAR_TABLE_PAGE_LENGTH,
+              lengthChange: false,
+              info: false,
+              dom: 't<"regular-table__footer"p>'
+            });
+
+            moveRegularTablePagination();
+            columnValueOptions = buildColumnOptions(augmentedDataset);
+            initializeRegularFilterControls(augmentedDataset);
             wireHeaderEvents(regularTable, { allowSorting: false });
             applyTableHeight(regularTable);
             if (SHOW_REGULAR_TOTAL_ROW) {
               updateRegularTableFooter(regularTable);
             }
-            moveRegularTablePagination();
-          });
+            regularTable.on('draw.dt', () => {
+              wireHeaderEvents(regularTable, { allowSorting: false });
+              applyTableHeight(regularTable);
+              if (SHOW_REGULAR_TOTAL_ROW) {
+                updateRegularTableFooter(regularTable);
+              }
+              moveRegularTablePagination();
+            });
 
-          regularTableInitialised = true;
-          requestAnimationFrame(() => refreshRegularTableLayout());
+            regularTableInitialised = true;
+            requestAnimationFrame(() => refreshRegularTableLayout());
+          } catch (tableError) {
+            regularTableInitialised = false;
+            if (!Array.isArray(tableError?.missingColumns)) {
+              tableError.missingColumns = [];
+            }
+            if (typeof tableError.rowsBefore !== 'number') {
+              tableError.rowsBefore = rowsBefore;
+            }
+            if (typeof tableError.rowsAfter !== 'number') {
+              tableError.rowsAfter = rowsAfter;
+            }
+            if (!tableError.step) {
+              tableError.step = 'initialise-table';
+            }
+            throw tableError;
+          }
         })
         .catch((error) => {
-          const tableElement = document.getElementById('regular-table');
-          if (tableElement) {
-            tableElement.outerHTML = `<p style="color: var(--muted);">${error.message}</p>`;
-          }
+          const details = {
+            step: error && typeof error.step === 'string' ? error.step : 'regular-render',
+            message: error && error.message ? error.message : 'Unable to render regular data',
+            missingColumns: Array.isArray(error?.missingColumns) ? error.missingColumns : [],
+            rowsBefore: typeof error?.rowsBefore === 'number' ? error.rowsBefore : (Array.isArray(regularDatasetCache?.rows) ? regularDatasetCache.rows.length : undefined),
+            rowsAfter: typeof error?.rowsAfter === 'number' ? error.rowsAfter : undefined,
+          };
+          console.error('Regular tab render failed:', { error, details });
+          showRegularErrorStatus(details);
         })
         .finally(() => {
           setTabPanelLoading('regular', false);
