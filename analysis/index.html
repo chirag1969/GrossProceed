@@ -11,6 +11,7 @@
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="./js/dataLoader.js"></script>
   <style>
     html {
       font-size: 13px;
@@ -3247,9 +3248,6 @@
     let salesGapInitialised = false;
     let activeSalesGapFilterConfig = null;
     let salesGapFilterKeyListenerRegistered = false;
-    let excelWorkbookCache = null;
-    let excelWorkbookPromise = null;
-    let excelWorkbookRequestUrlCache = null;
 
     const NUMERIC_COLUMN_EXCLUSIONS = new Set(['ORDER NO', 'PLAIN ORDER NO', 'ORDER #', 'ORDER NO.', 'CHECKOUT']);
     const ZERO_DECIMAL_COLUMNS = new Set(['qty', 'order no', 'plain order no', 'order no.', 'order #']);
@@ -3342,18 +3340,17 @@
     const REGULAR_TABLE_PAGE_LENGTH = 200;
     const SHOW_REGULAR_TOTAL_ROW = true;
     const REGULAR_FILTER_MAX_UNIQUE_VALUES = 350;
-    const WORKBOOK_CONFIG_PATH = './workbook-config.json';
-    const DEFAULT_WORKBOOK_PATTERN = '*GROSS PROCEED*COMBINE.xlsx';
-    const DEFAULT_WORKBOOK_DIRECTORY = '..';
-    let EXCEL_WORKBOOK_PATH = null;
-    let EXCEL_WORKBOOK_PATTERN = DEFAULT_WORKBOOK_PATTERN;
-    let EXCEL_WORKBOOK_DIRECTORY = DEFAULT_WORKBOOK_DIRECTORY;
+    const DEFAULT_WORKBOOK_PATH = (typeof ExcelDataLoader === 'object'
+      && ExcelDataLoader !== null
+      && typeof ExcelDataLoader.DEFAULT_PATH === 'string')
+      ? ExcelDataLoader.DEFAULT_PATH
+      : './data/daily.xlsx';
+    let EXCEL_WORKBOOK_PATH = DEFAULT_WORKBOOK_PATH;
     let EXCEL_REGULAR_SHEET_CANDIDATES = [
       'REGULAR',
       'Regular',
     ];
-    let EXCEL_REGULAR_DISPLAY_NAME = 'Regular';
-    let workbookConfigPromise = null;
+    let EXCEL_REGULAR_DISPLAY_NAME = 'Gross Proceed';
 
     function applyWorkbookDisplayName(displayName) {
       if (typeof displayName !== 'string') {
@@ -3375,345 +3372,12 @@
       }
     }
 
-    function applyWorkbookConfig(config) {
-      if (!config || typeof config !== 'object') {
-        return;
-      }
-
-      if (typeof config.regularDisplayName === 'string') {
-        applyWorkbookDisplayName(config.regularDisplayName);
-      } else if (typeof config.regularSheetName === 'string') {
-        applyWorkbookDisplayName(config.regularSheetName);
-      }
-
-      if (typeof config.regularSheetName === 'string') {
-        const sheetName = config.regularSheetName.trim();
-        if (sheetName.length) {
-          const sheetVariants = [
-            sheetName,
-            sheetName.toUpperCase(),
-            sheetName.toLowerCase(),
-            sheetName.replace(/\s+/g, ' '),
-            'REGULAR',
-            'Regular',
-          ];
-          const unique = Array.from(new Set(sheetVariants.filter((value) => typeof value === 'string' && value.trim().length))).map((value) => value.trim());
-          if (unique.length) {
-            EXCEL_REGULAR_SHEET_CANDIDATES = unique;
-          }
-        }
-      }
-
-      if (typeof config.workbookDirectory === 'string' && config.workbookDirectory.trim().length) {
-        const normalisedDirectory = normaliseDirectoryPath(config.workbookDirectory);
-        if (normalisedDirectory) {
-          EXCEL_WORKBOOK_DIRECTORY = normalisedDirectory;
-        }
-      }
-
-      if (typeof config.workbookPattern === 'string' && config.workbookPattern.trim().length) {
-        EXCEL_WORKBOOK_PATTERN = config.workbookPattern.trim();
-      }
-
-      if (typeof config.workbookUrl === 'string' && config.workbookUrl.trim().length) {
-        const resolvedUrl = new URL(config.workbookUrl.trim(), window.location.href);
-        const relativeUrl = toRelativeUrl(resolvedUrl);
-        EXCEL_WORKBOOK_PATH = relativeUrl || resolvedUrl.toString();
-        excelWorkbookRequestUrlCache = null;
-        const parentUrl = new URL('./', resolvedUrl);
-        const relativeDirectory = toRelativeUrl(parentUrl);
-        const normalisedParentDirectory = normaliseDirectoryPath(relativeDirectory);
-        if (normalisedParentDirectory) {
-          EXCEL_WORKBOOK_DIRECTORY = normalisedParentDirectory;
-        }
-      } else if (typeof config.workbookFilename === 'string' && config.workbookFilename.trim().length) {
-        const filename = config.workbookFilename.trim();
-        const encoded = encodeURIComponent(filename).replace(/%2F/gi, '/');
-        const baseDirectory = normaliseDirectoryPath(EXCEL_WORKBOOK_DIRECTORY) || DEFAULT_WORKBOOK_DIRECTORY;
-        const baseUrl = new URL(baseDirectory, window.location.href);
-        const resolvedUrl = new URL(encoded, baseUrl);
-        const relativePath = toRelativeUrl(resolvedUrl);
-        EXCEL_WORKBOOK_PATH = relativePath || resolvedUrl.toString();
-        excelWorkbookRequestUrlCache = null;
-      }
-    }
-
-    function normaliseDirectoryPath(value) {
-      if (typeof value !== 'string') {
-        return null;
-      }
-      const trimmed = value.trim();
-      if (!trimmed.length) {
-        return null;
-      }
-      if (trimmed === '.' || trimmed === './') {
-        return './';
-      }
-      if (trimmed === '..' || trimmed === '../') {
-        return '../';
-      }
-      if (trimmed === '/') {
-        return '/';
-      }
-      if (/^https?:/i.test(trimmed)) {
-        try {
-          const resolved = new URL(trimmed, window.location.href);
-          return toRelativeUrl(resolved) || resolved.toString();
-        } catch (error) {
-          return null;
-        }
-      }
-      if (trimmed.endsWith('/')) {
-        return trimmed;
-      }
-      return `${trimmed}/`;
-    }
-
-    function toRelativeUrl(value) {
-      if (!value) {
-        return null;
-      }
-      try {
-        const base = new URL(window.location.href);
-        const resolved = value instanceof URL ? value : new URL(value, base);
-        if (resolved.origin === base.origin) {
-          return `${resolved.pathname}${resolved.search}${resolved.hash}`;
-        }
-        return resolved.toString();
-      } catch (error) {
-        return typeof value === 'string' ? value : null;
-      }
-    }
-
-    function globToRegExp(pattern) {
-      if (typeof pattern !== 'string' || !pattern.trim().length) {
-        return null;
-      }
-      const characters = pattern.trim().split('');
-      let regexString = '^';
-      for (const char of characters) {
-        if (char === '*') {
-          regexString += '.*';
-        } else if (char === '?') {
-          regexString += '.';
-        } else if ('\.[]{}()+-^$|'.includes(char)) {
-          regexString += `\${char}`;
-        } else {
-          regexString += char;
-        }
-      }
-      regexString += '$';
-      try {
-        return new RegExp(regexString, 'i');
-      } catch (error) {
-        return null;
-      }
-    }
-
-    function parseLastModifiedHeader(headers) {
-      if (!headers) {
-        return null;
-      }
-      let headerValue = null;
-      if (typeof headers.get === 'function') {
-        headerValue = headers.get('last-modified');
-      } else if (headers && typeof headers === 'object' && typeof headers['last-modified'] === 'string') {
-        headerValue = headers['last-modified'];
-      }
-      if (!headerValue) {
-        return null;
-      }
-      const timestamp = Date.parse(headerValue);
-      return Number.isNaN(timestamp) ? null : timestamp;
-    }
-
-    async function fetchResourceMetadata(path) {
-      const metadata = { exists: false, lastModified: null };
-      if (!path) {
-        return metadata;
-      }
-      try {
-        const headResponse = await fetch(path, { method: 'HEAD', cache: 'no-store' });
-        if (headResponse.ok) {
-          metadata.exists = true;
-          metadata.lastModified = parseLastModifiedHeader(headResponse.headers);
-          return metadata;
-        }
-        if (headResponse.status && headResponse.status !== 405 && headResponse.status !== 403) {
-          return metadata;
-        }
-      } catch (error) {
-        // Intentionally ignored; fallback request will be attempted.
-      }
-      try {
-        const response = await fetch(path, {
-          method: 'GET',
-          headers: { Range: 'bytes=0-0' },
-          cache: 'no-store',
-        });
-        if (response.ok) {
-          metadata.exists = true;
-          metadata.lastModified = parseLastModifiedHeader(response.headers);
-          if (response.body && typeof response.body.cancel === 'function') {
-            response.body.cancel().catch(() => {});
-          }
-        }
-      } catch (error) {
-        // Ignore network failures during metadata checks.
-      }
-      return metadata;
-    }
-
-    async function verifyWorkbookPath(path) {
-      if (!path) {
-        return null;
-      }
-      const metadata = await fetchResourceMetadata(path);
-      return metadata.exists ? path : null;
-    }
-
-    async function listDirectoryEntries(directoryPath) {
-      if (!directoryPath) {
-        return [];
-      }
-      try {
-        const directoryUrl = new URL(directoryPath, window.location.href);
-        const response = await fetch(directoryUrl.toString(), { cache: 'no-store' });
-        if (!response.ok) {
-          return [];
-        }
-        const text = await response.text();
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(text, 'text/html');
-        if (!doc || typeof doc.querySelectorAll !== 'function') {
-          return [];
-        }
-        const anchors = Array.from(doc.querySelectorAll('a[href]'));
-        const entries = anchors
-          .map((anchor) => {
-            const rawHref = anchor.getAttribute('href');
-            if (!rawHref || rawHref.startsWith('?') || rawHref.startsWith('#')) {
-              return null;
-            }
-            const cleanedHref = rawHref.trim();
-            if (!cleanedHref.length || cleanedHref === '/' || cleanedHref === '../' || cleanedHref === './') {
-              return null;
-            }
-            if (cleanedHref.endsWith('/')) {
-              return null;
-            }
-            let resolvedUrl;
-            try {
-              resolvedUrl = new URL(cleanedHref, directoryUrl);
-            } catch (error) {
-              return null;
-            }
-            const relativePath = toRelativeUrl(resolvedUrl);
-            if (!relativePath) {
-              return null;
-            }
-            const segments = resolvedUrl.pathname.split('/').filter((segment) => segment.length);
-            const nameSegment = segments.length ? segments[segments.length - 1] : cleanedHref;
-            let decodedName;
-            try {
-              decodedName = decodeURIComponent(nameSegment);
-            } catch (decodeError) {
-              decodedName = nameSegment;
-            }
-            return { name: decodedName, href: relativePath };
-          })
-          .filter((entry) => entry && entry.name.toLowerCase().endsWith('.xlsx'));
-        const seen = new Set();
-        const unique = [];
-        for (const entry of entries) {
-          if (!seen.has(entry.href)) {
-            seen.add(entry.href);
-            unique.push(entry);
-          }
-        }
-        return unique;
-      } catch (error) {
-        return [];
-      }
-    }
-
-    async function resolveWorkbookPathFromPattern() {
-      const directory = normaliseDirectoryPath(EXCEL_WORKBOOK_DIRECTORY) || DEFAULT_WORKBOOK_DIRECTORY;
-      const pattern = EXCEL_WORKBOOK_PATTERN || DEFAULT_WORKBOOK_PATTERN;
-      const regex = globToRegExp(pattern);
-      const entries = await listDirectoryEntries(directory);
-      if (!entries.length) {
-        return null;
-      }
-      const candidates = Array.isArray(entries)
-        ? entries.filter((entry) => (regex ? regex.test(entry.name) : true))
-        : [];
-      if (!candidates.length) {
-        return null;
-      }
-      const metadataResults = await Promise.all(
-        candidates.map(async (entry) => ({
-          entry,
-          metadata: await fetchResourceMetadata(entry.href),
-        })),
-      );
-      const available = metadataResults
-        .filter((candidate) => candidate.metadata && candidate.metadata.exists)
-        .sort((a, b) => {
-          const timeA = typeof a.metadata.lastModified === 'number' ? a.metadata.lastModified : Number.NEGATIVE_INFINITY;
-          const timeB = typeof b.metadata.lastModified === 'number' ? b.metadata.lastModified : Number.NEGATIVE_INFINITY;
-          if (timeA !== timeB) {
-            return timeB - timeA;
-          }
-          return a.entry.name.localeCompare(b.entry.name);
-        });
-      if (available.length) {
-        return available[0].entry.href;
-      }
-      return candidates[0].href || null;
-    }
-
-    function ensureWorkbookConfig() {
-      if (workbookConfigPromise) {
-        return workbookConfigPromise;
-      }
-      workbookConfigPromise = (async () => {
-        const response = await fetch(WORKBOOK_CONFIG_PATH, { cache: 'no-store' });
-        if (!response.ok) {
-          throw new Error('Unable to load workbook configuration');
-        }
-        const config = await response.json();
-        applyWorkbookConfig(config);
-
-        let resolvedPath = null;
-        if (EXCEL_WORKBOOK_PATH) {
-          resolvedPath = await verifyWorkbookPath(EXCEL_WORKBOOK_PATH);
-        }
-        if (!resolvedPath) {
-          resolvedPath = await resolveWorkbookPathFromPattern();
-        }
-        if (!resolvedPath) {
-          throw new Error('Workbook configuration is missing a valid path');
-        }
-        EXCEL_WORKBOOK_PATH = resolvedPath;
-        excelWorkbookRequestUrlCache = null;
-
-        return {
-          path: EXCEL_WORKBOOK_PATH,
-          displayName: EXCEL_REGULAR_DISPLAY_NAME,
-          raw: config,
-        };
-      })().catch((error) => {
-        workbookConfigPromise = null;
-        throw error;
-      });
-      return workbookConfigPromise;
-    }
+    applyWorkbookDisplayName(EXCEL_REGULAR_DISPLAY_NAME);
 
     function getRegularDisplayName() {
       return EXCEL_REGULAR_DISPLAY_NAME && EXCEL_REGULAR_DISPLAY_NAME.length
         ? EXCEL_REGULAR_DISPLAY_NAME
-        : 'Regular';
+        : 'Gross Proceed';
     }
     const EXCEL_MAIN_SHEET_CANDIDATES = ['Main', 'MAIN'];
     const EXCEL_KEY_COLUMN_NAMES = ['ORDER NO', 'Order No', 'ORDER NO.', 'ORDER #', 'Plain Order No'];
@@ -5180,60 +4844,11 @@
       return dataset;
     }
 
-    async function resolveWorkbookRequestUrl() {
-      if (excelWorkbookRequestUrlCache) {
-        return excelWorkbookRequestUrlCache;
-      }
-      await ensureWorkbookConfig();
-      if (!EXCEL_WORKBOOK_PATH) {
-        throw new Error('Excel workbook path is not configured');
-      }
-      let requestUrl = EXCEL_WORKBOOK_PATH;
-      try {
-        const metadata = await fetchResourceMetadata(EXCEL_WORKBOOK_PATH);
-        if (metadata && metadata.exists) {
-          const baseUrl = new URL(EXCEL_WORKBOOK_PATH, window.location.href);
-          const parameterName = metadata.lastModified ? 't' : 'ts';
-          const parameterValue = metadata.lastModified ? String(metadata.lastModified) : String(Date.now());
-          baseUrl.searchParams.set(parameterName, parameterValue);
-          const relativeUrl = toRelativeUrl(baseUrl);
-          requestUrl = relativeUrl || baseUrl.toString();
-        }
-      } catch (error) {
-        // Fall back to the configured path without cache busting parameters when metadata cannot be resolved.
-      }
-      excelWorkbookRequestUrlCache = requestUrl;
-      return requestUrl;
-    }
-
     function fetchExcelWorkbook() {
-      if (typeof XLSX === 'undefined') {
-        return Promise.reject(new Error('Excel parser library is not available'));
+      if (typeof ExcelDataLoader === 'object' && ExcelDataLoader !== null && typeof ExcelDataLoader.loadWorkbook === 'function') {
+        return ExcelDataLoader.loadWorkbook({ path: EXCEL_WORKBOOK_PATH });
       }
-      if (excelWorkbookCache) {
-        return Promise.resolve(excelWorkbookCache);
-      }
-      if (excelWorkbookPromise) {
-        return excelWorkbookPromise;
-      }
-      excelWorkbookPromise = resolveWorkbookRequestUrl()
-        .then((requestUrl) => fetch(requestUrl, { cache: 'no-store' }))
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error('Unable to load Excel workbook');
-          }
-          return response.arrayBuffer();
-        })
-        .then((buffer) => {
-          const workbook = XLSX.read(buffer, { type: 'array' });
-          excelWorkbookCache = workbook;
-          return workbook;
-        })
-        .catch((error) => {
-          excelWorkbookPromise = null;
-          throw error;
-        });
-      return excelWorkbookPromise;
+      return Promise.reject(new Error('Excel loader is not available'));
     }
 
     function loadDatasetFromExcel(options = {}) {
