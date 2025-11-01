@@ -3,14 +3,37 @@
     return;
   }
 
-  const REPO_OWNER = 'chirag1969';
-  const REPO_NAME = 'GrossProceed';
-  const DEFAULT_BRANCH = 'main';
-  const WORKBOOK_PATH = 'analysis/data/daily.xlsx';
-  const COMMITS_ENDPOINT = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/commits`;
-  const RAW_BASE_URL = `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/${DEFAULT_BRANCH}/${WORKBOOK_PATH}`;
+  const WORKBOOK_PATH = '/GrossProceed/analysis/data/daily.xlsx';
+  const RAW_BASE_URL = 'https://raw.githubusercontent.com/chirag1969/GrossProceed/main/analysis/data/daily.xlsx';
 
   let cachedPromise = null;
+  let serviceWorkerUnregistered = false;
+
+  function ensureServiceWorkerUnregistered() {
+    if (serviceWorkerUnregistered) {
+      return;
+    }
+    serviceWorkerUnregistered = true;
+    if (typeof navigator !== 'undefined'
+      && navigator
+      && typeof navigator.serviceWorker !== 'undefined'
+      && navigator.serviceWorker
+      && typeof navigator.serviceWorker.getRegistrations === 'function') {
+      navigator.serviceWorker.getRegistrations()
+        .then((registrations) => {
+          registrations.forEach((registration) => {
+            if (registration && typeof registration.unregister === 'function') {
+              registration.unregister().catch((error) => {
+                console.warn('Failed to unregister service worker', error);
+              });
+            }
+          });
+        })
+        .catch((error) => {
+          console.warn('Unable to inspect service workers for unregister', error);
+        });
+    }
+  }
 
   function normaliseOptions(options) {
     if (!options || typeof options !== 'object') {
@@ -34,6 +57,18 @@
       return `${year}-${month}-${day}`;
     }
     return '';
+  }
+
+  function formatDateTime(value) {
+    if (!(value instanceof Date) || Number.isNaN(value.getTime())) {
+      return '';
+    }
+    const year = value.getUTCFullYear();
+    const month = pad(value.getUTCMonth() + 1);
+    const day = pad(value.getUTCDate());
+    const hours = pad(value.getUTCHours());
+    const minutes = pad(value.getUTCMinutes());
+    return `${year}-${month}-${day} ${hours}:${minutes} UTC`;
   }
 
   function normaliseCellValue(cell, workbookOptions) {
@@ -96,62 +131,124 @@
     return sheetNames[0];
   }
 
-  async function fetchLatestCommit() {
-    const url = new URL(COMMITS_ENDPOINT);
-    url.searchParams.set('path', WORKBOOK_PATH);
-    url.searchParams.set('per_page', '1');
-    url.searchParams.set('page', '1');
-    const response = await fetch(url.toString(), {
+  function buildAttemptUrl(source, cacheBuster) {
+    const defaultCacheBuster = cacheBuster || Date.now().toString();
+    try {
+      if (source.type === 'same-origin') {
+        if (global && global.location && typeof global.location.origin === 'string') {
+          const url = new URL(WORKBOOK_PATH, global.location.origin);
+          url.searchParams.set('cb', defaultCacheBuster);
+          return {
+            href: url.toString(),
+            displayUrl: WORKBOOK_PATH,
+          };
+        }
+        const url = new URL(WORKBOOK_PATH, 'https://example.com');
+        url.searchParams.set('cb', defaultCacheBuster);
+        return {
+          href: url.toString(),
+          displayUrl: WORKBOOK_PATH,
+        };
+      }
+      const url = new URL(RAW_BASE_URL);
+      url.searchParams.set('cb', defaultCacheBuster);
+      return {
+        href: url.toString(),
+        displayUrl: RAW_BASE_URL,
+      };
+    } catch (error) {
+      return {
+        href: `${source.type === 'same-origin' ? WORKBOOK_PATH : RAW_BASE_URL}?cb=${defaultCacheBuster}`,
+        displayUrl: source.type === 'same-origin' ? WORKBOOK_PATH : RAW_BASE_URL,
+      };
+    }
+  }
+
+  async function fetchWorkbookFromSource(source, cacheBuster) {
+    const { href, displayUrl } = buildAttemptUrl(source, cacheBuster);
+    const response = await fetch(href, {
       cache: 'no-store',
       headers: {
-        'Cache-Control': 'no-cache',
+        'Cache-Control': 'no-store',
         Pragma: 'no-cache',
       },
     });
     if (!response.ok) {
-      throw new Error(`Failed to resolve latest commit for ${WORKBOOK_PATH}`);
-    }
-    const body = await response.json();
-    if (!Array.isArray(body) || !body.length) {
-      throw new Error('No commit history available for workbook');
-    }
-    const commit = body[0];
-    const sha = typeof commit.sha === 'string' ? commit.sha : '';
-    const commitDate = commit && commit.commit && commit.commit.committer && commit.commit.committer.date
-      ? commit.commit.committer.date
-      : '';
-    const committedDate = commitDate ? new Date(commitDate) : null;
-    return {
-      sha,
-      shortSha: sha ? sha.slice(0, 7) : '',
-      committedDate,
-      committedDateISO: committedDate && !Number.isNaN(committedDate.getTime()) ? committedDate.toISOString() : '',
-      committedDateDisplay: committedDate && !Number.isNaN(committedDate.getTime()) ? formatDate(committedDate) : '',
-    };
-  }
-
-  function buildRawUrl(version) {
-    const url = new URL(RAW_BASE_URL);
-    if (version && version.sha) {
-      url.searchParams.set('version', version.sha);
-    }
-    url.searchParams.set('t', Date.now().toString());
-    return url.toString();
-  }
-
-  async function fetchWorkbook(url) {
-    const response = await fetch(url, {
-      cache: 'no-store',
-      headers: {
-        'Cache-Control': 'no-cache',
-        Pragma: 'no-cache',
-      },
-    });
-    if (!response.ok) {
-      throw new Error(`Failed to load workbook from ${url}`);
+      const error = new Error(`Request to ${displayUrl} failed with status ${response.status} ${response.statusText || ''}`.trim());
+      error.status = response.status;
+      error.statusText = response.statusText;
+      error.url = displayUrl;
+      error.finalUrl = href;
+      throw error;
     }
     const buffer = await response.arrayBuffer();
-    return buffer;
+    const fetchCompletedAt = new Date();
+    const lastModifiedHeader = response.headers ? response.headers.get('last-modified') : null;
+    const lastModifiedDate = lastModifiedHeader ? new Date(lastModifiedHeader) : null;
+    const metadata = {
+      sourceType: source.type,
+      sourceLabel: source.label,
+      url: displayUrl,
+      finalUrl: href,
+      cacheBuster: cacheBuster,
+      fetchTimestamp: fetchCompletedAt,
+      fetchTimestampISO: fetchCompletedAt.toISOString(),
+      fetchTimestampDisplay: formatDateTime(fetchCompletedAt),
+      lastModifiedISO: lastModifiedDate && !Number.isNaN(lastModifiedDate.getTime()) ? lastModifiedDate.toISOString() : '',
+      lastModifiedDisplay: lastModifiedDate && !Number.isNaN(lastModifiedDate.getTime()) ? formatDateTime(lastModifiedDate) : '',
+    };
+    return { buffer, metadata };
+  }
+
+  async function fetchWorkbookBuffer() {
+    const cacheBuster = Date.now().toString();
+    const sources = [
+      { type: 'same-origin', label: 'same-origin' },
+      { type: 'raw.githubusercontent.com', label: 'raw.githubusercontent.com' },
+    ];
+
+    const errors = [];
+
+    // Try primary source first, then fallback.
+    for (let index = 0; index < sources.length; index += 1) {
+      const source = sources[index];
+      try {
+        const result = await fetchWorkbookFromSource(source, cacheBuster);
+        return result;
+      } catch (error) {
+        const detail = {
+          source: source.label,
+          message: error && error.message ? error.message : 'Unknown error',
+        };
+        if (typeof error.status === 'number') {
+          detail.status = error.status;
+        }
+        if (typeof error.statusText === 'string' && error.statusText.length) {
+          detail.statusText = error.statusText;
+        }
+        if (error && typeof error.finalUrl === 'string') {
+          detail.finalUrl = error.finalUrl;
+        }
+        errors.push(detail);
+        console.error(`Failed to load workbook from ${source.label}:`, error);
+      }
+    }
+
+    const summary = errors.length ? errors.map((error) => {
+      const parts = [];
+      parts.push(`${error.source}:`);
+      if (error.message) {
+        parts.push(error.message);
+      }
+      if (error.finalUrl) {
+        parts.push(`(${error.finalUrl})`);
+      }
+      return parts.join(' ');
+    }).join(' ') : 'No additional error details available.';
+
+    const finalError = new Error(`Unable to fetch Excel workbook. ${summary} Please hard refresh the page and contact the maintainer if the issue persists.`);
+    finalError.attempts = errors;
+    throw finalError;
   }
 
   async function loadExcelData(options = {}) {
@@ -162,10 +259,11 @@
     if (typeof XLSX === 'undefined') {
       return Promise.reject(new Error('Excel parser library is not available'));
     }
+
+    ensureServiceWorkerUnregistered();
+
     cachedPromise = (async () => {
-      const version = await fetchLatestCommit();
-      const rawUrl = buildRawUrl(version);
-      const buffer = await fetchWorkbook(rawUrl);
+      const { buffer, metadata } = await fetchWorkbookBuffer();
       const workbook = XLSX.read(buffer, {
         type: 'array',
         cellDates: true,
@@ -185,7 +283,7 @@
           defval: '',
           raw: true,
         });
-        rows = rawRows.map((row) => Array.isArray(row) ? normaliseRow(row, workbookOptions) : []);
+        rows = rawRows.map((row) => (Array.isArray(row) ? normaliseRow(row, workbookOptions) : []));
       }
       const records = buildRecords(rows);
       return {
@@ -193,12 +291,13 @@
         sheetName,
         rows,
         records,
-        version,
+        version: metadata,
       };
     })().catch((error) => {
       cachedPromise = null;
       throw error;
     });
+
     return cachedPromise;
   }
 
