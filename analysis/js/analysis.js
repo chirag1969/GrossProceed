@@ -246,58 +246,54 @@ const tabButtons = document.querySelectorAll('.tab-button');
     const displayDateFormatter = {
       format(value) {
         if (typeof window.formatDDMMYYYY === 'function') {
-          return window.formatDDMMYYYY(value);
+          const formatted = window.formatDDMMYYYY(value);
+          if (formatted) {
+            return formatted;
+          }
         }
-        if (value instanceof Date && !Number.isNaN(value.getTime())) {
-          const day = String(value.getDate()).padStart(2, '0');
-          const month = String(value.getMonth() + 1).padStart(2, '0');
-          const year = value.getFullYear();
-          return `${day}-${month}-${year}`;
+        if (typeof window.toYMD === 'function') {
+          const ymd = window.toYMD(value);
+          if (ymd) {
+            const dd = String(ymd.d).padStart(2, '0');
+            const mm = String(ymd.m).padStart(2, '0');
+            const yyyy = String(ymd.y);
+            return `${dd}-${mm}-${yyyy}`;
+          }
         }
         return '';
       },
     };
     const parseDateValue = (value) => {
-      if (typeof window.parseToDate === 'function') {
-        return window.parseToDate(value);
-      }
-      if (value instanceof Date && !Number.isNaN(value.getTime())) {
-        return value;
-      }
-      if (typeof value === 'number' && Number.isFinite(value)) {
-        const epoch = Date.UTC(1899, 11, 30);
-        const ms = value * 24 * 60 * 60 * 1000;
-        const date = new Date(epoch + ms);
-        return Number.isNaN(date.getTime()) ? null : date;
-      }
-      if (typeof value === 'string') {
-        const parsed = Date.parse(value);
-        if (!Number.isNaN(parsed)) {
-          return new Date(parsed);
-        }
-        const match = value.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/);
-        if (match) {
-          const dd = Number(match[1]);
-          const mm = Number(match[2]) - 1;
-          const yyyy = Number(match[3]);
-          const date = new Date(yyyy, mm, dd);
+      if (typeof window.toYMD === 'function') {
+        const ymd = window.toYMD(value);
+        if (ymd) {
+          const date = new Date(Date.UTC(ymd.y, ymd.m - 1, ymd.d));
           return Number.isNaN(date.getTime()) ? null : date;
         }
+      }
+      if (value instanceof Date && !Number.isNaN(value.getTime())) {
+        const date = new Date(Date.UTC(value.getUTCFullYear(), value.getUTCMonth(), value.getUTCDate()));
+        return Number.isNaN(date.getTime()) ? null : date;
       }
       return null;
     };
     const formatDateValue = (value) => {
       if (typeof window.formatDDMMYYYY === 'function') {
-        return window.formatDDMMYYYY(value);
+        const formatted = window.formatDDMMYYYY(value);
+        if (formatted) {
+          return formatted;
+        }
       }
-      const date = parseDateValue(value);
-      if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
-        return '';
+      if (typeof window.toYMD === 'function') {
+        const ymd = window.toYMD(value);
+        if (ymd) {
+          const dd = String(ymd.d).padStart(2, '0');
+          const mm = String(ymd.m).padStart(2, '0');
+          const yyyy = String(ymd.y);
+          return `${dd}-${mm}-${yyyy}`;
+        }
       }
-      const day = String(date.getDate()).padStart(2, '0');
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const year = date.getFullYear();
-      return `${day}-${month}-${year}`;
+      return '';
     };
     const isDateColumnName = (name) => {
       if (typeof name !== 'string') {
@@ -2960,40 +2956,37 @@ const tabButtons = document.querySelectorAll('.tab-button');
           if (!worksheet) {
             throw new Error(`${getRegularDisplayName()} worksheet not found in workbook`);
           }
-          const rawRows = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true });
-          if (!Array.isArray(rawRows) || rawRows.length < 2) {
-            throw new Error('Regular: Expected headers on row 2 and data from row 3.');
-          }
-          const headerRow = Array.isArray(rawRows[1]) ? rawRows[1] : [];
-          const header = headerRow.map((value) => String(value ?? '').trim());
-          const hasHeader = header.some((value) => value.length);
-          if (!hasHeader) {
-            throw new Error('Regular: Expected headers on row 2 and data from row 3.');
-          }
-          const dataRows = rawRows.slice(2);
-          const regularData = dataRows.map((row) => {
-            const safeRow = Array.isArray(row) ? row : [];
-            const record = {};
-            header.forEach((key, index) => {
-              record[key] = safeRow[index];
-            });
-            return record;
+          const matrix = XLSX.utils.sheet_to_json(worksheet, {
+            header: 1,
+            raw: true,
+            defval: null,
+            blankrows: false,
           });
-          const cleanedRegularData = regularData.filter((record) => Object.values(record).some((value) => {
-            if (value === null || value === undefined) {
-              return false;
-            }
-            const text = typeof value === 'string' ? value.trim() : String(value).trim();
-            return text !== '';
-          }));
+          if (!Array.isArray(matrix) || matrix.length < 2) {
+            throw new Error('Regular: Expected headers on row 2 and data from row 3.');
+          }
+          const header = (matrix[1] || []).map((value) => String(value ?? '').trim());
+          if (!header.some((value) => value.length)) {
+            throw new Error('Regular: Expected headers on row 2 and data from row 3.');
+          }
+          const dataRows = matrix.slice(2);
+          const rows = dataRows
+            .map((row) => {
+              const safeRow = Array.isArray(row) ? row : [];
+              return header.map((_, index) => safeRow[index]);
+            })
+            .filter((row) => row.some((value) => {
+              if (value === null || value === undefined) {
+                return false;
+              }
+              if (typeof value === 'string') {
+                return value.trim().length > 0;
+              }
+              return true;
+            }));
           console.log('Regular header:', header);
-          console.log('Regular rows:', cleanedRegularData.length);
-          const columns = header;
-          const rows = cleanedRegularData.map((record) => columns.map((column) => {
-            const value = record[column];
-            return value === undefined || value === null ? '' : value;
-          }));
-          return { columns, rows };
+          console.log('Regular rows:', rows.length);
+          return { columns: header, rows };
         })
         .then((data) => {
           regularDatasetCache = data;
@@ -6222,24 +6215,16 @@ const tabButtons = document.querySelectorAll('.tab-button');
     }
 
     function parseExcelSerialToDate(value) {
-      if (typeof window.parseToDate === 'function') {
-        const parsed = window.parseToDate(value);
-        if (parsed instanceof Date && !Number.isNaN(parsed.getTime())) {
-          return parsed;
+      if (typeof window.toYMD === 'function') {
+        const ymd = window.toYMD(value);
+        if (ymd) {
+          const date = new Date(Date.UTC(ymd.y, ymd.m - 1, ymd.d));
+          return Number.isNaN(date.getTime()) ? null : date;
         }
       }
       if (value instanceof Date && !Number.isNaN(value.getTime())) {
-        return value;
-      }
-      if (typeof value === 'number' && Number.isFinite(value)) {
-        const adjusted = value >= 60 ? value - 1 : value;
-        const epoch = Date.UTC(1899, 11, 31);
-        const milliseconds = adjusted * 24 * 60 * 60 * 1000;
-        const date = new Date(epoch + milliseconds);
+        const date = new Date(Date.UTC(value.getUTCFullYear(), value.getUTCMonth(), value.getUTCDate()));
         return Number.isNaN(date.getTime()) ? null : date;
-      }
-      if (typeof value === 'string') {
-        return parseDateValue(value);
       }
       return null;
     }
@@ -8836,8 +8821,13 @@ const tabButtons = document.querySelectorAll('.tab-button');
             render(data, type) {
               const value = data === undefined || data === null ? '' : data;
               const columnName = augmentedDataset.columns[columnIndex];
+              const isCheckoutColumn = columnIndex === checkoutColumnIndex;
+              const isDateColumn = isCheckoutColumn || isDateColumnName(columnName);
               if (type === 'sort') {
-                if (columnIndex === checkoutColumnIndex || isDateColumnName(columnName)) {
+                if (isDateColumn) {
+                  if (typeof window.sortKeyYYYYMMDD === 'function') {
+                    return window.sortKeyYYYYMMDD(value);
+                  }
                   const parsed = parseDateValue(value);
                   return parsed ? parsed.toISOString() : '';
                 }
@@ -8848,11 +8838,7 @@ const tabButtons = document.querySelectorAll('.tab-button');
                 return typeof value === 'string' ? value.toLowerCase() : value ?? '';
               }
               if (type === 'display' || type === 'filter') {
-                if (columnIndex === checkoutColumnIndex) {
-                  // Checkout renderer: force dd-mm-yyyy display and keep ISO sort keys in sync.
-                  return formatDateValue(value);
-                }
-                if (isDateColumnName(columnName)) {
+                if (isDateColumn) {
                   return formatDateValue(value);
                 }
                 return formatCellValue(value, columnName);
@@ -8944,6 +8930,7 @@ const tabButtons = document.querySelectorAll('.tab-button');
                 });
               }
             }
+            console.assert(/^\d{2}-\d{2}-\d{4}$/.test($('.dataTable tbody tr:eq(0) td:eq(2)').text()), 'Checkout not dd-mm-yyyy');
           };
           runCheckoutFormatAssertion();
           columnValueOptions = buildColumnOptions(augmentedDataset);
