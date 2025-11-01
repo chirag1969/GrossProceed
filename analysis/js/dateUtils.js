@@ -3,49 +3,98 @@
     return;
   }
 
-  // Accepts JS Date, Excel serial (number), ISO/string, or empty.
-  function excelSerialToDate(n) {
-    // Excel serial (1900-based)
-    if (typeof n !== 'number' || Number.isNaN(n)) return null;
-    const epoch = new Date(Date.UTC(1899, 11, 30)); // Excel’s day 0 correction
-    const ms = n * 24 * 60 * 60 * 1000;
-    return new Date(epoch.getTime() + ms);
+  function excelSerialToYMD(n) {
+    if (typeof XLSX === 'undefined' || !XLSX.SSF || typeof n !== 'number' || Number.isNaN(n)) {
+      return null;
+    }
+    const parsed = XLSX.SSF.parse_date_code(n);
+    if (!parsed || !parsed.y || !parsed.m || !parsed.d) {
+      return null;
+    }
+    return { y: parsed.y, m: parsed.m, d: parsed.d };
   }
 
-  function parseToDate(value) {
-    if (value == null || value === '') return null;
-    if (value instanceof Date && !Number.isNaN(value)) return value;
-    if (typeof value === 'number') {
-      const d = excelSerialToDate(value);
-      return (d && !Number.isNaN(d)) ? d : null;
+  function toYMD(value) {
+    if (value === null || value === undefined || value === '') {
+      return null;
     }
+
+    if (typeof value === 'number') {
+      return excelSerialToYMD(value);
+    }
+
     if (typeof value === 'string') {
-      // Try ISO or common date strings
-      const t = Date.parse(value);
-      if (!Number.isNaN(t)) return new Date(t);
-      // Try dd/mm/yyyy or dd-mm-yyyy typed input
-      const m = value.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/);
-      if (m) {
-        const dd = parseInt(m[1], 10);
-        const mm = parseInt(m[2], 10) - 1;
-        const yyyy = parseInt(m[3], 10);
-        const d = new Date(yyyy, mm, dd);
-        return (!Number.isNaN(d)) ? d : null;
+      const match = value.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+      if (match) {
+        return { d: Number(match[1]), m: Number(match[2]), y: Number(match[3]) };
+      }
+      const timestamp = Date.parse(value);
+      if (!Number.isNaN(timestamp)) {
+        const date = new Date(timestamp);
+        return {
+          y: date.getUTCFullYear(),
+          m: date.getUTCMonth() + 1,
+          d: date.getUTCDate(),
+        };
       }
     }
+
+    if (value instanceof Date && !Number.isNaN(value)) {
+      return {
+        y: value.getUTCFullYear(),
+        m: value.getUTCMonth() + 1,
+        d: value.getUTCDate(),
+      };
+    }
+
     return null;
   }
 
   function formatDDMMYYYY(value) {
-    const d = parseToDate(value);
-    if (!d) return '';
-    const dd = String(d.getDate()).padStart(2, '0');
-    const mm = String(d.getMonth() + 1).padStart(2, '0');
-    const yyyy = String(d.getFullYear());
+    const ymd = value && typeof value === 'object' && 'y' in value && 'm' in value && 'd' in value
+      ? value
+      : toYMD(value);
+    if (!ymd) {
+      return '';
+    }
+    const dd = String(ymd.d).padStart(2, '0');
+    const mm = String(ymd.m).padStart(2, '0');
+    const yyyy = String(ymd.y);
     return `${dd}-${mm}-${yyyy}`;
   }
 
+  function sortKeyYYYYMMDD(value) {
+    const ymd = toYMD(value);
+    if (!ymd) {
+      return '';
+    }
+    const mm = String(ymd.m).padStart(2, '0');
+    const dd = String(ymd.d).padStart(2, '0');
+    return `${ymd.y}-${mm}-${dd}`;
+  }
+
+  function excelSerialToDate(n) {
+    const ymd = excelSerialToYMD(n);
+    if (!ymd) {
+      return null;
+    }
+    const date = new Date(Date.UTC(ymd.y, ymd.m - 1, ymd.d));
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+
+  function parseToDate(value) {
+    const ymd = toYMD(value);
+    if (!ymd) {
+      return null;
+    }
+    const date = new Date(Date.UTC(ymd.y, ymd.m - 1, ymd.d));
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+
+  global.excelSerialToYMD = excelSerialToYMD;
+  global.toYMD = toYMD;
+  global.formatDDMMYYYY = formatDDMMYYYY;
+  global.sortKeyYYYYMMDD = sortKeyYYYYMMDD;
   global.excelSerialToDate = excelSerialToDate;
   global.parseToDate = parseToDate;
-  global.formatDDMMYYYY = formatDDMMYYYY;
 })(typeof window !== 'undefined' ? window : this);

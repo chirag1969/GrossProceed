@@ -44,36 +44,50 @@
 
   function formatDateOnly(value) {
     if (typeof global.formatDDMMYYYY === 'function') {
-      return global.formatDDMMYYYY(value);
+      const formatted = global.formatDDMMYYYY(value);
+      if (formatted) {
+        return formatted;
+      }
+    }
+    if (typeof global.toYMD === 'function') {
+      const ymd = global.toYMD(value);
+      if (ymd) {
+        const dd = String(ymd.d).padStart(2, '0');
+        const mm = String(ymd.m).padStart(2, '0');
+        const yyyy = String(ymd.y);
+        return `${dd}-${mm}-${yyyy}`;
+      }
     }
     if (value instanceof Date && !Number.isNaN(value.getTime())) {
-      const day = String(value.getDate()).padStart(2, '0');
-      const month = String(value.getMonth() + 1).padStart(2, '0');
-      const year = value.getFullYear();
-      return `${day}-${month}-${year}`;
+      const dd = String(value.getUTCDate()).padStart(2, '0');
+      const mm = String(value.getUTCMonth() + 1).padStart(2, '0');
+      const yyyy = value.getUTCFullYear();
+      return `${dd}-${mm}-${yyyy}`;
     }
     return '';
   }
 
   function formatDateTime(value) {
-    let date = null;
-    if (typeof global.parseToDate === 'function') {
-      date = global.parseToDate(value);
-    } else if (value instanceof Date && !Number.isNaN(value.getTime())) {
-      date = value;
+    let targetDate = null;
+    if (value instanceof Date && !Number.isNaN(value.getTime())) {
+      targetDate = value;
+    } else if (typeof global.parseToDate === 'function') {
+      const parsed = global.parseToDate(value);
+      if (parsed instanceof Date && !Number.isNaN(parsed.getTime())) {
+        targetDate = parsed;
+      }
     }
-    if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+    if (!(targetDate instanceof Date) || Number.isNaN(targetDate.getTime())) {
       return '';
     }
-    const formattedDate = formatDateOnly(date) || formatDateOnly(new Date(Date.UTC(
-      date.getUTCFullYear(),
-      date.getUTCMonth(),
-      date.getUTCDate(),
+    const datePart = formatDateOnly(new Date(Date.UTC(
+      targetDate.getUTCFullYear(),
+      targetDate.getUTCMonth(),
+      targetDate.getUTCDate(),
     )));
-    const hours = String(date.getUTCHours()).padStart(2, '0');
-    const minutes = String(date.getUTCMinutes()).padStart(2, '0');
-    const safeDatePart = formattedDate || '';
-    return safeDatePart ? `${safeDatePart} ${hours}:${minutes} UTC` : `${hours}:${minutes} UTC`;
+    const hours = String(targetDate.getUTCHours()).padStart(2, '0');
+    const minutes = String(targetDate.getUTCMinutes()).padStart(2, '0');
+    return datePart ? `${datePart} ${hours}:${minutes} UTC` : `${hours}:${minutes} UTC`;
   }
 
   function normaliseCellValue(cell, workbookOptions) {
@@ -81,15 +95,15 @@
       return '';
     }
     if (cell instanceof Date && !Number.isNaN(cell.getTime())) {
-      return formatDateOnly(cell);
+      const utcDate = new Date(Date.UTC(
+        cell.getUTCFullYear(),
+        cell.getUTCMonth(),
+        cell.getUTCDate(),
+      ));
+      const formatted = formatDateOnly(utcDate);
+      return formatted || '';
     }
     if (typeof cell === 'number' && Number.isFinite(cell)) {
-      const date = XLSX.SSF.parse_date_code(cell, { date1904: !!(workbookOptions && workbookOptions.date1904) });
-      if (date && date.y && date.m && date.d) {
-        const adjustedSerial = workbookOptions && workbookOptions.date1904 ? cell + 1462 : cell;
-        const formatted = formatDateOnly(typeof adjustedSerial === 'number' ? adjustedSerial : cell);
-        return formatted || `${String(date.d).padStart(2, '0')}-${String(date.m).padStart(2, '0')}-${date.y}`;
-      }
       return cell;
     }
     return cell;
