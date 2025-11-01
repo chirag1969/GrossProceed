@@ -244,15 +244,73 @@ const tabButtons = document.querySelectorAll('.tab-button');
       maximumFractionDigits: 1,
     });
     const displayDateFormatter = {
-      format(date) {
-        if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
-          return '';
+      format(value) {
+        if (typeof window.formatDDMMYYYY === 'function') {
+          return window.formatDDMMYYYY(value);
         }
-        const day = String(date.getUTCDate()).padStart(2, '0');
-        const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-        const year = date.getUTCFullYear();
-        return `${day}-${month}-${year}`;
+        if (value instanceof Date && !Number.isNaN(value.getTime())) {
+          const day = String(value.getDate()).padStart(2, '0');
+          const month = String(value.getMonth() + 1).padStart(2, '0');
+          const year = value.getFullYear();
+          return `${day}-${month}-${year}`;
+        }
+        return '';
       },
+    };
+    const parseDateValue = (value) => {
+      if (typeof window.parseToDate === 'function') {
+        return window.parseToDate(value);
+      }
+      if (value instanceof Date && !Number.isNaN(value.getTime())) {
+        return value;
+      }
+      if (typeof value === 'number' && Number.isFinite(value)) {
+        const epoch = Date.UTC(1899, 11, 30);
+        const ms = value * 24 * 60 * 60 * 1000;
+        const date = new Date(epoch + ms);
+        return Number.isNaN(date.getTime()) ? null : date;
+      }
+      if (typeof value === 'string') {
+        const parsed = Date.parse(value);
+        if (!Number.isNaN(parsed)) {
+          return new Date(parsed);
+        }
+        const match = value.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/);
+        if (match) {
+          const dd = Number(match[1]);
+          const mm = Number(match[2]) - 1;
+          const yyyy = Number(match[3]);
+          const date = new Date(yyyy, mm, dd);
+          return Number.isNaN(date.getTime()) ? null : date;
+        }
+      }
+      return null;
+    };
+    const formatDateValue = (value) => {
+      if (typeof window.formatDDMMYYYY === 'function') {
+        return window.formatDDMMYYYY(value);
+      }
+      const date = parseDateValue(value);
+      if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+        return '';
+      }
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+      return `${day}-${month}-${year}`;
+    };
+    const isDateColumnName = (name) => {
+      if (typeof name !== 'string') {
+        return false;
+      }
+      const normalised = name.trim().toLowerCase();
+      if (!normalised.length) {
+        return false;
+      }
+      if (normalised === 'checkout' || normalised === 'date') {
+        return true;
+      }
+      return normalised.includes(' date');
     };
     const TOTAL_ROW_LABEL = 'Grand Total';
     const TOTAL_ROW_LABEL_NORMALISED = TOTAL_ROW_LABEL.trim().toLowerCase();
@@ -2890,15 +2948,53 @@ const tabButtons = document.querySelectorAll('.tab-button');
       if (regularDatasetPromise) {
         return regularDatasetPromise;
       }
-      regularDatasetPromise = loadDatasetFromExcel({
-        sheetCandidates: EXCEL_REGULAR_SHEET_CANDIDATES,
-        fallbackPredicate: (name) => {
-          const normalised = normaliseSheetName(name);
-          return normalised.includes('regular');
-        },
-        errorMessage: `${getRegularDisplayName()} worksheet not found in workbook`,
-        headerRowIndex: 1,
-      })
+      regularDatasetPromise = fetchExcelWorkbook()
+        .then((workbook) => {
+          const { worksheet } = findWorksheetFromWorkbook(workbook, {
+            candidates: EXCEL_REGULAR_SHEET_CANDIDATES,
+            fallbackPredicate: (name) => {
+              const normalised = normaliseSheetName(name);
+              return normalised.includes('regular');
+            },
+          });
+          if (!worksheet) {
+            throw new Error(`${getRegularDisplayName()} worksheet not found in workbook`);
+          }
+          const rawRows = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true });
+          if (!Array.isArray(rawRows) || rawRows.length < 2) {
+            throw new Error('Regular: Expected headers on row 2 and data from row 3.');
+          }
+          const headerRow = Array.isArray(rawRows[1]) ? rawRows[1] : [];
+          const header = headerRow.map((value) => String(value ?? '').trim());
+          const hasHeader = header.some((value) => value.length);
+          if (!hasHeader) {
+            throw new Error('Regular: Expected headers on row 2 and data from row 3.');
+          }
+          const dataRows = rawRows.slice(2);
+          const regularData = dataRows.map((row) => {
+            const safeRow = Array.isArray(row) ? row : [];
+            const record = {};
+            header.forEach((key, index) => {
+              record[key] = safeRow[index];
+            });
+            return record;
+          });
+          const cleanedRegularData = regularData.filter((record) => Object.values(record).some((value) => {
+            if (value === null || value === undefined) {
+              return false;
+            }
+            const text = typeof value === 'string' ? value.trim() : String(value).trim();
+            return text !== '';
+          }));
+          console.log('Regular header:', header);
+          console.log('Regular rows:', cleanedRegularData.length);
+          const columns = header;
+          const rows = cleanedRegularData.map((record) => columns.map((column) => {
+            const value = record[column];
+            return value === undefined || value === null ? '' : value;
+          }));
+          return { columns, rows };
+        })
         .then((data) => {
           regularDatasetCache = data;
           return data;
@@ -6125,89 +6221,32 @@ const tabButtons = document.querySelectorAll('.tab-button');
       return null;
     }
 
-    function createUTCDate(year, month, day) {
-      const y = Number(year);
-      const m = Number(month);
-      const d = Number(day);
-      if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) {
-        return null;
-      }
-      if (m < 1 || m > 12 || d < 1 || d > 31) {
-        return null;
-      }
-      const timestamp = Date.UTC(y, m - 1, d);
-      const date = new Date(timestamp);
-      if (Number.isNaN(date.getTime())) {
-        return null;
-      }
-      if (date.getUTCFullYear() !== y || date.getUTCMonth() !== m - 1 || date.getUTCDate() !== d) {
-        return null;
-      }
-      return date;
-    }
-
-    function parseDateString(value) {
-      if (typeof value !== 'string') {
-        return null;
-      }
-      const trimmed = value.trim();
-      if (!trimmed.length) {
-        return null;
-      }
-      const normalised = trimmed.replace(/[./]/g, '-');
-      const isoMatch = normalised.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:\D.*)?$/);
-      if (isoMatch) {
-        const [, year, month, day] = isoMatch;
-        const result = createUTCDate(year, month, day);
-        if (result) {
-          return result;
+    function parseExcelSerialToDate(value) {
+      if (typeof window.parseToDate === 'function') {
+        const parsed = window.parseToDate(value);
+        if (parsed instanceof Date && !Number.isNaN(parsed.getTime())) {
+          return parsed;
         }
       }
-      const dmyMatch = normalised.match(/^(\d{1,2})-(\d{1,2})-(\d{4})(?:\D.*)?$/);
-      if (dmyMatch) {
-        const [, day, month, year] = dmyMatch;
-        const result = createUTCDate(year, month, day);
-        if (result) {
-          return result;
-        }
+      if (value instanceof Date && !Number.isNaN(value.getTime())) {
+        return value;
+      }
+      if (typeof value === 'number' && Number.isFinite(value)) {
+        const adjusted = value >= 60 ? value - 1 : value;
+        const epoch = Date.UTC(1899, 11, 31);
+        const milliseconds = adjusted * 24 * 60 * 60 * 1000;
+        const date = new Date(epoch + milliseconds);
+        return Number.isNaN(date.getTime()) ? null : date;
+      }
+      if (typeof value === 'string') {
+        return parseDateValue(value);
       }
       return null;
     }
 
-    function parseExcelSerialToDate(value) {
-      if (value instanceof Date && !Number.isNaN(value.getTime())) {
-        return createUTCDate(value.getUTCFullYear(), value.getUTCMonth() + 1, value.getUTCDate());
-      }
-      const parsedFromString = typeof value === 'string' ? parseDateString(value) : null;
-      if (parsedFromString) {
-        return parsedFromString;
-      }
-      const numeric = parseNumericValue(value);
-      if (numeric === null) {
-        return null;
-      }
-      const serial = Math.floor(numeric);
-      if (serial <= 0) {
-        return null;
-      }
-      const fractional = numeric - serial;
-      const adjustedSerial = serial >= 60 ? serial - 1 : serial;
-      const excelEpoch = Date.UTC(1899, 11, 31);
-      const dayMilliseconds = 24 * 60 * 60 * 1000;
-      const timestamp = excelEpoch + adjustedSerial * dayMilliseconds + Math.round(fractional * dayMilliseconds);
-      const date = new Date(timestamp);
-      return Number.isNaN(date.getTime()) ? null : date;
-    }
-
     function formatExcelSerialDate(value) {
-      const date = parseExcelSerialToDate(value);
-      if (!date) {
-        return null;
-      }
-      const day = String(date.getUTCDate()).padStart(2, '0');
-      const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-      const year = date.getUTCFullYear();
-      return `${day}-${month}-${year}`;
+      const formatted = formatDateValue(value);
+      return formatted || null;
     }
 
     function detectNumericColumns(dataset) {
@@ -6241,8 +6280,8 @@ const tabButtons = document.querySelectorAll('.tab-button');
         return typeof value === 'string' ? value.trim() : '';
       }
       const normalizedColumn = columnName ? columnName.trim().toLowerCase() : '';
-      if (normalizedColumn === 'checkout' || normalizedColumn === 'date') {
-        const formattedDate = formatExcelSerialDate(value);
+      if (isDateColumnName(columnName)) {
+        const formattedDate = formatDateValue(value);
         if (formattedDate) {
           return formattedDate;
         }
@@ -8790,8 +8829,38 @@ const tabButtons = document.querySelectorAll('.tab-button');
           const augmentedDataset = augmentDatasetWithTotals(dataset);
           regularTableAugmentedDataset = augmentedDataset;
           totalColumnIndex = augmentedDataset.totalColumnIndex;
-          const columns = augmentedDataset.columns.map((title) => ({ title }));
-          const formattedRows = augmentedDataset.rows.map((row) => row.map((value, index) => formatCellValue(value, augmentedDataset.columns[index])));
+          const checkoutColumnIndex = augmentedDataset.columns.findIndex((column) => column && column.trim().toLowerCase() === 'checkout');
+          const columns = augmentedDataset.columns.map((title, columnIndex) => ({
+            title,
+            data: columnIndex,
+            render(data, type) {
+              const value = data === undefined || data === null ? '' : data;
+              const columnName = augmentedDataset.columns[columnIndex];
+              if (type === 'sort') {
+                if (columnIndex === checkoutColumnIndex || isDateColumnName(columnName)) {
+                  const parsed = parseDateValue(value);
+                  return parsed ? parsed.toISOString() : '';
+                }
+                const numericValue = parseNumericValue(value);
+                if (numericValue !== null) {
+                  return numericValue;
+                }
+                return typeof value === 'string' ? value.toLowerCase() : value ?? '';
+              }
+              if (type === 'display' || type === 'filter') {
+                if (columnIndex === checkoutColumnIndex) {
+                  // Checkout renderer: force dd-mm-yyyy display and keep ISO sort keys in sync.
+                  return formatDateValue(value);
+                }
+                if (isDateColumnName(columnName)) {
+                  return formatDateValue(value);
+                }
+                return formatCellValue(value, columnName);
+              }
+              return value;
+            },
+          }));
+          const tableData = augmentedDataset.rows;
           const productColumnIndex = augmentedDataset.columns.indexOf('Product');
           const quantityColumnIndex = augmentedDataset.columns.findIndex((column) => column && column.trim().toLowerCase() === 'qty');
           const numericColumnIndices = augmentedDataset.numericColumnIndices;
@@ -8834,12 +8903,13 @@ const tabButtons = document.querySelectorAll('.tab-button');
             targets: Number(columnIndex),
             className: Array.from(classSet).join(' '),
           }));
+          columnDefs.push({ targets: '_all', type: 'string' });
 
           const initialRowCount = Math.min(augmentedDataset.rows.length, REGULAR_TABLE_PAGE_LENGTH);
           const initialReservedSpace = calculateRegularTableReservedSpace();
           const initialScrollHeight = `${calculateScrollBodyHeight(initialRowCount, undefined, initialReservedSpace)}px`;
           regularTable = $('#regular-table').DataTable({
-            data: formattedRows,
+            data: tableData,
             columns,
             columnDefs,
             scrollX: true,
@@ -8847,9 +8917,8 @@ const tabButtons = document.querySelectorAll('.tab-button');
             scrollCollapse: true,
             deferRender: true,
             autoWidth: true,
-            aaSorting: [],
             order: [],
-            ordering: false,
+            ordering: true,
             paging: true,
             pageLength: REGULAR_TABLE_PAGE_LENGTH,
             lengthChange: false,
@@ -8858,20 +8927,41 @@ const tabButtons = document.querySelectorAll('.tab-button');
           });
 
           moveRegularTablePagination();
+          const runCheckoutFormatAssertion = () => {
+            if (checkoutColumnIndex < 0) {
+              return;
+            }
+            const currentRows = regularTable.rows({ page: 'current' }).data().toArray();
+            const limit = Math.min(5, currentRows.length);
+            for (let index = 0; index < limit; index += 1) {
+              const source = currentRows[index][checkoutColumnIndex];
+              const formatted = formatDateValue(source);
+              if (formatted) {
+                console.assert(/^[0-9]{2}-[0-9]{2}-[0-9]{4}$/.test(formatted), 'Regular checkout date format mismatch', {
+                  rowIndex: index,
+                  value: source,
+                  formatted,
+                });
+              }
+            }
+          };
+          runCheckoutFormatAssertion();
           columnValueOptions = buildColumnOptions(augmentedDataset);
           initializeRegularFilterControls(augmentedDataset);
-          wireHeaderEvents(regularTable, { allowSorting: false });
+          wireHeaderEvents(regularTable, { allowSorting: true });
           applyTableHeight(regularTable);
           if (SHOW_REGULAR_TOTAL_ROW) {
             updateRegularTableFooter(regularTable);
           }
           regularTable.on('draw.dt', () => {
-            wireHeaderEvents(regularTable, { allowSorting: false });
+            wireHeaderEvents(regularTable, { allowSorting: true });
             applyTableHeight(regularTable);
             if (SHOW_REGULAR_TOTAL_ROW) {
               updateRegularTableFooter(regularTable);
             }
             moveRegularTablePagination();
+            // Regression check: ensure freshly rendered rows retain checkout formatting.
+            runCheckoutFormatAssertion();
           });
 
           regularTableInitialised = true;

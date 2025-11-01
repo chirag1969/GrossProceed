@@ -42,33 +42,38 @@
     return options;
   }
 
-  function pad(number) {
-    return number < 10 ? `0${number}` : `${number}`;
-  }
-
-  function formatDate(value) {
-    if (!value) {
-      return '';
+  function formatDateOnly(value) {
+    if (typeof global.formatDDMMYYYY === 'function') {
+      return global.formatDDMMYYYY(value);
     }
     if (value instanceof Date && !Number.isNaN(value.getTime())) {
-      const year = value.getUTCFullYear();
-      const month = pad(value.getUTCMonth() + 1);
-      const day = pad(value.getUTCDate());
+      const day = String(value.getDate()).padStart(2, '0');
+      const month = String(value.getMonth() + 1).padStart(2, '0');
+      const year = value.getFullYear();
       return `${day}-${month}-${year}`;
     }
     return '';
   }
 
   function formatDateTime(value) {
-    if (!(value instanceof Date) || Number.isNaN(value.getTime())) {
+    let date = null;
+    if (typeof global.parseToDate === 'function') {
+      date = global.parseToDate(value);
+    } else if (value instanceof Date && !Number.isNaN(value.getTime())) {
+      date = value;
+    }
+    if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
       return '';
     }
-    const month = pad(value.getUTCMonth() + 1);
-    const day = pad(value.getUTCDate());
-    const hours = pad(value.getUTCHours());
-    const minutes = pad(value.getUTCMinutes());
-    const year = value.getUTCFullYear();
-    return `${day}-${month}-${year} ${hours}:${minutes} UTC`;
+    const formattedDate = formatDateOnly(date) || formatDateOnly(new Date(Date.UTC(
+      date.getUTCFullYear(),
+      date.getUTCMonth(),
+      date.getUTCDate(),
+    )));
+    const hours = String(date.getUTCHours()).padStart(2, '0');
+    const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+    const safeDatePart = formattedDate || '';
+    return safeDatePart ? `${safeDatePart} ${hours}:${minutes} UTC` : `${hours}:${minutes} UTC`;
   }
 
   function normaliseCellValue(cell, workbookOptions) {
@@ -76,12 +81,14 @@
       return '';
     }
     if (cell instanceof Date && !Number.isNaN(cell.getTime())) {
-      return formatDate(cell);
+      return formatDateOnly(cell);
     }
     if (typeof cell === 'number' && Number.isFinite(cell)) {
       const date = XLSX.SSF.parse_date_code(cell, { date1904: !!(workbookOptions && workbookOptions.date1904) });
       if (date && date.y && date.m && date.d) {
-        return `${pad(date.d)}-${pad(date.m)}-${date.y}`;
+        const adjustedSerial = workbookOptions && workbookOptions.date1904 ? cell + 1462 : cell;
+        const formatted = formatDateOnly(typeof adjustedSerial === 'number' ? adjustedSerial : cell);
+        return formatted || `${String(date.d).padStart(2, '0')}-${String(date.m).padStart(2, '0')}-${date.y}`;
       }
       return cell;
     }
