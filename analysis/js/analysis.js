@@ -198,6 +198,8 @@ const tabButtons = document.querySelectorAll('.tab-button');
     let mainTableFooterValues = [];
     let mainTableNumericColumnSet = new Set();
     let mainTableAugmentedDataset = null;
+    let mainTillDateColumnIndices = [];
+    let mainTillDateHeaders = [];
     let mainDatasetCache = null;
     let mainDatasetPromise = null;
     let loTablesInitialised = false;
@@ -315,6 +317,8 @@ const tabButtons = document.querySelectorAll('.tab-button');
     };
     const TOTAL_ROW_LABEL = 'Grand Total';
     const TOTAL_ROW_LABEL_NORMALISED = TOTAL_ROW_LABEL.trim().toLowerCase();
+    const MAIN_TABLE_FORMAT_OPTIONS = { skipDateFormatting: true };
+    const TILL_DATE_HEADER_PATTERN = /till date/i;
 
     let columnValueOptions = [];
     let columnFilters = {};
@@ -4769,7 +4773,9 @@ const tabButtons = document.querySelectorAll('.tab-button');
         return [];
       }
 
-      const baseValues = buildFormattedFooterValues(mainTableAugmentedDataset);
+      const baseValues = buildFormattedFooterValues(mainTableAugmentedDataset, {
+        formatOptions: MAIN_TABLE_FORMAT_OPTIONS,
+      });
       const values = Array.isArray(baseValues) && baseValues.length === columnCount
         ? baseValues.slice()
         : (() => {
@@ -4810,12 +4816,55 @@ const tabButtons = document.querySelectorAll('.tab-button');
         });
 
         const formattedTotal = hasValue
-          ? formatCellValue(sum, columns[columnIndex])
-          : formatCellValue(0, columns[columnIndex]);
+          ? formatCellValue(sum, columns[columnIndex], MAIN_TABLE_FORMAT_OPTIONS)
+          : formatCellValue(0, columns[columnIndex], MAIN_TABLE_FORMAT_OPTIONS);
         values[columnIndex] = formattedTotal;
       });
 
       return values;
+    }
+
+    function logMainTillDateHeaders() {
+      const headers = Array.isArray(mainTillDateHeaders) ? mainTillDateHeaders : [];
+      console.log('[Main] non-date columns (till date):', headers);
+    }
+
+    function verifyMainTillDateCells(table) {
+      if (!table || typeof table.column !== 'function') {
+        return;
+      }
+      if (!Array.isArray(mainTillDateColumnIndices) || mainTillDateColumnIndices.length === 0) {
+        return;
+      }
+      const datePattern = /^[0-9]{2}-[0-9]{2}-[0-9]{4}$/;
+      mainTillDateColumnIndices.forEach((columnIndex, headerIndex) => {
+        if (!Number.isFinite(columnIndex)) {
+          return;
+        }
+        const column = table.column(columnIndex);
+        if (!column || typeof column.data !== 'function') {
+          return;
+        }
+        const data = column.data().toArray();
+        const hasDatePattern = data.some((value) => {
+          if (value === null || value === undefined) {
+            return false;
+          }
+          const text = typeof value === 'string' ? value.trim() : String(value).trim();
+          return datePattern.test(text);
+        });
+        if (hasDatePattern) {
+          const headerName = Array.isArray(mainTillDateHeaders)
+            ? (mainTillDateHeaders[headerIndex]
+              || (Array.isArray(mainTableAugmentedDataset?.columns)
+                ? mainTableAugmentedDataset.columns[columnIndex]
+                : `Column ${columnIndex + 1}`))
+            : (Array.isArray(mainTableAugmentedDataset?.columns)
+              ? mainTableAugmentedDataset.columns[columnIndex]
+              : `Column ${columnIndex + 1}`);
+          console.warn(`[Main] warning: dd-mm-yyyy detected in "${headerName}" column`);
+        }
+      });
     }
 
     function updateMainTableFooter(table) {
@@ -5521,10 +5570,11 @@ const tabButtons = document.querySelectorAll('.tab-button');
       onChange();
     }
 
-    function buildFilteredDataset(baseDataset, filters) {
+    function buildFilteredDataset(baseDataset, filters, options = {}) {
       if (!baseDataset || !Array.isArray(baseDataset.columns) || !Array.isArray(baseDataset.rows)) {
         return baseDataset;
       }
+      const formatOptions = options && typeof options === 'object' ? options.formatOptions : undefined;
       const filterEntries = Object.entries(filters || {})
         .map(([key, values]) => {
           const columnIndex = Number(key);
@@ -5546,7 +5596,7 @@ const tabButtons = document.querySelectorAll('.tab-button');
             return true;
           }
           const columnName = baseDataset.columns[columnIndex];
-          const formattedValue = formatCellValue(row[columnIndex], columnName);
+          const formattedValue = formatCellValue(row[columnIndex], columnName, formatOptions);
           return values.includes(formattedValue);
         });
       });
@@ -5622,7 +5672,9 @@ const tabButtons = document.querySelectorAll('.tab-button');
             return;
           }
           ensureMainFilterSetup(dataset);
-          const effectiveDataset = buildFilteredDataset(dataset, mainColumnFilters);
+          const effectiveDataset = buildFilteredDataset(dataset, mainColumnFilters, {
+            formatOptions: MAIN_TABLE_FORMAT_OPTIONS,
+          });
           const pivotResults = buildDashboardPivotResultsFromDataset(effectiveDataset);
           if (pivotResults instanceof Map) {
             mainDashboardPivotCache = pivotResults;
@@ -6107,7 +6159,7 @@ const tabButtons = document.querySelectorAll('.tab-button');
         return;
       }
       if (!Array.isArray(mainColumnValueOptions) || !mainColumnValueOptions.length) {
-        mainColumnValueOptions = buildColumnOptions(augmented);
+        mainColumnValueOptions = buildColumnOptions(augmented, { formatOptions: MAIN_TABLE_FORMAT_OPTIONS });
       }
       if (!mainFilterInitialised) {
         initializeMainFilterControls(augmented);
@@ -6304,12 +6356,13 @@ const tabButtons = document.querySelectorAll('.tab-button');
       });
     }
 
-    function buildColumnOptions(dataset) {
+    function buildColumnOptions(dataset, options = {}) {
+      const formatOptions = options && typeof options === 'object' ? options.formatOptions : undefined;
       const sets = dataset.columns.map(() => new Set());
       dataset.rows.forEach((row) => {
         row.forEach((value, index) => {
           const columnName = dataset.columns[index];
-          const formatted = formatCellValue(value, columnName);
+          const formatted = formatCellValue(value, columnName, formatOptions);
           sets[index].add(formatted);
         });
       });
@@ -6421,12 +6474,14 @@ const tabButtons = document.querySelectorAll('.tab-button');
       }, []);
     }
 
-    function formatCellValue(value, columnName) {
+    function formatCellValue(value, columnName, options = {}) {
+      const effectiveOptions = options && typeof options === 'object' ? options : {};
+      const { skipDateFormatting = false } = effectiveOptions;
       if (isPlaceholderValue(value)) {
         return typeof value === 'string' ? value.trim() : '';
       }
       const normalizedColumn = columnName ? columnName.trim().toLowerCase() : '';
-      if (isDateColumnName(columnName)) {
+      if (!skipDateFormatting && isDateColumnName(columnName)) {
         const formattedDate = formatDateValue(value);
         if (formattedDate) {
           return formattedDate;
@@ -6531,18 +6586,19 @@ const tabButtons = document.querySelectorAll('.tab-button');
       return augmented;
     }
 
-    function buildFormattedFooterValues(augmentedDataset) {
+    function buildFormattedFooterValues(augmentedDataset, options = {}) {
       if (!augmentedDataset || !Array.isArray(augmentedDataset.columns) || !Array.isArray(augmentedDataset.totalsRow)) {
         return [];
       }
       const numericColumns = new Set(augmentedDataset.numericColumnIndices || []);
+      const formatOptions = options && typeof options === 'object' ? options.formatOptions : undefined;
       return augmentedDataset.totalsRow.map((value, index) => {
         if (index === 0) {
           const label = typeof value === 'string' && value.trim().length ? value : TOTAL_ROW_LABEL;
           return label;
         }
         if (numericColumns.has(index)) {
-          return formatCellValue(value, augmentedDataset.columns[index]);
+          return formatCellValue(value, augmentedDataset.columns[index], formatOptions);
         }
         if (value === null || value === undefined) {
           return '';
@@ -8800,7 +8856,9 @@ const tabButtons = document.querySelectorAll('.tab-button');
           }
           ensureMainFilterSetup(dataset);
           const filtersActive = hasActiveColumnFilters(mainColumnFilters);
-          const effectiveDataset = filtersActive ? buildFilteredDataset(dataset, mainColumnFilters) : dataset;
+          const effectiveDataset = filtersActive
+            ? buildFilteredDataset(dataset, mainColumnFilters, { formatOptions: MAIN_TABLE_FORMAT_OPTIONS })
+            : dataset;
           const results = buildDashboardPivotResultsFromDataset(effectiveDataset);
           return { results, filtersActiveAtBuild: filtersActive };
         });
@@ -9177,14 +9235,26 @@ const tabButtons = document.querySelectorAll('.tab-button');
           mainTotalColumnIndex = augmentedDataset.totalColumnIndex;
           const tableElement = document.getElementById('main-table');
           applyHeaderPreambleToTable(tableElement, dataset.headerPreamble || null, augmentedDataset.columns);
+          mainTillDateColumnIndices = [];
+          mainTillDateHeaders = [];
+          augmentedDataset.columns.forEach((columnName, columnIndex) => {
+            if (typeof columnName === 'string' && TILL_DATE_HEADER_PATTERN.test(columnName)) {
+              mainTillDateColumnIndices.push(columnIndex);
+              mainTillDateHeaders.push(columnName);
+            }
+          });
           const columns = augmentedDataset.columns.map((title) => ({ title }));
-          const formattedRows = augmentedDataset.rows.map((row) => row.map((value, index) => formatCellValue(value, augmentedDataset.columns[index])));
+          const formattedRows = augmentedDataset.rows.map((row) => row.map((value, index) => formatCellValue(
+            value,
+            augmentedDataset.columns[index],
+            MAIN_TABLE_FORMAT_OPTIONS
+          )));
           const productColumnIndex = augmentedDataset.columns.indexOf('Product');
           const quantityColumnIndex = augmentedDataset.columns.findIndex((column) => column && column.trim().toLowerCase() === 'qty');
           const numericColumnIndices = augmentedDataset.numericColumnIndices;
 
           mainTableFooterValues = SHOW_REGULAR_TOTAL_ROW
-            ? buildFormattedFooterValues(augmentedDataset)
+            ? buildFormattedFooterValues(augmentedDataset, { formatOptions: MAIN_TABLE_FORMAT_OPTIONS })
             : [];
           mainTableNumericColumnSet = SHOW_REGULAR_TOTAL_ROW
             ? new Set(numericColumnIndices)
@@ -9244,7 +9314,7 @@ const tabButtons = document.querySelectorAll('.tab-button');
           });
 
           moveMainTablePagination();
-          mainColumnValueOptions = buildColumnOptions(augmentedDataset);
+          mainColumnValueOptions = buildColumnOptions(augmentedDataset, { formatOptions: MAIN_TABLE_FORMAT_OPTIONS });
           initializeMainFilterControls(augmentedDataset);
           wireHeaderEvents(mainTable, {
             valueOptions: mainColumnValueOptions,
@@ -9268,10 +9338,13 @@ const tabButtons = document.querySelectorAll('.tab-button');
               updateMainTableFooter(mainTable);
             }
             moveMainTablePagination();
+            verifyMainTillDateCells(mainTable);
           });
 
           mainTableInitialised = true;
           requestAnimationFrame(() => refreshMainTableLayout());
+          logMainTillDateHeaders();
+          verifyMainTillDateCells(mainTable);
         })
         .catch((error) => {
           console.error('Failed to initialise Main table:', error);
