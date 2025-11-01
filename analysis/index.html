@@ -3249,6 +3249,7 @@
     let salesGapFilterKeyListenerRegistered = false;
     let excelWorkbookCache = null;
     let excelWorkbookPromise = null;
+    let excelWorkbookRequestUrlCache = null;
 
     const NUMERIC_COLUMN_EXCLUSIONS = new Set(['ORDER NO', 'PLAIN ORDER NO', 'ORDER #', 'ORDER NO.', 'CHECKOUT']);
     const ZERO_DECIMAL_COLUMNS = new Set(['qty', 'order no', 'plain order no', 'order no.', 'order #']);
@@ -3418,6 +3419,7 @@
         const resolvedUrl = new URL(config.workbookUrl.trim(), window.location.href);
         const relativeUrl = toRelativeUrl(resolvedUrl);
         EXCEL_WORKBOOK_PATH = relativeUrl || resolvedUrl.toString();
+        excelWorkbookRequestUrlCache = null;
         const parentUrl = new URL('./', resolvedUrl);
         const relativeDirectory = toRelativeUrl(parentUrl);
         const normalisedParentDirectory = normaliseDirectoryPath(relativeDirectory);
@@ -3432,6 +3434,7 @@
         const resolvedUrl = new URL(encoded, baseUrl);
         const relativePath = toRelativeUrl(resolvedUrl);
         EXCEL_WORKBOOK_PATH = relativePath || resolvedUrl.toString();
+        excelWorkbookRequestUrlCache = null;
       }
     }
 
@@ -3693,6 +3696,7 @@
           throw new Error('Workbook configuration is missing a valid path');
         }
         EXCEL_WORKBOOK_PATH = resolvedPath;
+        excelWorkbookRequestUrlCache = null;
 
         return {
           path: EXCEL_WORKBOOK_PATH,
@@ -5176,6 +5180,32 @@
       return dataset;
     }
 
+    async function resolveWorkbookRequestUrl() {
+      if (excelWorkbookRequestUrlCache) {
+        return excelWorkbookRequestUrlCache;
+      }
+      await ensureWorkbookConfig();
+      if (!EXCEL_WORKBOOK_PATH) {
+        throw new Error('Excel workbook path is not configured');
+      }
+      let requestUrl = EXCEL_WORKBOOK_PATH;
+      try {
+        const metadata = await fetchResourceMetadata(EXCEL_WORKBOOK_PATH);
+        if (metadata && metadata.exists) {
+          const baseUrl = new URL(EXCEL_WORKBOOK_PATH, window.location.href);
+          const parameterName = metadata.lastModified ? 't' : 'ts';
+          const parameterValue = metadata.lastModified ? String(metadata.lastModified) : String(Date.now());
+          baseUrl.searchParams.set(parameterName, parameterValue);
+          const relativeUrl = toRelativeUrl(baseUrl);
+          requestUrl = relativeUrl || baseUrl.toString();
+        }
+      } catch (error) {
+        // Fall back to the configured path without cache busting parameters when metadata cannot be resolved.
+      }
+      excelWorkbookRequestUrlCache = requestUrl;
+      return requestUrl;
+    }
+
     function fetchExcelWorkbook() {
       if (typeof XLSX === 'undefined') {
         return Promise.reject(new Error('Excel parser library is not available'));
@@ -5186,13 +5216,8 @@
       if (excelWorkbookPromise) {
         return excelWorkbookPromise;
       }
-      excelWorkbookPromise = ensureWorkbookConfig()
-        .then(() => {
-          if (!EXCEL_WORKBOOK_PATH) {
-            throw new Error('Excel workbook path is not configured');
-          }
-          return fetch(EXCEL_WORKBOOK_PATH, { cache: 'no-store' });
-        })
+      excelWorkbookPromise = resolveWorkbookRequestUrl()
+        .then((requestUrl) => fetch(requestUrl, { cache: 'no-store' }))
         .then((response) => {
           if (!response.ok) {
             throw new Error('Unable to load Excel workbook');
