@@ -54,7 +54,7 @@
       const year = value.getUTCFullYear();
       const month = pad(value.getUTCMonth() + 1);
       const day = pad(value.getUTCDate());
-      return `${year}-${month}-${day}`;
+      return `${day}-${month}-${year}`;
     }
     return '';
   }
@@ -63,12 +63,12 @@
     if (!(value instanceof Date) || Number.isNaN(value.getTime())) {
       return '';
     }
-    const year = value.getUTCFullYear();
     const month = pad(value.getUTCMonth() + 1);
     const day = pad(value.getUTCDate());
     const hours = pad(value.getUTCHours());
     const minutes = pad(value.getUTCMinutes());
-    return `${year}-${month}-${day} ${hours}:${minutes} UTC`;
+    const year = value.getUTCFullYear();
+    return `${day}-${month}-${year} ${hours}:${minutes} UTC`;
   }
 
   function normaliseCellValue(cell, workbookOptions) {
@@ -81,7 +81,7 @@
     if (typeof cell === 'number' && Number.isFinite(cell)) {
       const date = XLSX.SSF.parse_date_code(cell, { date1904: !!(workbookOptions && workbookOptions.date1904) });
       if (date && date.y && date.m && date.d) {
-        return `${date.y}-${pad(date.m)}-${pad(date.d)}`;
+        return `${pad(date.d)}-${pad(date.m)}-${date.y}`;
       }
       return cell;
     }
