@@ -749,6 +749,23 @@
       flex-wrap: wrap;
       margin-left: auto;
     }
+    .regular-card__status {
+      margin: 0;
+      padding: 0.85rem 1rem;
+      border-radius: 0.85rem;
+      border: 1px solid rgba(180, 35, 24, 0.32);
+      background: rgba(180, 35, 24, 0.08);
+      color: #b42318;
+      font-weight: 600;
+      line-height: 1.4;
+    }
+    .regular-card__status[hidden] {
+      display: none !important;
+    }
+    .regular-card__status[data-state='error']::before {
+      content: '⚠️';
+      margin-right: 0.5rem;
+    }
     .filter-button {
       display: inline-flex;
       align-items: center;
@@ -2882,6 +2899,7 @@
             <div class="regular-card__pagination" id="regular-table-pagination" aria-label="Regular table pagination"></div>
           </div>
         </header>
+        <div class="regular-card__status" id="regular-data-status" hidden></div>
         <div class="table-container regular-table-container">
           <table id="regular-table" class="display" style="width:100%"></table>
         </div>
