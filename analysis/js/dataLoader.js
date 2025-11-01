@@ -4,6 +4,7 @@
   }
 
   const WORKBOOK_PATH = '/GrossProceed/analysis/data/daily.xlsx';
+  const WORKBOOK_URL = WORKBOOK_PATH;
   const RAW_BASE_URL = 'https://raw.githubusercontent.com/chirag1969/GrossProceed/main/analysis/data/daily.xlsx';
 
   let cachedPromise = null;
@@ -266,13 +267,18 @@
 
   async function fetchWorkbookFromSource(source, cacheBuster) {
     const { href, displayUrl } = buildAttemptUrl(source, cacheBuster);
-    const response = await fetch(href, {
+    const fetchOptions = {
       cache: 'no-store',
+      credentials: 'same-origin',
       headers: {
         'Cache-Control': 'no-store',
         Pragma: 'no-cache',
       },
-    });
+    };
+    if (typeof navigator !== 'undefined' && navigator && navigator.serviceWorker) {
+      fetchOptions.headers['x-sw-bypass'] = '1';
+    }
+    const response = await fetch(href, fetchOptions);
     if (!response.ok) {
       const error = new Error(`Request to ${displayUrl} failed with status ${response.status} ${response.statusText || ''}`.trim());
       error.status = response.status;
@@ -396,5 +402,6 @@
     return cachedPromise;
   }
 
+  global.WORKBOOK_URL = WORKBOOK_URL;
   global.loadExcelData = loadExcelData;
 })(typeof window !== 'undefined' ? window : this);

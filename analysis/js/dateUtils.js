@@ -3,8 +3,13 @@
     return;
   }
 
+  /* Never use toLocaleDateString. Use SheetJS parser to avoid local TZ shifts. */
+
   function excelSerialToYMD(n) {
-    if (typeof XLSX === 'undefined' || !XLSX.SSF || typeof n !== 'number' || Number.isNaN(n)) {
+    if (typeof n !== 'number' || Number.isNaN(n)) {
+      return null;
+    }
+    if (typeof XLSX === 'undefined' || !XLSX.SSF) {
       return null;
     }
     const parsed = XLSX.SSF.parse_date_code(n);
@@ -23,11 +28,20 @@
       return excelSerialToYMD(value);
     }
 
+    if (value instanceof Date && !Number.isNaN(value.getTime())) {
+      return {
+        y: value.getUTCFullYear(),
+        m: value.getUTCMonth() + 1,
+        d: value.getUTCDate(),
+      };
+    }
+
     if (typeof value === 'string') {
       const match = value.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
       if (match) {
         return { d: Number(match[1]), m: Number(match[2]), y: Number(match[3]) };
       }
+
       const timestamp = Date.parse(value);
       if (!Number.isNaN(timestamp)) {
         const date = new Date(timestamp);
@@ -39,21 +53,11 @@
       }
     }
 
-    if (value instanceof Date && !Number.isNaN(value)) {
-      return {
-        y: value.getUTCFullYear(),
-        m: value.getUTCMonth() + 1,
-        d: value.getUTCDate(),
-      };
-    }
-
     return null;
   }
 
   function formatDDMMYYYY(value) {
-    const ymd = value && typeof value === 'object' && 'y' in value && 'm' in value && 'd' in value
-      ? value
-      : toYMD(value);
+    const ymd = value && value.y && value.m && value.d ? value : toYMD(value);
     if (!ymd) {
       return '';
     }

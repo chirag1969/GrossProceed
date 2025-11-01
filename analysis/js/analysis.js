@@ -180,6 +180,9 @@ const tabButtons = document.querySelectorAll('.tab-button');
     const PANEL_TRANSITION_DURATION = 340;
     const FILTER_TRANSITION_DURATION = 320;
     const BUTTON_BUSY_TIMEOUT = 420;
+    const WORKBOOK_URL = (typeof window !== 'undefined' && window && window.WORKBOOK_URL)
+      ? window.WORKBOOK_URL
+      : '/GrossProceed/analysis/data/daily.xlsx';
 
     let regularTable;
     let regularTableInitialised = false;
@@ -188,6 +191,7 @@ const tabButtons = document.querySelectorAll('.tab-button');
     let regularTableAugmentedDataset = null;
     let regularDatasetCache = null;
     let regularDatasetPromise = null;
+    let regularSheetHeader = null;
     let mainTable;
     let mainTableInitialised = false;
     let mainTableFooterValues = [];
@@ -2937,6 +2941,55 @@ const tabButtons = document.querySelectorAll('.tab-button');
         });
     }
 
+    async function loadRegularSheetData(arrayBuffer) {
+      const wb = XLSX.read(arrayBuffer, { type: 'array', cellDates: true, cellNF: false, cellText: false });
+
+      const sheetName = wb.SheetNames.find((name) => /regular/i.test(String(name))) || null;
+      if (!sheetName) {
+        console.error('No sheet with name containing "REGULAR" found in workbook:', wb.SheetNames);
+        regularSheetHeader = null;
+        return [];
+      }
+      const ws = wb.Sheets[sheetName];
+
+      const matrix = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: null, blankrows: false });
+
+      if (!matrix || matrix.length < 3) {
+        console.error('REGULAR sheet: Expected headers on row 2 and data from row 3. Found rows:', matrix ? matrix.length : 0);
+        regularSheetHeader = null;
+        return [];
+      }
+
+      const header = (matrix[1] || []).map((value) => String(value ?? '').trim());
+      regularSheetHeader = header;
+      const dataRows = matrix.slice(2);
+
+      const rows = dataRows
+        .map((row) => {
+          const safeRow = Array.isArray(row) ? row : [];
+          const entry = {};
+          header.forEach((columnName, index) => {
+            const key = columnName || `col_${index + 1}`;
+            entry[key] = safeRow[index];
+          });
+          return entry;
+        })
+        .filter((entry) => Object.values(entry).some((value) => {
+          if (value === null || value === undefined) {
+            return false;
+          }
+          if (typeof value === 'string') {
+            return value.trim().length > 0;
+          }
+          return true;
+        }));
+
+      console.log('[Regular] sheet:', sheetName);
+      console.log('[Regular] header:', header);
+      console.log('[Regular] rows:', rows.length);
+      return rows;
+    }
+
     function fetchRegularDataset() {
       if (regularDatasetCache) {
         return Promise.resolve(regularDatasetCache);
@@ -2944,53 +2997,50 @@ const tabButtons = document.querySelectorAll('.tab-button');
       if (regularDatasetPromise) {
         return regularDatasetPromise;
       }
-      regularDatasetPromise = fetchExcelWorkbook()
-        .then((workbook) => {
-          const { worksheet } = findWorksheetFromWorkbook(workbook, {
-            candidates: EXCEL_REGULAR_SHEET_CANDIDATES,
-            fallbackPredicate: (name) => {
-              const normalised = normaliseSheetName(name);
-              return normalised.includes('regular');
-            },
-          });
-          if (!worksheet) {
-            throw new Error(`${getRegularDisplayName()} worksheet not found in workbook`);
+
+      const fetchOptions = {
+        cache: 'no-store',
+        credentials: 'same-origin',
+        headers: {
+          'Cache-Control': 'no-store',
+          Pragma: 'no-cache',
+        },
+      };
+      if (typeof navigator !== 'undefined' && navigator && navigator.serviceWorker) {
+        fetchOptions.headers['x-sw-bypass'] = '1';
+      }
+
+      console.log('[Regular] using workbook:', WORKBOOK_URL);
+
+      regularDatasetPromise = fetch(`${WORKBOOK_URL}?t=${Date.now()}`, fetchOptions)
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error(`Regular workbook request failed with status ${response.status}`);
           }
-          const matrix = XLSX.utils.sheet_to_json(worksheet, {
-            header: 1,
-            raw: true,
-            defval: null,
-            blankrows: false,
-          });
-          if (!Array.isArray(matrix) || matrix.length < 2) {
-            throw new Error('Regular: Expected headers on row 2 and data from row 3.');
-          }
-          const header = (matrix[1] || []).map((value) => String(value ?? '').trim());
-          if (!header.some((value) => value.length)) {
-            throw new Error('Regular: Expected headers on row 2 and data from row 3.');
-          }
-          const dataRows = matrix.slice(2);
-          const rows = dataRows
-            .map((row) => {
-              const safeRow = Array.isArray(row) ? row : [];
-              return header.map((_, index) => safeRow[index]);
-            })
-            .filter((row) => row.some((value) => {
-              if (value === null || value === undefined) {
-                return false;
-              }
-              if (typeof value === 'string') {
-                return value.trim().length > 0;
-              }
-              return true;
-            }));
-          console.log('Regular header:', header);
-          console.log('Regular rows:', rows.length);
-          return { columns: header, rows };
+          return response.arrayBuffer();
         })
-        .then((data) => {
-          regularDatasetCache = data;
-          return data;
+        .then((buffer) => loadRegularSheetData(buffer))
+        .then((rows) => {
+          const header = Array.isArray(regularSheetHeader) ? regularSheetHeader.slice() : [];
+          if (!header.length && rows.length) {
+            const firstRow = rows[0];
+            if (firstRow && typeof firstRow === 'object') {
+              header.push(...Object.keys(firstRow));
+            }
+          }
+
+          if (!header.length) {
+            throw new Error('Regular: Expected headers on row 2 and data from row 3.');
+          }
+
+          const matrixRows = rows.map((entry) => header.map((columnName, index) => {
+            const key = columnName || `col_${index + 1}`;
+            return entry && Object.prototype.hasOwnProperty.call(entry, key) ? entry[key] : null;
+          }));
+
+          const dataset = { columns: header, rows: matrixRows };
+          regularDatasetCache = dataset;
+          return dataset;
         })
         .catch((error) => {
           regularDatasetPromise = null;
@@ -4651,7 +4701,7 @@ const tabButtons = document.querySelectorAll('.tab-button');
 
     function moveRegularTablePagination() {
       const paginationHost = document.getElementById('regular-table-pagination');
-      const tableWrapper = document.getElementById('regular-table_wrapper');
+      const tableWrapper = document.getElementById('regularTable_wrapper');
       if (!paginationHost || !tableWrapper) {
         return;
       }
@@ -4985,7 +5035,7 @@ const tabButtons = document.querySelectorAll('.tab-button');
         document.addEventListener('click', (event) => {
           if (!headerMenuElement.classList.contains('hidden')) {
             const target = event.target;
-            if (headerMenuElement && !headerMenuElement.contains(target) && !(target.closest('#regular-table thead')) && !(target.closest('#main-table thead'))) {
+            if (headerMenuElement && !headerMenuElement.contains(target) && !(target.closest('#regularTable thead')) && !(target.closest('#main-table thead'))) {
               closeHeaderMenu();
             }
           }
@@ -8859,7 +8909,7 @@ const tabButtons = document.querySelectorAll('.tab-button');
             : new Set();
 
           if (SHOW_REGULAR_TOTAL_ROW) {
-            const tableElement = document.getElementById('regular-table');
+            const tableElement = document.getElementById('regularTable');
             if (tableElement) {
               ensureTableFooter(
                 tableElement,
@@ -8894,7 +8944,7 @@ const tabButtons = document.querySelectorAll('.tab-button');
           const initialRowCount = Math.min(augmentedDataset.rows.length, REGULAR_TABLE_PAGE_LENGTH);
           const initialReservedSpace = calculateRegularTableReservedSpace();
           const initialScrollHeight = `${calculateScrollBodyHeight(initialRowCount, undefined, initialReservedSpace)}px`;
-          regularTable = $('#regular-table').DataTable({
+          regularTable = $('#regularTable').DataTable({
             data: tableData,
             columns,
             columnDefs,
@@ -8930,7 +8980,7 @@ const tabButtons = document.querySelectorAll('.tab-button');
                 });
               }
             }
-            console.assert(/^\d{2}-\d{2}-\d{4}$/.test($('.dataTable tbody tr:eq(0) td:eq(2)').text()), 'Checkout not dd-mm-yyyy');
+            console.assert(/^[0-9]{2}-[0-9]{2}-[0-9]{4}$/.test($('#regularTable tbody tr:eq(0) td:eq(2)').text().trim()), 'Checkout not dd-mm-yyyy');
           };
           runCheckoutFormatAssertion();
           columnValueOptions = buildColumnOptions(augmentedDataset);
@@ -8953,9 +9003,15 @@ const tabButtons = document.querySelectorAll('.tab-button');
 
           regularTableInitialised = true;
           requestAnimationFrame(() => refreshRegularTableLayout());
+          console.assert($('#regularTable').length, 'Regular table not found');
+          setTimeout(() => {
+            const text = $('#regularTable tbody tr:eq(0) td:eq(2)').text().trim();
+            console.log('First checkout:', text);
+            console.assert(/^[0-9]{2}-[0-9]{2}-[0-9]{4}$/.test(text), 'Checkout not dd-mm-yyyy');
+          }, 500);
         })
         .catch((error) => {
-          const tableElement = document.getElementById('regular-table');
+          const tableElement = document.getElementById('regularTable');
           if (tableElement) {
             tableElement.outerHTML = `<p style="color: var(--muted);">${error.message}</p>`;
           }
@@ -8963,6 +9019,14 @@ const tabButtons = document.querySelectorAll('.tab-button');
         .finally(() => {
           setTabPanelLoading('regular', false);
         });
+    }
+
+    async function initRegularTab() {
+      try {
+        await loadRegularTable();
+      } catch (error) {
+        console.error('Regular tab load failed:', error);
+      }
     }
 
     function loadMainTable() {
@@ -9096,4 +9160,12 @@ const tabButtons = document.querySelectorAll('.tab-button');
         .finally(() => {
           setTabPanelLoading('main', false);
         });
+    }
+
+    if (typeof document !== 'undefined') {
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initRegularTab, { once: true });
+      } else {
+        initRegularTab();
+      }
     }
