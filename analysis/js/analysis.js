@@ -2005,16 +2005,24 @@ const tabButtons = document.querySelectorAll('.tab-button');
       return dataset;
     }
 
-    function fetchExcelWorkbook() {
-      if (workbookLoadPromise) {
+    function fetchExcelWorkbook(options = {}) {
+      const forceReload = Boolean(options && options.forceReload);
+      if (!forceReload && workbookLoadPromise) {
         return workbookLoadPromise;
+      }
+      if (forceReload) {
+        workbookLoadPromise = null;
       }
       if (typeof window !== 'object' || typeof window.loadExcelData !== 'function') {
         const error = new Error('Excel loader is not available');
         showDataLoaderError(error.message);
         return Promise.reject(error);
       }
-      workbookLoadPromise = window.loadExcelData({ includeWorkbook: true })
+      const loadOptions = { includeWorkbook: true };
+      if (forceReload) {
+        loadOptions.forceReload = true;
+      }
+      const workbookPromise = window.loadExcelData(loadOptions)
         .then((payload) => {
           if (!payload || typeof payload !== 'object' || !payload.workbook) {
             throw new Error('Excel workbook is unavailable');
@@ -2038,7 +2046,8 @@ const tabButtons = document.querySelectorAll('.tab-button');
           console.error('Failed to load Excel workbook:', error);
           throw error;
         });
-      return workbookLoadPromise;
+      workbookLoadPromise = workbookPromise;
+      return workbookPromise;
     }
 
     function loadDatasetFromExcel(options = {}) {
@@ -2946,16 +2955,54 @@ const tabButtons = document.querySelectorAll('.tab-button');
         });
     }
 
+    function selectRegularSheetName(sheetNames) {
+      if (!Array.isArray(sheetNames) || !sheetNames.length) {
+        return null;
+      }
+      const matches = sheetNames
+        .map((name, index) => ({
+          name,
+          index,
+          label: name === null || name === undefined ? '' : String(name).trim(),
+        }))
+        .filter((entry) => /regular/i.test(entry.label));
+      if (!matches.length) {
+        return null;
+      }
+      const scored = matches.map((entry) => {
+        const upper = entry.label.toUpperCase();
+        let score = 2;
+        if (upper === 'REGULAR') {
+          score = 0;
+        } else if (upper.startsWith('REGULAR')) {
+          score = 1;
+        }
+        return { ...entry, score };
+      });
+      scored.sort((a, b) => {
+        if (a.score !== b.score) {
+          return a.score - b.score;
+        }
+        return b.index - a.index;
+      });
+      const selected = scored[0];
+      if (scored.length > 1) {
+        const candidates = scored.map((entry) => entry.name).join(', ');
+        console.log('[Regular] multiple REGULAR sheet matches:', candidates, '→ using', selected.name);
+      }
+      return selected.name;
+    }
+
     function buildRegularDatasetFromWorkbook(workbook) {
       if (!workbook || typeof workbook !== 'object') {
         throw new Error('Regular: Workbook is unavailable');
       }
 
       const sheetNames = Array.isArray(workbook.SheetNames) ? workbook.SheetNames : [];
-      const targetSheetName = sheetNames.find((name) => /regular/i.test(String(name))) || null;
+      const targetSheetName = selectRegularSheetName(sheetNames);
       if (!targetSheetName) {
-        console.error('No sheet with name containing "REGULAR" found in workbook:', sheetNames);
-        const error = new Error('Regular sheet not found in workbook');
+        console.warn('[Regular] No worksheet containing "REGULAR" was found. Available sheets:', sheetNames);
+        const error = new Error('No worksheet containing "REGULAR" was found in the workbook.');
         error.availableSheets = sheetNames;
         throw error;
       }
@@ -2966,6 +3013,9 @@ const tabButtons = document.querySelectorAll('.tab-button');
         error.availableSheets = sheetNames;
         throw error;
       }
+
+      console.log('[Regular] available sheets:', sheetNames);
+      console.log('[Regular] selected sheet:', targetSheetName);
 
       const matrix = XLSX.utils.sheet_to_json(worksheet, {
         header: 1,
@@ -3056,27 +3106,20 @@ const tabButtons = document.querySelectorAll('.tab-button');
         regularDatasetCache = null;
       }
 
-      if (typeof window !== 'object' || typeof window.loadExcelData !== 'function') {
-        return Promise.reject(new Error('Regular: Excel loader is unavailable.'));
-      }
-
-      const loadOptions = { includeWorkbook: true };
-      if (forceReload) {
-        loadOptions.forceReload = true;
-      }
-
-      regularDatasetPromise = window.loadExcelData(loadOptions)
-        .then((payload) => {
-          if (!payload || typeof payload !== 'object' || !payload.workbook) {
+      // Reuse the shared workbook loader so the Regular tab sees the same
+      // data snapshot as the Main tab, including any forced refreshes.
+      regularDatasetPromise = fetchExcelWorkbook({ forceReload })
+        .then((workbook) => {
+          if (!workbook || typeof workbook !== 'object') {
             throw new Error('Regular: Workbook payload is invalid.');
           }
 
-          const workbookUrl = payload.version && typeof payload.version.finalUrl === 'string' && payload.version.finalUrl.length
-            ? payload.version.finalUrl
+          const workbookUrl = workbookVersionInfo && typeof workbookVersionInfo.finalUrl === 'string' && workbookVersionInfo.finalUrl.length
+            ? workbookVersionInfo.finalUrl
             : (typeof WORKBOOK_URL === 'string' ? `${WORKBOOK_URL}` : '');
-          console.log('[Regular] using workbook:', workbookUrl);
+          console.log('[Regular] using workbook:', workbookUrl, forceReload ? '(force reload)' : '(cached)');
 
-          const dataset = buildRegularDatasetFromWorkbook(payload.workbook);
+          const dataset = buildRegularDatasetFromWorkbook(workbook);
           regularDatasetCache = { columns: dataset.columns, rows: dataset.rows };
           return regularDatasetCache;
         })
