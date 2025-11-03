@@ -20,3 +20,9 @@ The analysis dashboard hosted on GitHub Pages reads its data directly from the E
 - The loader returns both the parsed workbook and raw row data; additional sheets can be accessed by updating the relevant candidate lists and column definitions.
 
 No manual build step is required—pushing an updated `daily.xlsx` to `main` automatically refreshes the published dashboard once the page is reloaded.
+
+## Regular tab data sync
+- The Regular tab now reads from the same workbook instance that powers the Main tab, including when the page requests a forced refresh.
+- When multiple worksheets contain "REGULAR" in their name, the loader prefers an exact "REGULAR" match, then names that start with `REGULAR`, and finally the last matching sheet in the workbook.
+- If no worksheet name contains "REGULAR", the tab shows an inline notice while the rest of the dashboard continues to operate.
+- To verify freshness, upload a new `analysis/data/daily.xlsx`, reload the dashboard, and confirm that the Regular tab rows mirror the updated workbook.
