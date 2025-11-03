@@ -5,6 +5,8 @@
 
   /* Never use toLocaleDateString. Use SheetJS parser to avoid local TZ shifts. */
 
+  const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
   function excelSerialToYMD(n) {
     if (typeof n !== 'number' || Number.isNaN(n)) {
       return null;
@@ -19,80 +21,253 @@
     return { y: parsed.y, m: parsed.m, d: parsed.d };
   }
 
-  function toYMD(value) {
+  function buildMetadata(y, m, d, grain) {
+    const safeMonth = Math.max(1, Math.min(12, m));
+    const safeDay = Math.max(1, Math.min(31, d));
+    const date = new Date(Date.UTC(y, safeMonth - 1, safeDay));
+    if (Number.isNaN(date.getTime())) {
+      return null;
+    }
+    const metadata = {
+      y,
+      m: safeMonth,
+      d: safeDay,
+      grain: grain || 'day',
+      date,
+    };
+    if (metadata.grain === 'quarter') {
+      metadata.quarter = Math.floor((safeMonth - 1) / 3) + 1;
+    }
+    metadata.sortValue = metadata.date.getTime();
+    return metadata;
+  }
+
+  function parseQuarterFromDigits(text) {
+    if (!/^\d{5}$/.test(text)) {
+      return null;
+    }
+    const year = Number(text.slice(0, 4));
+    const quarterDigit = Number(text.slice(4));
+    if (!Number.isFinite(year) || !Number.isFinite(quarterDigit)) {
+      return null;
+    }
+    if (quarterDigit < 1 || quarterDigit > 4) {
+      return null;
+    }
+    const month = ((quarterDigit - 1) * 3) + 1;
+    return buildMetadata(year, month, 1, 'quarter');
+  }
+
+  function parseQuarterFromText(text) {
+    const match = text.match(/^(\d{4})\s*[-]?\s*[Qq](\d)$/);
+    if (!match) {
+      return null;
+    }
+    const year = Number(match[1]);
+    const quarterDigit = Number(match[2]);
+    if (!Number.isFinite(year) || !Number.isFinite(quarterDigit)) {
+      return null;
+    }
+    if (quarterDigit < 1 || quarterDigit > 4) {
+      return null;
+    }
+    const month = ((quarterDigit - 1) * 3) + 1;
+    return buildMetadata(year, month, 1, 'quarter');
+  }
+
+  function parseYearMonth(text) {
+    const match = text.match(/^(\d{4})[-]?(\d{2})$/);
+    if (!match) {
+      return null;
+    }
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+    if (!Number.isFinite(year) || !Number.isFinite(month) || month < 1 || month > 12) {
+      return null;
+    }
+    return buildMetadata(year, month, 1, 'month');
+  }
+
+  function parseYear(text) {
+    if (!/^\d{4}$/.test(text)) {
+      return null;
+    }
+    const year = Number(text);
+    if (!Number.isFinite(year)) {
+      return null;
+    }
+    return buildMetadata(year, 1, 1, 'year');
+  }
+
+  function parseYYYYMMDD(text) {
+    if (!/^\d{8}$/.test(text)) {
+      return null;
+    }
+    const year = Number(text.slice(0, 4));
+    const month = Number(text.slice(4, 6));
+    const day = Number(text.slice(6, 8));
+    if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) {
+      return null;
+    }
+    if (month < 1 || month > 12) {
+      return null;
+    }
+    if (day < 1 || day > 31) {
+      return null;
+    }
+    return buildMetadata(year, month, day, 'day');
+  }
+
+  function parseExcelSerial(text) {
+    if (!/^\d+(?:\.\d+)?$/.test(text)) {
+      return null;
+    }
+    const numeric = Number(text);
+    if (!Number.isFinite(numeric)) {
+      return null;
+    }
+    if (numeric < 1 || numeric > 600000) {
+      return null;
+    }
+    const ymd = excelSerialToYMD(numeric);
+    if (!ymd) {
+      return null;
+    }
+    return buildMetadata(ymd.y, ymd.m, ymd.d, 'day');
+  }
+
+  function parseDateMetadata(value) {
     if (value === null || value === undefined || value === '') {
       return null;
     }
 
-    if (typeof value === 'number') {
-      return excelSerialToYMD(value);
-    }
-
     if (value instanceof Date && !Number.isNaN(value.getTime())) {
-      return {
-        y: value.getUTCFullYear(),
-        m: value.getUTCMonth() + 1,
-        d: value.getUTCDate(),
-      };
+      return buildMetadata(value.getUTCFullYear(), value.getUTCMonth() + 1, value.getUTCDate(), 'day');
     }
 
-    if (typeof value === 'string') {
-      const match = value.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
-      if (match) {
-        return { d: Number(match[1]), m: Number(match[2]), y: Number(match[3]) };
-      }
+    const rawText = typeof value === 'string' ? value.trim() : String(value);
+    if (!rawText.length) {
+      return null;
+    }
 
-      const timestamp = Date.parse(value);
-      if (!Number.isNaN(timestamp)) {
-        const date = new Date(timestamp);
-        return {
-          y: date.getUTCFullYear(),
-          m: date.getUTCMonth() + 1,
-          d: date.getUTCDate(),
-        };
+    const quarterFromText = parseQuarterFromText(rawText);
+    if (quarterFromText) {
+      return quarterFromText;
+    }
+
+    const yyyymmdd = parseYYYYMMDD(rawText);
+    if (yyyymmdd) {
+      return yyyymmdd;
+    }
+
+    const yyyymm = parseYearMonth(rawText);
+    if (yyyymm) {
+      return yyyymm;
+    }
+
+    const quarterDigits = parseQuarterFromDigits(rawText);
+    if (quarterDigits) {
+      return quarterDigits;
+    }
+
+    const yearOnly = parseYear(rawText);
+    if (yearOnly) {
+      return yearOnly;
+    }
+
+    const serial = parseExcelSerial(rawText);
+    if (serial) {
+      return serial;
+    }
+
+    const match = rawText.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+    if (match) {
+      let year = Number(match[3]);
+      if (year < 100) {
+        year += year >= 70 ? 1900 : 2000;
       }
+      const month = Number(match[2]);
+      const day = Number(match[1]);
+      if (Number.isFinite(year) && Number.isFinite(month) && Number.isFinite(day)) {
+        return buildMetadata(year, month, day, 'day');
+      }
+    }
+
+    const parsed = Date.parse(rawText);
+    if (!Number.isNaN(parsed)) {
+      const date = new Date(parsed);
+      return buildMetadata(date.getUTCFullYear(), date.getUTCMonth() + 1, date.getUTCDate(), 'day');
     }
 
     return null;
   }
 
+  function toYMD(value) {
+    const metadata = parseDateMetadata(value);
+    if (!metadata) {
+      return null;
+    }
+    return { y: metadata.y, m: metadata.m, d: metadata.d };
+  }
+
   function formatDDMMYYYY(value) {
-    const ymd = value && value.y && value.m && value.d ? value : toYMD(value);
-    if (!ymd) {
+    const metadata = parseDateMetadata(value);
+    if (!metadata) {
       return '';
     }
-    const dd = String(ymd.d).padStart(2, '0');
-    const mm = String(ymd.m).padStart(2, '0');
-    const yyyy = String(ymd.y);
+    const dd = String(metadata.d).padStart(2, '0');
+    const mm = String(metadata.m).padStart(2, '0');
+    const yyyy = String(metadata.y);
     return `${dd}-${mm}-${yyyy}`;
   }
 
   function sortKeyYYYYMMDD(value) {
-    const ymd = toYMD(value);
-    if (!ymd) {
+    const metadata = parseDateMetadata(value);
+    if (!metadata) {
       return '';
     }
-    const mm = String(ymd.m).padStart(2, '0');
-    const dd = String(ymd.d).padStart(2, '0');
-    return `${ymd.y}-${mm}-${dd}`;
+    const mm = String(metadata.m).padStart(2, '0');
+    const dd = String(metadata.d).padStart(2, '0');
+    return `${metadata.y}-${mm}-${dd}`;
   }
 
   function excelSerialToDate(n) {
-    const ymd = excelSerialToYMD(n);
-    if (!ymd) {
+    const metadata = parseDateMetadata(n);
+    if (!metadata) {
       return null;
     }
-    const date = new Date(Date.UTC(ymd.y, ymd.m - 1, ymd.d));
-    return Number.isNaN(date.getTime()) ? null : date;
+    return metadata.date;
   }
 
   function parseToDate(value) {
-    const ymd = toYMD(value);
-    if (!ymd) {
+    const metadata = parseDateMetadata(value);
+    if (!metadata) {
       return null;
     }
-    const date = new Date(Date.UTC(ymd.y, ymd.m - 1, ymd.d));
-    return Number.isNaN(date.getTime()) ? null : date;
+    return metadata.date;
+  }
+
+  function formatDateLabel(value) {
+    const metadata = value && typeof value === 'object' && value.grain
+      ? value
+      : parseDateMetadata(value);
+    if (!metadata) {
+      return '';
+    }
+    const year = String(metadata.y);
+    if (metadata.grain === 'year') {
+      return year;
+    }
+    if (metadata.grain === 'quarter') {
+      const quarterNumber = metadata.quarter || Math.floor((metadata.m - 1) / 3) + 1;
+      return `Q${quarterNumber} ${year}`;
+    }
+    const monthName = MONTH_NAMES[Math.max(0, Math.min(11, metadata.m - 1))];
+    if (metadata.grain === 'month') {
+      return `${monthName} ${year}`;
+    }
+    const day = String(metadata.d).padStart(2, '0');
+    return `${day}-${monthName}-${year}`;
   }
 
   global.excelSerialToYMD = excelSerialToYMD;
@@ -101,4 +276,6 @@
   global.sortKeyYYYYMMDD = sortKeyYYYYMMDD;
   global.excelSerialToDate = excelSerialToDate;
   global.parseToDate = parseToDate;
+  global.parseDateMetadata = parseDateMetadata;
+  global.formatDateLabel = formatDateLabel;
 })(typeof window !== 'undefined' ? window : this);

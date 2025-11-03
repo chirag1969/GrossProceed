@@ -782,9 +782,22 @@ const tabButtons = document.querySelectorAll('.tab-button');
             lower: option && typeof option.lower === 'string' && option.lower.length
               ? option.lower
               : rawKey,
+            sortKey: Number.isFinite(option && option.sortKey) ? option.sortKey : null,
           });
         });
       }
+      normalizedOptions.sort((a, b) => {
+        const aHasSort = Number.isFinite(a.sortKey);
+        const bHasSort = Number.isFinite(b.sortKey);
+        if (aHasSort && bHasSort) {
+          if (a.sortKey !== b.sortKey) {
+            return a.sortKey - b.sortKey;
+          }
+        } else if (aHasSort !== bHasSort) {
+          return aHasSort ? -1 : 1;
+        }
+        return a.lower.localeCompare(b.lower, undefined, { numeric: true, sensitivity: 'base' });
+      });
       state.fieldValueMap.set(fieldId, { options: normalizedOptions, keySet });
     }
 
@@ -866,13 +879,26 @@ const tabButtons = document.querySelectorAll('.tab-button');
         const seen = new Set();
         const options = [];
         rawValues.forEach((rawValue) => {
-          const formatted = rawValue === null || rawValue === undefined ? '' : String(rawValue);
-          const normalized = normalizeDashboardFilterValue(formatted);
+          let display = rawValue === null || rawValue === undefined ? '' : String(rawValue);
+          let sortKey = null;
+          if (typeof window.parseDateMetadata === 'function') {
+            const metadata = window.parseDateMetadata(rawValue);
+            if (metadata) {
+              sortKey = metadata.sortValue;
+              if (typeof window.formatDateLabel === 'function') {
+                const formatted = window.formatDateLabel(metadata);
+                if (formatted) {
+                  display = formatted;
+                }
+              }
+            }
+          }
+          const normalized = normalizeDashboardFilterValue(display);
           if (seen.has(normalized)) {
             return;
           }
           seen.add(normalized);
-          options.push({ key: normalized, label: formatted, lower: normalized });
+          options.push({ key: normalized, label: display, lower: normalized, sortKey });
         });
         optionMap.set(fieldId, options);
       });
@@ -2161,6 +2187,15 @@ const tabButtons = document.querySelectorAll('.tab-button');
       const text = typeof rawValue === 'string' ? rawValue.trim() : String(rawValue);
       if (!text.length) {
         return null;
+      }
+      if (typeof window.parseDateMetadata === 'function' && typeof window.formatDateLabel === 'function') {
+        const metadata = window.parseDateMetadata(rawValue);
+        if (metadata) {
+          const formatted = window.formatDateLabel(metadata);
+          if (formatted) {
+            return formatted;
+          }
+        }
       }
       const numeric = Number(text);
       if (Number.isFinite(numeric) && numeric >= 30000 && numeric <= 60000) {
@@ -4616,9 +4651,16 @@ const tabButtons = document.querySelectorAll('.tab-button');
             }
             const span = mergeMap.get(cellKey) || null;
             const rawValue = row && columnIndex < row.length ? row[columnIndex] : '';
-            const text = typeof rawValue === 'string'
-              ? rawValue
-              : (rawValue === null || rawValue === undefined ? '' : String(rawValue));
+            let displayValue = rawValue;
+            if (typeof window.formatDateLabel === 'function') {
+              const formattedDate = window.formatDateLabel(rawValue);
+              if (formattedDate) {
+                displayValue = formattedDate;
+              }
+            }
+            const text = typeof displayValue === 'string'
+              ? displayValue
+              : (displayValue === null || displayValue === undefined ? '' : String(displayValue));
             const trimmed = text.trim();
             const th = document.createElement('th');
             th.classList.add('table-preamble__cell');
