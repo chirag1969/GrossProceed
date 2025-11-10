@@ -6,6 +6,54 @@
   /* Never use toLocaleDateString. Use SheetJS parser to avoid local TZ shifts. */
 
   const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const DATE_TEXT_INDICATOR_PATTERN = /[-/.,:\s]|T|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec/i;
+
+  function shouldIncrementDay(sourceValue, metadata) {
+    if (!metadata || metadata.grain !== 'day') {
+      return false;
+    }
+    if (sourceValue instanceof Date) {
+      return true;
+    }
+    if (typeof sourceValue !== 'string') {
+      return false;
+    }
+    const trimmed = sourceValue.trim();
+    if (!trimmed.length) {
+      return false;
+    }
+    return DATE_TEXT_INDICATOR_PATTERN.test(trimmed);
+  }
+
+  function incrementMetadataDay(metadata) {
+    if (!metadata || metadata.grain !== 'day') {
+      return metadata;
+    }
+    const baseDate = metadata.date instanceof Date
+      ? new Date(metadata.date.getTime())
+      : new Date(Date.UTC(metadata.y, metadata.m - 1, metadata.d));
+    if (Number.isNaN(baseDate.getTime())) {
+      return metadata;
+    }
+    baseDate.setUTCDate(baseDate.getUTCDate() + 1);
+    const adjusted = buildMetadata(
+      baseDate.getUTCFullYear(),
+      baseDate.getUTCMonth() + 1,
+      baseDate.getUTCDate(),
+      metadata.grain,
+    );
+    return adjusted || metadata;
+  }
+
+  function finaliseMetadataForValue(sourceValue, metadata) {
+    if (!metadata) {
+      return null;
+    }
+    if (shouldIncrementDay(sourceValue, metadata)) {
+      return incrementMetadataDay(metadata);
+    }
+    return metadata;
+  }
 
   function excelSerialToYMD(n) {
     if (typeof n !== 'number' || Number.isNaN(n)) {
@@ -142,7 +190,10 @@
     }
 
     if (value instanceof Date && !Number.isNaN(value.getTime())) {
-      return buildMetadata(value.getUTCFullYear(), value.getUTCMonth() + 1, value.getUTCDate(), 'day');
+      return finaliseMetadataForValue(
+        value,
+        buildMetadata(value.getUTCFullYear(), value.getUTCMonth() + 1, value.getUTCDate(), 'day'),
+      );
     }
 
     const rawText = typeof value === 'string' ? value.trim() : String(value);
@@ -164,38 +215,38 @@
         && day >= 1
         && day <= 31
       ) {
-        return buildMetadata(year, month, day, 'day');
+        return finaliseMetadataForValue(rawText, buildMetadata(year, month, day, 'day'));
       }
     }
 
     const quarterFromText = parseQuarterFromText(rawText);
     if (quarterFromText) {
-      return quarterFromText;
+      return finaliseMetadataForValue(rawText, quarterFromText);
     }
 
     const yyyymmdd = parseYYYYMMDD(rawText);
     if (yyyymmdd) {
-      return yyyymmdd;
+      return finaliseMetadataForValue(rawText, yyyymmdd);
     }
 
     const yyyymm = parseYearMonth(rawText);
     if (yyyymm) {
-      return yyyymm;
+      return finaliseMetadataForValue(rawText, yyyymm);
     }
 
     const quarterDigits = parseQuarterFromDigits(rawText);
     if (quarterDigits) {
-      return quarterDigits;
+      return finaliseMetadataForValue(rawText, quarterDigits);
     }
 
     const yearOnly = parseYear(rawText);
     if (yearOnly) {
-      return yearOnly;
+      return finaliseMetadataForValue(rawText, yearOnly);
     }
 
     const serial = parseExcelSerial(rawText);
     if (serial) {
-      return serial;
+      return finaliseMetadataForValue(rawText, serial);
     }
 
     const match = rawText.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
@@ -207,14 +258,17 @@
       const month = Number(match[2]);
       const day = Number(match[1]);
       if (Number.isFinite(year) && Number.isFinite(month) && Number.isFinite(day)) {
-        return buildMetadata(year, month, day, 'day');
+        return finaliseMetadataForValue(rawText, buildMetadata(year, month, day, 'day'));
       }
     }
 
     const parsed = Date.parse(rawText);
     if (!Number.isNaN(parsed)) {
       const date = new Date(parsed);
-      return buildMetadata(date.getUTCFullYear(), date.getUTCMonth() + 1, date.getUTCDate(), 'day');
+      return finaliseMetadataForValue(
+        rawText,
+        buildMetadata(date.getUTCFullYear(), date.getUTCMonth() + 1, date.getUTCDate(), 'day'),
+      );
     }
 
     return null;
