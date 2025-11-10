@@ -2,43 +2,3052 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta http-equiv="refresh" content="0; url=analysis/index.html" />
-  <title>Redirecting…</title>
-  <link rel="canonical" href="analysis/index.html" />
+  <title>Gross Proceed Performance Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" />
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="./analysis/js/dateUtils.js"></script>
+  <script src="./analysis/js/dataLoader.js"></script>
   <style>
+    html {
+      font-size: 13px;
+    }
+    :root {
+      color-scheme: light;
+      --bg: #f1f3f4;
+      --card-bg: #ffffff;
+      --text: #121625;
+      --muted: #5f677b;
+      --accent: #145afc;
+      --accent-soft: rgba(20, 90, 252, 0.12);
+      --shadow-soft: 0 24px 45px rgba(15, 23, 42, 0.12);
+      --transition-snappy: 260ms;
+      --transition-gentle: 340ms;
+      --sticky-header-offset: 72px;
+      --tab-bar-bg: rgba(255, 255, 255, 0.92);
+      --tab-border: rgba(20, 90, 252, 0.18);
+      --tab-active-bg: linear-gradient(135deg, #145afc 0%, #6c8bff 100%);
+      --tab-inactive-bg: rgba(20, 90, 252, 0.08);
+      --tab-inactive-hover-bg: rgba(20, 90, 252, 0.16);
+      --tab-text: #1c1f2e;
+      --tab-text-muted: #455072;
+      --tab-active-text: #ffffff;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
     body {
       margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      overflow-y: auto;
+      -webkit-font-smoothing: antialiased;
+    }
+    .data-status {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.65rem 2.25rem 0.25rem;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+    .data-status__version {
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+    .data-status__error {
+      margin-left: auto;
+      color: #b42318;
+      font-weight: 600;
+    }
+    .data-status__version[hidden],
+    .data-status__error[hidden] {
+      display: none !important;
+    }
+    .tab-nav {
+      position: sticky;
+      top: 0;
+      z-index: 45;
+      display: flex;
+      align-items: center;
+      flex-wrap: nowrap;
+      gap: 0.6rem;
+      margin: 0 0 1.1rem;
+      padding: 0.9rem 2.25rem 1.35rem;
+      min-height: 3.25rem;
+      border-radius: 0 0 1.25rem 1.25rem;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(241, 244, 255, 0.88) 100%);
+      border: 1px solid var(--tab-border);
+      border-top-color: rgba(20, 90, 252, 0.08);
+      box-shadow: 0 22px 38px rgba(20, 90, 252, 0.08);
+      backdrop-filter: blur(14px);
+      isolation: isolate;
+      box-sizing: border-box;
+      overflow-x: auto;
+      scrollbar-gutter: stable both-edges;
+      scrollbar-width: none;
+      scroll-padding-inline: 1.5rem;
+      --indicator-left: 0px;
+      --indicator-top: 0px;
+      --indicator-width: 0px;
+      --indicator-height: 0px;
+    }
+    .tab-nav::-webkit-scrollbar {
+      display: none;
+    }
+    .tab-nav::before,
+    .tab-nav::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: clamp(1.25rem, 4vw, 2.75rem);
+      pointer-events: none;
+      z-index: 4;
+      opacity: 0;
+      transition: opacity var(--transition-snappy) ease;
+    }
+    .tab-nav::before {
+      left: 0;
+      border-bottom-left-radius: inherit;
+      border-top-left-radius: inherit;
+      background: linear-gradient(90deg, rgba(244, 247, 255, 1) 0%, rgba(244, 247, 255, 0) 100%);
+    }
+    .tab-nav::after {
+      right: 0;
+      border-bottom-right-radius: inherit;
+      border-top-right-radius: inherit;
+      background: linear-gradient(270deg, rgba(244, 247, 255, 1) 0%, rgba(244, 247, 255, 0) 100%);
+    }
+    .tab-nav.tab-nav--show-start-shadow::before {
+      opacity: 1;
+    }
+    .tab-nav.tab-nav--show-end-shadow::after {
+      opacity: 1;
+    }
+    .tab-button {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 2.85rem;
+      padding: 0.55rem 1.8rem;
+      border: 1px solid transparent;
+      background: var(--tab-inactive-bg);
+      font: inherit;
+      color: var(--tab-text-muted);
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      cursor: pointer;
+      border-radius: 999px;
+      flex: 0 0 auto;
+      z-index: 1;
+      transform: translateY(0);
+      -webkit-appearance: none;
+      appearance: none;
+      white-space: nowrap;
+      transition:
+        color var(--transition-snappy) ease,
+        background var(--transition-snappy) ease,
+        box-shadow var(--transition-snappy) ease,
+        border-color var(--transition-snappy) ease,
+        letter-spacing var(--transition-snappy) ease,
+        transform var(--transition-snappy) ease;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55), 0 1px 2px rgba(15, 23, 42, 0.06);
+    }
+    .tab-button::after {
+      content: '';
+      position: absolute;
+      inset: -3px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      transition: opacity var(--transition-snappy) ease;
+      opacity: 0;
+    }
+    .tab-button:hover,
+    .tab-button:focus-visible {
+      color: var(--tab-text);
+      background: var(--tab-inactive-hover-bg);
+      border-color: rgba(20, 90, 252, 0.24);
+      outline: none;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65), 0 6px 14px rgba(20, 90, 252, 0.16);
+    }
+    .tab-button.active {
+      color: var(--tab-active-text);
+      background: var(--tab-active-bg);
+      border-color: transparent;
+      box-shadow: 0 14px 30px rgba(20, 90, 252, 0.35);
+      z-index: 2;
+      transform: translateY(-2px);
+    }
+    .tab-button.active::after {
+      border-color: rgba(255, 255, 255, 0.8);
+      opacity: 1;
+    }
+    .tab-nav.has-active-indicator .tab-button.active {
+      background: transparent;
+      border-color: transparent;
+      box-shadow: none;
+    }
+    .tab-nav.has-active-indicator .tab-button.active::after {
+      display: none;
+    }
+    .tab-nav.has-active-indicator .tab-button:hover,
+    .tab-nav.has-active-indicator .tab-button:focus-visible {
+      background: rgba(20, 90, 252, 0.08);
+      box-shadow: none;
+    }
+    .tab-nav.has-active-indicator .tab-button.active {
+      color: var(--tab-active-text);
+      transform: translateY(-1px);
+      text-shadow: 0 1px 0 rgba(13, 45, 128, 0.26);
+    }
+    .tab-nav__indicator {
+      position: absolute;
+      top: 0;
+      left: 0;
+      transform: translate3d(var(--indicator-left, 0), var(--indicator-top, 0), 0)
+        scaleX(var(--indicator-scale-x, 1))
+        rotate(var(--indicator-tilt, 0deg));
+      width: var(--indicator-width, 0);
+      height: var(--indicator-height, 0);
+      border-radius: 999px;
+      background: var(--tab-active-bg);
+      box-shadow:
+        0 20px 45px rgba(20, 90, 252, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.6);
+      opacity: 0;
+      pointer-events: none;
+      z-index: 0;
+      transition:
+        transform var(--transition-gentle) ease,
+        width var(--transition-gentle) ease,
+        height var(--transition-gentle) ease,
+        opacity var(--transition-snappy) ease;
+      transform-origin: center;
+    }
+    .tab-nav__indicator::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.42), transparent 70%);
+      mix-blend-mode: screen;
+      opacity: 0.85;
+    }
+    .tab-nav__indicator[data-direction='left'] {
+      --indicator-scale-x: 1.025;
+      --indicator-tilt: -0.65deg;
+    }
+    .tab-nav__indicator[data-direction='right'] {
+      --indicator-scale-x: 1.025;
+      --indicator-tilt: 0.65deg;
+    }
+    .tab-nav.has-active-indicator .tab-nav__indicator {
+      opacity: 1;
+    }
+    .tab-panel {
+      position: relative;
+      display: none;
+      flex: 1 1 auto;
+      min-height: calc(100vh - var(--sticky-header-offset));
+      overflow: hidden;
+    }
+    .tab-panel.active,
+    .tab-panel.is-exiting {
+      display: flex;
+      flex-direction: column;
+    }
+    .tab-panel.active {
+      animation: tab-panel-in var(--transition-gentle) ease forwards;
+    }
+    .tab-panel.is-exiting {
+      animation: tab-panel-out calc(var(--transition-snappy) + 40ms) ease forwards;
+      pointer-events: none;
+    }
+    .panel-loading {
+      position: absolute;
+      inset: 0;
       display: flex;
       align-items: center;
       justify-content: center;
-      min-height: 100vh;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: #f4f6fb;
-      color: #1b1e28;
-    }
-    main {
-      text-align: center;
-      max-width: 32rem;
       padding: 2rem;
-      background: white;
+      background: linear-gradient(180deg, rgba(237, 241, 255, 0.86) 0%, rgba(237, 241, 255, 0.95) 100%);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity var(--transition-snappy) ease;
+      z-index: 40;
+    }
+    .panel-loading.is-visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .panel-loading__content {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.9rem;
       border-radius: 1rem;
-      box-shadow: 0 16px 40px rgba(27, 30, 40, 0.12);
-    }
-    a {
-      color: #145afc;
+      padding: 1rem 1.5rem;
+      background: rgba(255, 255, 255, 0.88);
+      box-shadow: 0 26px 55px rgba(15, 23, 42, 0.2);
+      backdrop-filter: blur(14px);
+      color: var(--text);
       font-weight: 600;
-      text-decoration: none;
+      letter-spacing: 0.01em;
     }
-    p {
-      margin: 0.75rem 0 0;
-      color: #5f677b;
+    .panel-loading__spinner {
+      width: 1.65rem;
+      height: 1.65rem;
+      border-radius: 50%;
+      border: 3px solid rgba(20, 90, 252, 0.22);
+      border-top-color: var(--accent);
+      animation: spin 0.9s linear infinite;
+    }
+    .panel-loading__message {
+      margin: 0;
+      font-size: 0.95rem;
+    }
+    .grid {
+      display: grid;
+      gap: 1rem;
+      padding: 0 2rem 1.5rem;
+      flex: 1 1 auto;
+      min-height: 0;
+      grid-auto-rows: auto;
+      align-content: start;
+    }
+    .grid > * {
+      min-width: 0;
+    }
+    .lo-grid {
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    }
+    .lo-card {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      overflow: hidden;
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+    .lo-card__header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+    .lo-card__heading {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      min-width: 0;
+    }
+    .lo-card__title {
+      margin: 0;
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .lo-card__subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+    .sub-tab-nav {
+      display: inline-flex;
+      gap: 0.75rem;
+      background: rgba(20, 90, 252, 0.08);
+      padding: 0.4rem;
+      border-radius: 999px;
+      width: fit-content;
+    }
+    .sub-tab-button {
+      border: none;
+      background: transparent;
+      font: inherit;
+      font-weight: 600;
+      color: var(--muted);
+      padding: 0.45rem 1.25rem;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+    .sub-tab-button:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+    .sub-tab-button.active {
+      background: var(--card-bg);
+      color: var(--text);
+      box-shadow: 0 6px 16px rgba(20, 90, 252, 0.15);
+    }
+    .sub-tab-panel {
+      display: none;
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+    .sub-tab-panel.active {
+      display: flex;
+      flex-direction: column;
+    }
+    .lo-card {
+      min-height: calc(100vh - var(--sticky-header-offset) - 2.75rem);
+    }
+
+    .lo-table-container {
+      position: relative;
+      border-radius: 0.75rem;
+      border: 1px solid rgba(27, 30, 40, 0.08);
+      box-shadow: inset 0 0 0 1px rgba(27, 30, 40, 0.03), 0 12px 30px rgba(15, 23, 42, 0.08);
+      background: #fff;
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+      flex: 1 1 auto;
+      min-height: 0;
+      padding-bottom: 0;
+      display: flex;
+      overflow: hidden;
+    }
+
+    .lo-table-scroll {
+      flex: 1 1 auto;
+      min-height: 0;
+      width: 100%;
+      height: 100%;
+      overflow-x: auto;
+      overflow-y: auto;
+      border-radius: inherit;
+      scroll-padding-bottom: 96px;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+    }
+    .lo-table {
+      width: 100%;
+      min-width: 720px;
+      min-width: max(720px, 100%);
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+    .lo-table thead th {
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      background: linear-gradient(180deg, #f6f8ff 0%, #e3e8f7 100%);
+      color: var(--muted);
+      font-weight: 600;
+      padding: 0.65rem 0.75rem;
+      text-align: right;
+      position: sticky;
+      top: 0;
+      z-index: 5;
+    }
+    .lo-table thead th:first-child {
+      text-align: left;
+      z-index: 7;
+    }
+    .lo-table tbody td {
+      padding: 0.35rem 0.75rem;
+      border-top: 1px solid rgba(27, 30, 40, 0.08);
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+    .lo-table tbody td.cell-date {
+      text-align: left;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .lo-table thead th:first-child,
+    .lo-table tbody td.cell-date,
+    .lo-table tfoot th:first-child {
+      position: sticky;
+      left: 0;
+      z-index: 4;
+    }
+    .lo-table thead th:first-child {
+      z-index: 6;
+      box-shadow: 8px 0 12px rgba(15, 23, 42, 0.08);
+    }
+    .lo-table tbody td.cell-date {
+      background: inherit;
+      box-shadow: 8px 0 12px rgba(15, 23, 42, 0.06);
+    }
+    .lo-table tbody tr:nth-child(odd) td.cell-date {
+      background: rgba(226, 231, 244, 0.25);
+    }
+    .lo-table tbody tr:hover td.cell-date {
+      background: rgba(41, 71, 137, 0.12);
+    }
+    .lo-table tfoot th:first-child {
+      z-index: 5;
+      box-shadow: 8px 0 12px rgba(15, 23, 42, 0.08);
+    }
+    .lo-table tbody tr:nth-child(odd) td {
+      background: rgba(226, 231, 244, 0.25);
+    }
+    .lo-table tfoot {
+      position: sticky;
+      bottom: 0;
+      background: linear-gradient(180deg, #f6f8ff 0%, #e3e8f7 100%);
+      box-shadow: 0 -8px 16px rgba(15, 23, 42, 0.08);
+      z-index: 2;
+    }
+    .lo-table tfoot th,
+    .lo-table tfoot td {
+      position: sticky;
+      bottom: 0;
+      background: inherit;
+      color: var(--text);
+      font-weight: 600;
+      padding: 0.55rem 0.75rem;
+      border-top: 1px solid rgba(27, 30, 40, 0.14);
+      z-index: 3;
+    }
+    .lo-table tfoot th {
+      text-align: left;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      font-size: 0.78rem;
+    }
+    .lo-table tfoot td {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+    .lo-table tfoot::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: -16px;
+      height: 16px;
+      pointer-events: none;
+      background: linear-gradient(180deg, rgba(244, 246, 251, 0) 0%, rgba(244, 246, 251, 0.9) 100%);
+    }
+    .sales-gap-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .sales-gap-card,
+    .sku-gap-card {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .sales-gap-card__header,
+    .sku-gap-card__header {
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+    }
+    .sales-gap-card__title,
+    .sku-gap-card__title {
+      margin: 0;
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .sales-gap-card__subtitle,
+    .sku-gap-card__subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+    .sales-gap-table-container,
+    .sku-gap-table-container {
+      position: relative;
+      border-radius: 0.75rem;
+      border: 1px solid rgba(27, 30, 40, 0.08);
+      box-shadow: inset 0 0 0 1px rgba(27, 30, 40, 0.03), 0 12px 30px rgba(15, 23, 42, 0.08);
+      background: #fff;
+      overflow: hidden;
+    }
+    .sales-gap-table-scroll,
+    .sku-gap-table-scroll {
+      width: 100%;
+      overflow-x: auto;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+    }
+    .sales-gap-table,
+    .sku-gap-table {
+      width: 100%;
+      min-width: 680px;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+      background: transparent;
+    }
+    .sales-gap-table thead th,
+    .sku-gap-table thead th {
+      background: linear-gradient(180deg, #f6f8ff 0%, #e3e8f7 100%);
+      color: #1b1e28;
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 700;
+      padding: 0.6rem 0.75rem;
+      text-align: right;
+      border-bottom: 1px solid rgba(27, 30, 40, 0.12);
+    }
+    .sales-gap-table thead th:first-child,
+    .sku-gap-table thead th:first-child {
+      text-align: left;
+    }
+    #sales-gap-table thead .table-preamble-row th,
+    #sku-gap-table thead .table-preamble-row th {
+      background: rgba(20, 90, 252, 0.06);
+      border: 1px solid rgba(27, 30, 40, 0.12);
+      color: var(--text);
+      font-size: 0.82rem;
+      font-weight: 600;
+      text-transform: none;
+      letter-spacing: 0;
+      padding: 0.4rem 0.55rem;
+      text-align: center;
+      white-space: nowrap;
+    }
+    #sales-gap-table thead .table-preamble-row th:first-child,
+    #sku-gap-table thead .table-preamble-row th:first-child {
+      text-align: left;
+    }
+    #sales-gap-table thead .table-preamble-row th.is-empty,
+    #sku-gap-table thead .table-preamble-row th.is-empty {
+      background: rgba(27, 30, 40, 0.04);
+      color: var(--muted);
+      font-weight: 500;
+    }
+    .sales-gap-table tbody td,
+    .sku-gap-table tbody td {
+      padding: 0.55rem 0.75rem;
+      border-top: 1px solid rgba(27, 30, 40, 0.08);
+      text-align: right;
+      font-size: 0.85rem;
+      background: #fff;
+    }
+    .sales-gap-table tbody td:first-child,
+    .sku-gap-table tbody td:first-child {
+      text-align: left;
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+    }
+    .sales-gap-table tbody td.cell-numeric,
+    .sku-gap-table tbody td.cell-numeric {
+      font-variant-numeric: tabular-nums;
+    }
+    .sales-gap-table tbody tr:nth-child(even) td,
+    .sku-gap-table tbody tr:nth-child(even) td {
+      background: rgba(226, 231, 244, 0.35);
+    }
+    .sales-gap-table tbody tr:hover td,
+    .sku-gap-table tbody tr:hover td {
+      background: rgba(41, 71, 137, 0.12);
+    }
+    .sales-gap-row--total td,
+    .sku-gap-row--total td {
+      font-weight: 700;
+      background: rgba(20, 90, 252, 0.12);
+      color: var(--text);
+    }
+    .sales-gap-row--total td:first-child,
+    .sku-gap-row--total td:first-child {
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .sales-gap-table__empty,
+    .sku-gap-table__empty {
+      padding: 1.75rem 1rem;
+      text-align: center;
+      color: var(--muted);
+      font-weight: 500;
+    }
+    .card {
+      position: relative;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(255, 255, 255, 0.88) 100%);
+      border-radius: 1rem;
+      padding: 1.5rem;
+      box-shadow: var(--shadow-soft);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(20, 90, 252, 0.08);
+      overflow: hidden;
+      transition:
+        opacity var(--transition-gentle) ease,
+        transform var(--transition-gentle) ease,
+        box-shadow var(--transition-gentle) ease,
+        background var(--transition-gentle) ease;
+    }
+    .card[data-animate='true'] {
+      opacity: 0;
+      transform: translateY(28px);
+    }
+    .card[data-animate='true'].is-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    @media (hover: hover) {
+      .card.is-visible:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 32px 55px rgba(15, 23, 42, 0.18);
+      }
+    }
+    .placeholder-card {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      flex: 1 1 auto;
+      justify-content: center;
+      min-height: 240px;
+    }
+    .placeholder-card__title {
+      margin: 0;
+      font-size: 1.35rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .placeholder-card__message {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+      max-width: 40ch;
+    }
+    .table-card {
+      display: flex;
+      flex-direction: column;
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+    .regular-card {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+    .regular-card__header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+      padding: 0;
+      flex-wrap: wrap;
+    }
+    .regular-card__heading {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      min-width: 0;
+    }
+    .regular-card__controls {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      margin-left: auto;
+    }
+    .filter-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      border-radius: 999px;
+      border: 1px solid rgba(20, 90, 252, 0.24);
+      background: rgba(20, 90, 252, 0.12);
+      color: var(--accent);
+      font-weight: 600;
+      font-size: 0.9rem;
+      padding: 0.6rem 1.2rem;
+      cursor: pointer;
+      transition:
+        background var(--transition-snappy) ease,
+        border-color var(--transition-snappy) ease,
+        color var(--transition-snappy) ease,
+        box-shadow var(--transition-snappy) ease,
+        transform var(--transition-snappy) ease;
+    }
+    .lo-card__filter-button--hidden {
+      display: none !important;
+    }
+    .filter-button:hover,
+    .filter-button:focus-visible {
+      border-color: rgba(20, 90, 252, 0.45);
+      background: rgba(20, 90, 252, 0.2);
+      outline: none;
+      box-shadow: 0 20px 38px rgba(20, 90, 252, 0.2);
+      transform: translateY(-1px);
+    }
+    .filter-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .filter-button[data-active="true"] {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 24px 46px rgba(20, 90, 252, 0.32);
+      transform: translateY(-1px);
+    }
+    .filter-button[aria-disabled="true"] {
+      opacity: 0.5;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+    .filter-clear-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 2.25rem;
+      height: 2.25rem;
+      border-radius: 999px;
+      border: none;
+      background: rgba(27, 30, 40, 0.1);
+      color: var(--muted);
+      font-size: 1.25rem;
+      line-height: 1;
+      cursor: pointer;
+      transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .filter-clear-button:hover,
+    .filter-clear-button:focus-visible {
+      background: rgba(27, 30, 40, 0.18);
+      color: var(--text);
+      box-shadow: 0 10px 22px rgba(27, 30, 40, 0.18);
+      outline: none;
+    }
+    .filter-clear-button[hidden] {
+      display: none !important;
+    }
+    .filter-clear-button:disabled {
+      cursor: not-allowed;
+      opacity: 0.45;
+      box-shadow: none;
+    }
+    .regular-card__title {
+      margin: 0;
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .regular-card__subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+    .regular-card__pagination {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      min-height: 2.5rem;
+    }
+    .regular-card__pagination:empty {
+      display: none;
+    }
+    .regular-card__pagination .dataTables_paginate {
+      float: none;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .regular-card__pagination .paginate_button {
+      border-radius: 999px !important;
+      padding: 0.35rem 0.85rem;
+      border: 1px solid rgba(20, 90, 252, 0.25) !important;
+      color: var(--accent) !important;
+      background: #fff !important;
+      font-weight: 600;
+      transition: background 0.2s ease, border-color 0.2s ease;
+    }
+    .regular-card__pagination .paginate_button.current,
+    .regular-card__pagination .paginate_button:hover,
+    .regular-card__pagination .paginate_button:focus {
+      background: rgba(20, 90, 252, 0.12) !important;
+      border-color: rgba(20, 90, 252, 0.45) !important;
+      outline: none;
+    }
+    .regular-card__pagination .paginate_button:focus-visible {
+      box-shadow: 0 0 0 2px rgba(20, 90, 252, 0.35);
+    }
+    .regular-card__pagination .paginate_button.disabled,
+    .regular-card__pagination .paginate_button.disabled:hover {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .regular-table-container {
+      border-radius: 0.85rem;
+      border: 1px solid rgba(64, 80, 120, 0.18);
+      box-shadow: 0 12px 30px rgba(21, 32, 56, 0.12);
+      background: #fff;
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: visible;
+      display: flex;
+      flex-direction: column;
+      padding-bottom: 1rem;
+    }
+    .regular-table-container .dataTables_wrapper {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .regular-table-container .dataTables_scroll {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .regular-table-container .dataTables_scrollHead {
+      flex: 0 0 auto;
+    }
+    .regular-table-container .dataTables_scrollBody {
+      flex: 1 1 auto !important;
+    }
+    .regular-table-container .dataTables_scrollFoot {
+      flex: 0 0 auto;
+    }
+    .regular-table-container table {
+      margin-top: 0;
+    }
+    #tab-sku-summary .grid {
+      grid-auto-rows: auto;
+      align-content: flex-start;
+    }
+    .sku-card {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      flex: 1 1 auto;
+      min-height: 0;
+      max-height: clamp(24rem, calc(100vh - var(--sticky-header-offset) - 3.25rem), 60rem);
+    }
+    .sku-card__header {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      flex: 0 0 auto;
+    }
+    .sku-card__title {
+      margin: 0;
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .sku-card__subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+    .sku-card__toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      margin-top: 0.1rem;
+    }
+    .sku-card__toolbar[data-active='false'] .sku-card__pagination {
+      display: none;
+    }
+    .sku-card__pagination {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-left: auto;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+    .sku-card__pagination[aria-hidden='true'] {
+      display: none;
+    }
+    .sku-card__pagination-info {
+      white-space: nowrap;
+    }
+    .sku-card__pagination-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.35rem 0.9rem;
+      border-radius: 999px;
+      border: 1px solid rgba(27, 30, 40, 0.12);
+      background: #fff;
+      color: var(--text);
+      font: inherit;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    }
+    .sku-card__pagination-button:hover,
+    .sku-card__pagination-button:focus {
+      background: rgba(20, 90, 252, 0.12);
+      border-color: rgba(20, 90, 252, 0.45);
+      color: var(--accent);
+    }
+    .sku-card__pagination-button:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+    .sku-card__pagination-button[disabled] {
+      opacity: 0.45;
+      cursor: default;
+      background: rgba(27, 30, 40, 0.06);
+      border-color: rgba(27, 30, 40, 0.08);
+      color: var(--muted);
+    }
+    .sku-card__pagination-button[disabled]:hover,
+    .sku-card__pagination-button[disabled]:focus {
+      background: rgba(27, 30, 40, 0.06);
+      border-color: rgba(27, 30, 40, 0.08);
+      color: var(--muted);
+    }
+    .new-product-card {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+    .new-product-card__header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .new-product-card__heading {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      min-width: 0;
+    }
+    .new-product-card__title {
+      margin: 0;
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .new-product-card__subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+    .new-product-grid {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 1.25rem;
+      grid-auto-rows: auto;
+    }
+    .new-product-table-container {
+      border-radius: 0.85rem;
+      border: 1px solid rgba(64, 80, 120, 0.18);
+      box-shadow: 0 12px 30px rgba(21, 32, 56, 0.12);
+      background: #fff;
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .new-product-table-wrapper {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .new-product-table-wrapper .dataTables_wrapper {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+    .new-product-table-wrapper .dataTables_scroll {
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+    }
+    .new-product-table-wrapper .dataTables_scrollBody {
+      flex: 1 1 auto !important;
+    }
+    .new-product-table {
+      width: 100%;
+      min-width: 720px;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+    .new-product-status {
+      margin: 0 2rem 1rem;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+    .new-product-status[data-state='error'] {
+      color: #c0392b;
+    }
+    .sku-table-container {
+      border-radius: 0.85rem;
+      border: 1px solid rgba(64, 80, 120, 0.18);
+      box-shadow: 0 12px 30px rgba(21, 32, 56, 0.12);
+      background: #fff;
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .sku-table-scroll {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-x: auto;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    @media (max-width: 768px) {
+      .sku-card {
+        max-height: none;
+      }
+    }
+    .sku-table {
+      width: 100%;
+      min-width: 720px;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+    .sku-table thead th {
+      position: sticky;
+      top: 0;
+      background: linear-gradient(180deg, #f6f8ff 0%, #e3e8f7 100%);
+      color: var(--muted);
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.65rem 0.75rem;
+      text-align: right;
+      z-index: 3;
+    }
+    .sku-table thead th:first-child {
+      text-align: left;
+      box-shadow: 8px 0 12px rgba(15, 23, 42, 0.08);
+      z-index: 4;
+    }
+    .sku-table tbody td,
+    .sku-table tfoot td {
+      padding: 0.45rem 0.75rem;
+      border-top: 1px solid rgba(27, 30, 40, 0.08);
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+    .sku-table tbody td:first-child {
+      position: sticky;
+      left: 0;
+      text-align: left;
+      font-weight: 600;
+      color: var(--text);
+      background: inherit;
+      box-shadow: 8px 0 12px rgba(15, 23, 42, 0.06);
+      z-index: 2;
+    }
+    .sku-table thead th:first-child,
+    .sku-table tbody td:first-child,
+    .sku-table tfoot th:first-child {
+      background-clip: padding-box;
+    }
+    .sku-table tbody tr:nth-child(odd) td {
+      background: rgba(226, 231, 244, 0.25);
+    }
+    .sku-table tbody tr:hover td {
+      background: rgba(41, 71, 137, 0.12);
+    }
+    .sku-table tfoot {
+      position: sticky;
+      bottom: 0;
+      background: linear-gradient(180deg, #f6f8ff 0%, #e3e8f7 100%);
+      box-shadow: 0 -8px 16px rgba(15, 23, 42, 0.08);
+      z-index: 1;
+    }
+    .sku-table tfoot th,
+    .sku-table tfoot td {
+      padding: 0.55rem 0.75rem;
+      border-top: 1px solid rgba(27, 30, 40, 0.14);
+      font-weight: 600;
+    }
+    .sku-table tfoot th {
+      position: sticky;
+      left: 0;
+      text-align: left;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      font-size: 0.78rem;
+      color: var(--muted);
+      box-shadow: 8px 0 12px rgba(15, 23, 42, 0.08);
+      z-index: 2;
+    }
+    .sku-table th,
+    .sku-table td {
+      border-right: none;
+      border-left: none;
+    }
+    .sku-table__message {
+      text-align: left;
+      padding: 1rem 0.75rem;
+      font-weight: 600;
+      color: var(--muted);
+    }
+    .dashboard-grid {
+      padding: 0 2rem 1.5rem;
+      gap: 1.25rem;
+      grid-auto-rows: auto;
+    }
+    .dashboard-card {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .dashboard-card--full {
+      grid-column: 1 / -1;
+    }
+    .dashboard-card__header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+    .dashboard-card__heading {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+    .dashboard-card__toolbar {
+      display: inline-flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+    .dashboard-card__filter-button {
+      margin-left: auto;
+    }
+    .dashboard-card__title {
+      margin: 0;
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .dashboard-card__subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+    .dashboard-card__quick-filter { 
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.35rem 0.85rem;
+      border-radius: 999px;
+      border: 1px solid var(--tab-border);
+      background: rgba(20, 90, 252, 0.08);
+      transition:
+        border-color var(--transition-snappy) ease,
+        background var(--transition-snappy) ease,
+        box-shadow var(--transition-snappy) ease;
+    }
+    .dashboard-card__quick-filter-group {
+      position: relative;
+      display: inline-flex;
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .dashboard-card__quick-filter[data-active="true"] {
+      border-color: rgba(20, 90, 252, 0.55);
+      background: rgba(20, 90, 252, 0.16);
+      box-shadow: 0 16px 32px rgba(20, 90, 252, 0.28);
+    }
+    .dashboard-card__quick-filter-label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--tab-text-muted);
+      white-space: nowrap;
+    }
+    .dashboard-card__quick-filter-input {
+      border: none;
+      background: transparent;
+      font: inherit;
+      color: var(--tab-text);
+      min-width: 7.5rem;
+      outline: none;
+      padding: 0;
+    }
+    .dashboard-card__quick-filter-toggle {
+      border: none;
+      background: none;
+      font: inherit;
+      color: var(--tab-text);
+      min-width: 8.75rem;
+      text-align: left;
+      padding: 0;
+      cursor: pointer;
+    }
+    .dashboard-card__quick-filter-toggle[disabled] {
+      cursor: not-allowed;
+      color: var(--tab-text-muted);
+    }
+    .dashboard-card__quick-filter-select {
+      border: none;
+      background: transparent;
+      font: inherit;
+      color: var(--tab-text);
+      min-width: 8rem;
+      outline: none;
+      padding: 0;
+      cursor: pointer;
+    }
+    .dashboard-card__quick-filter-select:disabled {
+      cursor: not-allowed;
+      color: var(--tab-text-muted);
+    }
+    .dashboard-card__quick-filter-menu {
+      position: absolute;
+      top: calc(100% + 0.5rem);
+      right: 0;
+      min-width: 16rem;
+      border-radius: 0.75rem;
+      border: 1px solid rgba(27, 30, 40, 0.1);
+      background: #fff;
+      box-shadow: 0 18px 45px rgba(15, 23, 42, 0.16);
+      z-index: 50;
+      overflow: hidden;
+    }
+    .dashboard-card__quick-filter-menu-inner {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      padding: 1rem;
+      max-height: 18rem;
+      overflow: auto;
+    }
+    .dashboard-card__quick-filter-select-all {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--tab-text);
+    }
+    .dashboard-card__quick-filter-options {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .dashboard-card__quick-filter-option {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.9rem;
+      color: var(--tab-text);
+      cursor: pointer;
+    }
+    .dashboard-card__quick-filter-option input[type="checkbox"] {
+      width: 1rem;
+      height: 1rem;
+    }
+    .dashboard-card__quick-filter-menu-empty {
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+    .dashboard-card__quick-filter-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+      margin-top: 0.25rem;
+    }
+    .dashboard-card__quick-filter-action {
+      border: none;
+      background: none;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--accent);
+      cursor: pointer;
+      padding: 0.35rem 0.85rem;
+      border-radius: 0.5rem;
+      transition: background var(--transition-snappy) ease, color var(--transition-snappy) ease;
+    }
+    .dashboard-card__quick-filter-action:hover,
+    .dashboard-card__quick-filter-action:focus-visible {
+      background: var(--accent-soft);
+      outline: none;
+    }
+    .dashboard-card__quick-filter-action--primary {
+      background: var(--accent);
+      color: #fff;
+    }
+    .dashboard-card__quick-filter-action--primary:hover,
+    .dashboard-card__quick-filter-action--primary:focus-visible {
+      background: #0f43c9;
+    }
+    .dashboard-card__quick-filter-input::placeholder {
+      color: var(--tab-text-muted);
+    }
+    .dashboard-card__quick-filter-reset {
+      border: none;
+      background: none;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--accent);
+      cursor: pointer;
+      padding: 0;
+    }
+    .dashboard-card__quick-filter-empty {
+      margin: -0.25rem 0 0;
+      padding: 0 0.15rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+    .dashboard-table-container {
+      border-radius: 0.85rem;
+      border: 1px solid rgba(27, 30, 40, 0.1);
+      background: #fff;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+      overflow: hidden;
+    }
+    .dashboard-table-scroll {
+      overflow-x: auto;
+      overflow-y: hidden;
+      max-width: 100%;
+    }
+    .dashboard-table {
+      width: 100%;
+      min-width: 960px;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+    .dashboard-table thead th {
+      position: sticky;
+      top: 0;
+      background: linear-gradient(180deg, #f6f8ff 0%, #e3e8f7 100%);
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 600;
+      padding: 0.6rem 0.75rem;
+      border-bottom: 2px solid rgba(27, 30, 40, 0.12);
+      text-align: right;
+      white-space: nowrap;
+      z-index: 1;
+    }
+    .dashboard-table thead th:first-child {
+      text-align: left;
+    }
+    .dashboard-table th,
+    .dashboard-table td {
+      border-left: none;
+      border-right: none;
+    }
+    .dashboard-table tbody th,
+    .dashboard-table tbody td,
+    .dashboard-table tfoot th,
+    .dashboard-table tfoot td {
+      padding: 0.45rem 0.75rem;
+      border-bottom: 1px solid rgba(27, 30, 40, 0.08);
+      font-variant-numeric: tabular-nums;
+    }
+    .dashboard-table tbody th,
+    .dashboard-table tfoot th {
+      text-align: left;
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+    }
+    .dashboard-table tbody td,
+    .dashboard-table tfoot td {
+      text-align: right;
+      color: rgba(27, 30, 40, 0.92);
+    }
+    .dashboard-table tbody tr:nth-child(even) td,
+    .dashboard-table tbody tr:nth-child(even) th {
+      background: rgba(226, 231, 244, 0.35);
+    }
+    .dashboard-table tbody tr:hover td,
+    .dashboard-table tbody tr:hover th {
+      background: rgba(41, 71, 137, 0.12);
+    }
+    .dashboard-table__total {
+      background: linear-gradient(180deg, #f6f8ff 0%, #e3e8f7 100%);
+      font-weight: 700;
+    }
+    .dashboard-table__total th,
+    .dashboard-table__total td {
+      border-top: 2px solid rgba(27, 30, 40, 0.18);
+    }
+    .dashboard-table__value--error {
+      color: #b42318;
+      font-weight: 600;
+    }
+    .dashboard-table__message {
+      text-align: center;
+      padding: 1rem 0.75rem;
+      color: var(--muted);
+    }
+    .kpi-title {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-bottom: 0.35rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .kpi-value {
+      font-size: 1.75rem;
+      font-weight: 600;
+    }
+    canvas {
+      width: 100% !important;
+      height: auto !important;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 0.5rem;
+    }
+    th, td {
+      text-align: left;
+      padding: 0.5rem 0.75rem;
+      border-right: 1px solid rgba(27, 30, 40, 0.12);
+    }
+    th:first-child,
+    td:first-child {
+      border-left: 1px solid rgba(27, 30, 40, 0.12);
+    }
+    th:last-child,
+    td:last-child {
+      border-right: 1px solid rgba(27, 30, 40, 0.12);
+    }
+    th {
+      color: var(--muted);
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .table-container {
+      position: relative;
+      overflow: visible;
+      padding: 0;
+      flex: 1 1 auto;
+      min-height: 0;
+      max-width: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+    #tab-regular .table-card,
+    #tab-main .table-card {
+      background: transparent;
+      box-shadow: none;
+      padding: 0;
+    }
+    #tab-regular .table-container,
+    #tab-main .table-container {
+      padding-right: 0;
+      padding-bottom: 0;
+    }
+    #regularTable,
+    #main-table {
+      border-collapse: separate;
+      width: 100%;
+    }
+    #regularTable thead tr:last-child th,
+    #regularTable tbody td,
+    #main-table thead tr:last-child th,
+    #main-table tbody td {
+      text-align: left;
+      padding: 0.3rem 0.65rem;
+      border-right: 1px solid rgba(15, 23, 42, 0.08);
+      line-height: 1.15;
+      box-sizing: border-box;
+    }
+    #regularTable thead tr:last-child th,
+    #main-table thead tr:last-child th {
+      white-space: normal;
+    }
+    #regularTable tbody td,
+    #main-table tbody td {
+      white-space: nowrap;
+    }
+    #regularTable thead tr:last-child th:first-child,
+    #regularTable tbody td:first-child,
+    #main-table thead tr:last-child th:first-child,
+    #main-table tbody td:first-child {
+      border-left: 1px solid rgba(15, 23, 42, 0.08);
+    }
+    #regularTable thead tr:last-child th:last-child,
+    #regularTable tbody td:last-child,
+    #main-table thead tr:last-child th:last-child,
+    #main-table tbody td:last-child {
+      border-right: 1px solid rgba(15, 23, 42, 0.08);
+    }
+    #regularTable thead tr:last-child th,
+    #main-table thead tr:last-child th {
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #000;
+      font-weight: 700;
+      background: linear-gradient(180deg, #f6f8ff 0%, #e3e8f7 100%);
+      border-bottom: 2px solid rgba(70, 97, 145, 0.35);
+    }
+    #regularTable tbody td,
+    #main-table tbody td {
+      font-size: 0.82rem;
+      color: rgba(27, 30, 40, 0.9);
+      font-weight: 500;
+      background: #fff;
+    }
+    #regularTable tbody tr,
+    #main-table tbody tr {
+      border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+    }
+    #regularTable tbody tr:nth-child(even) td,
+    #main-table tbody tr:nth-child(even) td {
+      background: rgba(226, 231, 244, 0.35);
+    }
+    #regularTable tbody tr:hover td,
+    #main-table tbody tr:hover td {
+      background: rgba(41, 71, 137, 0.12);
+    }
+    #main-table thead .table-preamble-row th {
+      background: rgba(20, 90, 252, 0.06);
+      border: 1px solid rgba(27, 30, 40, 0.12);
+      color: var(--text);
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0;
+      padding: 0.4rem 0.55rem;
+      text-align: center;
+      text-transform: none;
+      white-space: nowrap;
+    }
+    #main-table thead .table-preamble-row th:first-child {
+      text-align: left;
+    }
+    #main-table thead .table-preamble-row th.is-empty {
+      background: rgba(27, 30, 40, 0.04);
+      color: var(--muted);
+      font-weight: 500;
+    }
+    #regularTable thead tr:last-child th.cell-numeric,
+    #regularTable tbody td.cell-numeric,
+    #main-table thead tr:last-child th.cell-numeric,
+    #main-table tbody td.cell-numeric,
+    .new-product-table thead th.cell-numeric,
+    .new-product-table tbody td.cell-numeric {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+    #regularTable tbody td.cell-qty,
+    #main-table tbody td.cell-qty {
+      font-weight: 600;
+    }
+    #regularTable thead tr:last-child th.is-filterable,
+    #main-table thead tr:last-child th.is-filterable {
+      cursor: pointer;
+      position: relative;
+    }
+    #regularTable thead tr:last-child th.has-filter::after,
+    #main-table thead tr:last-child th.has-filter::after {
+      content: '';
+      position: absolute;
+      top: 0.6rem;
+      right: 0.5rem;
+      width: 0.35rem;
+      height: 0.35rem;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+    #regularTable td.cell-multiline,
+    #main-table td.cell-multiline {
+      white-space: normal !important;
+      word-break: break-word;
+      line-height: 1.35;
+    }
+    #regularTable th.cell-product,
+    #regularTable td.cell-product,
+    #main-table th.cell-product,
+    #main-table td.cell-product {
+      min-width: 24ch;
+      max-width: 32ch;
+      white-space: nowrap !important;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    #regularTable_wrapper,
+    #main-table_wrapper {
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      min-height: 0;
+    }
+    #regularTable_wrapper .dataTables_scroll,
+    #main-table_wrapper .dataTables_scroll {
+      border: none;
+      border-radius: inherit;
+      background: transparent;
+      box-shadow: none;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+    #regularTable_wrapper .dataTables_scrollHead,
+    #main-table_wrapper .dataTables_scrollHead {
+      position: relative;
+      top: auto;
+      z-index: 5;
+      background: transparent;
+      overflow: hidden;
+      box-shadow: 0 8px 18px rgba(21, 32, 56, 0.12);
+      flex: 0 0 auto;
+    }
+    #regularTable_wrapper .dataTables_scrollHead table,
+    #main-table_wrapper .dataTables_scrollHead table {
+      border-collapse: separate;
+      border-spacing: 0;
+      width: 100% !important;
+    }
+    #regularTable_wrapper .dataTables_scrollBody,
+    #main-table_wrapper .dataTables_scrollBody {
+      border-top: none;
+      overflow-y: auto !important;
+      overflow-x: auto !important;
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+    #regularTable_wrapper .dataTables_scrollBody table,
+    #main-table_wrapper .dataTables_scrollBody table {
+      border-collapse: separate;
+      border-spacing: 0;
+      background: #fff;
+      width: 100% !important;
+    }
+    #regularTable_wrapper .dataTables_scrollFoot,
+    #main-table_wrapper .dataTables_scrollFoot {
+      position: sticky;
+      bottom: 0;
+      z-index: 12;
+      background: linear-gradient(180deg, #f5f7ff 0%, #ebeffd 100%);
+      box-shadow: 0 -10px 24px rgba(21, 32, 56, 0.1);
+      flex: 0 0 auto;
+    }
+    #regularTable_wrapper .dataTables_scrollFoot th,
+    #main-table_wrapper .dataTables_scrollFoot th {
+      position: sticky;
+      bottom: 0;
+      z-index: 13;
+      padding: 0.6rem 0.7rem;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #1b1e28;
+      text-transform: uppercase;
+      background: transparent;
+      border-top: 2px solid rgba(15, 23, 42, 0.08);
+    }
+    #regularTable_wrapper .dataTables_scrollFoot th.cell-total-label,
+    #main-table_wrapper .dataTables_scrollFoot th.cell-total-label {
+      text-align: left;
+      color: #2d3748;
+    }
+    #regularTable_wrapper .dataTables_scrollFoot th.cell-total,
+    #main-table_wrapper .dataTables_scrollFoot th.cell-total {
+      text-align: right;
+    }
+    #regularTable_wrapper .dataTables_scrollFoot th.cell-total-column,
+    #main-table_wrapper .dataTables_scrollFoot th.cell-total-column {
+      background: linear-gradient(180deg, #fff4d7 0%, #ffd897 100%);
+      border-left: 2px solid rgba(15, 23, 42, 0.08);
+      z-index: 14;
+    }
+    #regularTable_wrapper .dataTables_scrollHead th.cell-total-column,
+    #regularTable_wrapper .dataTables_scrollBody td.cell-total-column,
+    #regularTable_wrapper .dataTables_scrollFoot th.cell-total-column,
+    #main-table_wrapper .dataTables_scrollHead th.cell-total-column,
+    #main-table_wrapper .dataTables_scrollBody td.cell-total-column,
+    #main-table_wrapper .dataTables_scrollFoot th.cell-total-column {
+      position: sticky;
+      right: 0;
+      z-index: 4;
+    }
+    #regularTable_wrapper .dataTables_scrollHead th.cell-total-column,
+    #main-table_wrapper .dataTables_scrollHead th.cell-total-column {
+      z-index: 7;
+      background: linear-gradient(180deg, #fef5e6 0%, #fbdca3 100%);
+      color: #5c3c00;
+      border-left: 2px solid rgba(15, 23, 42, 0.08);
+    }
+    #regularTable_wrapper .dataTables_scrollBody td.cell-total-column,
+    #main-table_wrapper .dataTables_scrollBody td.cell-total-column {
+      background: linear-gradient(180deg, #fffdf7 0%, #fff0d3 100%);
+      font-weight: 600;
+      border-left: 2px solid rgba(15, 23, 42, 0.08);
+    }
+    #regularTable_wrapper .dataTables_scrollBody tr:nth-child(even) td.cell-total-column,
+    #main-table_wrapper .dataTables_scrollBody tr:nth-child(even) td.cell-total-column {
+      background: linear-gradient(180deg, #fff9ec 0%, #ffe7bf 100%);
+    }
+    #regularTable_wrapper .dataTables_scrollBody tr:hover td.cell-total-column,
+    #main-table_wrapper .dataTables_scrollBody tr:hover td.cell-total-column {
+      background: rgba(41, 71, 137, 0.18);
+    }
+    .regular-table__footer,
+    .main-table__footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.5rem;
+      padding: 0.75rem 0.5rem 0;
+      color: var(--muted);
+      font-size: 0.85rem;
+      flex-wrap: wrap;
+    }
+    .regular-table__footer:empty,
+    .main-table__footer:empty {
+      display: none;
+    }
+    .regular-table__footer .dataTables_paginate,
+    .main-table__footer .dataTables_paginate {
+      margin: 0 !important;
+    }
+    #regularTable_wrapper .dataTables_paginate .paginate_button,
+    #main-table_wrapper .dataTables_paginate .paginate_button {
+      border-radius: 999px;
+    }
+    table.dataTable thead .sorting,
+    table.dataTable thead .sorting_asc,
+    table.dataTable thead .sorting_desc,
+    table.dataTable thead .sorting_asc_disabled,
+    table.dataTable thead .sorting_desc_disabled {
+      background-image: none !important;
+    }
+    table.dataTable thead > tr > th.sorting::before,
+    table.dataTable thead > tr > th.sorting::after,
+    table.dataTable thead > tr > th.sorting_asc::before,
+    table.dataTable thead > tr > th.sorting_asc::after,
+    table.dataTable thead > tr > th.sorting_desc::before,
+    table.dataTable thead > tr > th.sorting_desc::after,
+    table.dataTable thead > tr > th.sorting_asc_disabled::before,
+    table.dataTable thead > tr > th.sorting_asc_disabled::after,
+    table.dataTable thead > tr > th.sorting_desc_disabled::before,
+    table.dataTable thead > tr > th.sorting_desc_disabled::after {
+      display: none !important;
+    }
+    .header-menu {
+      position: absolute;
+      z-index: 20;
+      min-width: 240px;
+      max-width: 280px;
+      background: var(--card-bg);
+      border-radius: 0.75rem;
+      box-shadow: 0 20px 35px rgba(15, 23, 42, 0.15);
+      border: 1px solid rgba(27, 30, 40, 0.08);
+      padding: 1rem;
+      color: var(--text);
+    }
+    .header-menu.hidden {
+      display: none;
+    }
+    .header-menu__header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 0.75rem;
+    }
+    .header-menu__title {
+      font-size: 0.95rem;
+      margin: 0;
+    }
+    .header-menu__close {
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-size: 1.25rem;
+      cursor: pointer;
+      padding: 0;
+      line-height: 1;
+    }
+    .header-menu__section {
+      margin-bottom: 1rem;
+    }
+    .header-menu__buttons {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .header-menu__button {
+      flex: 1 1 auto;
+      border: 1px solid rgba(27, 30, 40, 0.12);
+      background: #f8f9fe;
+      color: var(--text);
+      border-radius: 999px;
+      padding: 0.4rem 0.8rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: border-color 0.2s ease, background 0.2s ease;
+    }
+    .header-menu__button:hover,
+    .header-menu__button:focus-visible {
+      border-color: var(--accent);
+      background: rgba(20, 90, 252, 0.12);
+      outline: none;
+    }
+    .header-menu__search {
+      width: 100%;
+      border-radius: 0.5rem;
+      border: 1px solid rgba(27, 30, 40, 0.12);
+      padding: 0.45rem 0.6rem;
+      font: inherit;
+    }
+    .header-menu__options {
+      max-height: 200px;
+      overflow-y: auto;
+      border: 1px solid rgba(27, 30, 40, 0.1);
+      border-radius: 0.65rem;
+      padding: 0.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+    .header-menu__options:empty {
+      display: none;
+      border: none;
+      padding: 0;
+    }
+    .header-menu__empty-message {
+      margin-top: 0.5rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    .header-menu__option {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      color: var(--text);
+      opacity: 0;
+      transform: translateY(6px);
+      transition:
+        opacity var(--transition-snappy) ease,
+        transform var(--transition-snappy) ease;
+      transition-delay: calc(var(--stagger-index, 0) * 18ms);
+    }
+    .header-menu__option.is-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .header-menu__option input[type="checkbox"] {
+      width: 1rem;
+      height: 1rem;
+      accent-color: var(--accent);
+    }
+    .header-menu__footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+    .header-menu__apply,
+    .header-menu__clear {
+      flex: 1;
+      border-radius: 999px;
+      padding: 0.45rem 0.75rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+    }
+    .header-menu__apply {
+      background: var(--accent);
+      color: #fff;
+    }
+    .header-menu__apply:hover,
+    .header-menu__apply:focus-visible {
+      background: #0f46c2;
+      outline: none;
+    }
+    .header-menu__clear {
+      background: rgba(20, 90, 252, 0.12);
+      color: var(--accent);
+      border-color: rgba(20, 90, 252, 0.3);
+    }
+    .header-menu__clear:hover,
+    .header-menu__clear:focus-visible {
+      background: rgba(20, 90, 252, 0.2);
+      outline: none;
+    }
+    .regular-filter,
+    .main-filter {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 60;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity var(--transition-snappy) ease;
+    }
+    .regular-filter[hidden],
+    .main-filter[hidden] {
+      display: none !important;
+    }
+    .regular-filter.is-visible,
+    .main-filter.is-visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .regular-filter.is-closing,
+    .main-filter.is-closing {
+      pointer-events: none;
+    }
+    .regular-filter__backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.4);
+      backdrop-filter: blur(4px);
+      opacity: 0;
+      transition: opacity var(--transition-snappy) ease;
+    }
+    .regular-filter.is-visible .regular-filter__backdrop,
+    .main-filter.is-visible .regular-filter__backdrop {
+      opacity: 1;
+    }
+    .regular-filter.is-closing .regular-filter__backdrop,
+    .main-filter.is-closing .regular-filter__backdrop {
+      opacity: 0;
+    }
+    .regular-filter__dialog {
+      position: relative;
+      z-index: 1;
+      width: min(92vw, 420px);
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      background: var(--card-bg);
+      border-radius: 0.85rem;
+      box-shadow: 0 32px 60px rgba(15, 23, 42, 0.24);
+      padding: 1.35rem;
+      transform: translateY(16px) scale(0.97);
+      opacity: 0;
+      transition:
+        transform var(--transition-gentle) ease,
+        opacity var(--transition-gentle) ease;
+    }
+    .regular-filter.is-visible .regular-filter__dialog,
+    .main-filter.is-visible .regular-filter__dialog {
+      transform: translateY(0) scale(1);
+      opacity: 1;
+    }
+    .regular-filter.is-closing .regular-filter__dialog,
+    .main-filter.is-closing .regular-filter__dialog {
+      transform: translateY(24px) scale(0.97);
+      opacity: 0;
+    }
+    .regular-filter__header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+    }
+    .regular-filter__title {
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .regular-filter__close {
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-size: 1.5rem;
+      cursor: pointer;
+      line-height: 1;
+      padding: 0;
+    }
+    .regular-filter__field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+    .regular-filter__field-options {
+      display: inline-flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+    }
+    .regular-filter__field-button {
+      border-radius: 999px;
+      border: 1px solid rgba(27, 30, 40, 0.2);
+      padding: 0.35rem 0.85rem;
+      background: #fff;
+      color: var(--muted);
+      font: inherit;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .regular-filter__field-button:hover {
+      border-color: rgba(20, 90, 252, 0.65);
+      color: var(--text);
+      box-shadow: 0 2px 6px rgba(20, 90, 252, 0.15);
+    }
+    .regular-filter__field-button:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+    .regular-filter__field-button[aria-pressed='true'] {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 4px 12px rgba(20, 90, 252, 0.35);
+    }
+    .regular-filter__field-button:disabled,
+    .regular-filter__field-button[aria-disabled='true'] {
+      opacity: 0.55;
+      cursor: default;
+      box-shadow: none;
+    }
+    .regular-filter__label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+    }
+    .regular-filter__select,
+    .regular-filter__search {
+      border-radius: 0.65rem;
+      border: 1px solid rgba(27, 30, 40, 0.15);
+      padding: 0.55rem 0.7rem;
+      font: inherit;
+      background: #fff;
+      color: var(--text);
+    }
+    .regular-filter__select:disabled,
+    .regular-filter__search:disabled {
+      background: rgba(244, 246, 251, 0.65);
+      cursor: not-allowed;
+    }
+    .regular-filter__select-all {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .regular-filter__select-all input[type="checkbox"] {
+      width: 1rem;
+      height: 1rem;
+      accent-color: var(--accent);
+    }
+    .regular-filter__options {
+      flex: 1 1 auto;
+      overflow-y: auto;
+      border: 1px solid rgba(27, 30, 40, 0.12);
+      border-radius: 0.75rem;
+      padding: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+      min-height: 180px;
+      background: rgba(244, 246, 251, 0.55);
+    }
+    .regular-filter__options:empty {
+      padding: 0;
+      border: none;
+      min-height: 0;
+    }
+    .regular-filter__option {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 0.88rem;
+      color: var(--text);
+      line-height: 1.3;
+      opacity: 0;
+      transform: translateY(8px);
+      transition:
+        opacity var(--transition-snappy) ease,
+        transform var(--transition-snappy) ease;
+      transition-delay: calc(var(--stagger-index, 0) * 24ms);
+    }
+    .regular-filter__option.is-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .regular-filter__option input[type="checkbox"] {
+      width: 1rem;
+      height: 1rem;
+      accent-color: var(--accent);
+    }
+    .regular-filter__empty {
+      margin: 0;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+    .regular-filter__footer {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+    .regular-filter__apply,
+    .regular-filter__reset {
+      flex: 1 1 auto;
+      border-radius: 999px;
+      padding: 0.6rem 1rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+      position: relative;
+      overflow: hidden;
+      transition:
+        background var(--transition-snappy) ease,
+        border-color var(--transition-snappy) ease,
+        color var(--transition-snappy) ease,
+        box-shadow var(--transition-snappy) ease,
+        transform var(--transition-snappy) ease;
+    }
+    .regular-filter__apply {
+      background: var(--accent);
+      color: #fff;
+    }
+    .regular-filter__apply:hover,
+    .regular-filter__apply:focus-visible {
+      background: #0f46c2;
+      outline: none;
+      box-shadow: 0 20px 38px rgba(20, 90, 252, 0.32);
+      transform: translateY(-1px);
+    }
+    .regular-filter__reset {
+      background: rgba(20, 90, 252, 0.14);
+      color: var(--accent);
+      border-color: rgba(20, 90, 252, 0.32);
+    }
+    .regular-filter__reset:hover,
+    .regular-filter__reset:focus-visible {
+      background: rgba(20, 90, 252, 0.22);
+      outline: none;
+      transform: translateY(-1px);
+    }
+    .regular-filter__apply[data-loading='true'],
+    .regular-filter__reset[data-loading='true'] {
+      color: transparent;
+      pointer-events: none;
+      padding-left: 2.6rem;
+    }
+    .regular-filter__apply[data-loading='true']::before,
+    .regular-filter__reset[data-loading='true']::before {
+      content: '';
+      position: absolute;
+      left: 0.9rem;
+      top: 50%;
+      width: 1.15rem;
+      height: 1.15rem;
+      border-radius: 50%;
+      border: 2px solid currentColor;
+      border-right-color: transparent;
+      transform: translateY(-50%);
+      animation: spin 0.9s linear infinite;
+      opacity: 0.85;
+    }
+    .regular-filter__apply[data-loading='true']::before {
+      border-color: rgba(255, 255, 255, 0.7);
+      border-right-color: transparent;
+    }
+    .regular-filter__reset[data-loading='true']::before {
+      border-color: rgba(20, 90, 252, 0.45);
+      border-right-color: transparent;
+    }
+    .regular-filter__apply[data-loading='true']::after,
+    .regular-filter__reset[data-loading='true']::after {
+      content: attr(data-loading-label);
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+    .regular-filter__apply[data-loading='true']::after {
+      color: #fff;
+    }
+    .regular-filter__reset[data-loading='true']::after {
+      color: var(--accent);
+    }
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+    @media (max-width: 768px) {
+      .regular-card__header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+      }
+      .regular-card__controls {
+        width: 100%;
+        justify-content: flex-start;
+        margin-left: 0;
+      }
+      .regular-card__pagination {
+        width: 100%;
+        justify-content: flex-start;
+        margin-left: 0;
+      }
+    }
+    @media (max-width: 1280px) {
+      .lo-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    @media (max-width: 900px) {
+      .tab-nav {
+        margin: 0 0 1.25rem;
+        padding: 0.85rem 1.25rem;
+        border-radius: 0 0 20px 20px;
+      }
+      .grid {
+        padding: 0 1rem 1.5rem;
+      }
+      #regularTable_wrapper .dataTables_scrollHead {
+        top: calc(var(--sticky-header-offset) - 24px);
+      }
+    }
+    @keyframes tab-panel-in {
+      from {
+        opacity: 0;
+        transform: translateY(24px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    @keyframes tab-panel-out {
+      from {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      to {
+        opacity: 0;
+        transform: translateY(-16px);
+      }
+    }
+    @keyframes spin {
+      from {
+        transform: rotate(0deg);
+      }
+      to {
+        transform: rotate(360deg);
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .tab-panel.active,
+      .tab-panel.is-exiting,
+      .regular-filter,
+      .regular-filter__dialog,
+      .panel-loading,
+      .regular-filter__apply::before,
+      .regular-filter__reset::before,
+      .tab-nav__indicator,
+      .card[data-animate='true'],
+      .regular-filter__option,
+      .header-menu__option {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+      .tab-nav__indicator {
+        --indicator-scale-x: 1 !important;
+        --indicator-tilt: 0deg !important;
+      }
+      .card[data-animate='true'],
+      .regular-filter__option,
+      .header-menu__option {
+        opacity: 1 !important;
+        transform: none !important;
+      }
     }
   </style>
 </head>
 <body>
-  <main>
-    <h1>Redirecting to the dashboard…</h1>
-    <p>If you are not redirected automatically, <a href="analysis/index.html">click here to open the Gross Proceed dashboard</a>.</p>
-  </main>
+  <div class="data-status" aria-live="polite">
+    <span id="data-version" class="data-status__version" hidden></span>
+    <span id="data-error" class="data-status__error" hidden></span>
+  </div>
+  <nav class="tab-nav" aria-label="Dashboard views">
+    <span class="tab-nav__indicator" aria-hidden="true"></span>
+    <button class="tab-button" id="tab-sales-gap-button" type="button" data-tab="sales-gap" aria-controls="tab-sales-gap" aria-selected="false">Sales GAP</button>
+    <button class="tab-button" id="tab-dashboard-button" type="button" data-tab="dashboard" aria-controls="tab-dashboard" aria-selected="false">Dashboard</button>
+    <button class="tab-button" id="tab-platform-button" type="button" data-tab="platform" aria-controls="tab-platform" aria-selected="false">Store wise Daily Sales</button>
+    <button class="tab-button" id="tab-new-product-button" type="button" data-tab="new-product" aria-controls="tab-new-product" aria-selected="false">New Product Performance</button>
+    <button class="tab-button" id="tab-lo-button" type="button" data-tab="lo" aria-controls="tab-lo" aria-selected="false">LO - Sales &amp; Spend</button>
+    <button class="tab-button" id="tab-main-button" type="button" data-tab="main" aria-controls="tab-main" aria-selected="false">Main</button>
+    <button class="tab-button" id="tab-sku-summary-button" type="button" data-tab="sku-summary" aria-controls="tab-sku-summary" aria-selected="false">SKU wise summary</button>
+    <button class="tab-button active" id="tab-regular-button" type="button" data-tab="regular" aria-controls="tab-regular" aria-selected="true">Regular</button>
+  </nav>
+  <div class="tab-panel" id="tab-sales-gap" data-tab="sales-gap" role="tabpanel" aria-labelledby="tab-sales-gap-button" aria-hidden="true">
+    <section class="grid sales-gap-grid">
+      <article class="card sales-gap-card">
+        <header class="sales-gap-card__header">
+          <div>
+            <h2 class="sales-gap-card__title">Sales GAP by listing owner</h2>
+            <p class="sales-gap-card__subtitle">Comparison of our performance against competitors from the Sales GAP worksheet.</p>
+          </div>
+          <div class="filter-actions">
+            <button
+              type="button"
+              class="filter-clear-button"
+              id="sales-gap-filter-clear-button"
+              aria-label="Clear Sales GAP filters"
+              title="Clear filters"
+              hidden
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+            <button type="button" class="filter-button" id="sales-gap-filter-button" aria-haspopup="dialog" aria-expanded="false">Filters</button>
+          </div>
+        </header>
+        <div class="sales-gap-table-container">
+          <div class="sales-gap-table-scroll">
+            <table id="sales-gap-table" class="sales-gap-table"></table>
+          </div>
+        </div>
+      </article>
+      <article class="card sku-gap-card">
+        <header class="sku-gap-card__header">
+          <div>
+            <h2 class="sku-gap-card__title">SKU wise GAP</h2>
+            <p class="sku-gap-card__subtitle">Detailed SKU comparison sourced directly from the SKUWISE GAP worksheet.</p>
+          </div>
+          <div class="filter-actions">
+            <button
+              type="button"
+              class="filter-clear-button"
+              id="sku-gap-filter-clear-button"
+              aria-label="Clear SKU GAP filters"
+              title="Clear filters"
+              hidden
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+            <button type="button" class="filter-button" id="sku-gap-filter-button" aria-haspopup="dialog" aria-expanded="false">Filters</button>
+          </div>
+        </header>
+        <div class="sku-gap-table-container">
+          <div class="sku-gap-table-scroll">
+            <table id="sku-gap-table" class="sku-gap-table"></table>
+          </div>
+        </div>
+      </article>
+    </section>
+  </div>
+  <div class="tab-panel" id="tab-lo" data-tab="lo" role="tabpanel" aria-labelledby="tab-lo-button" aria-hidden="true">
+    <section class="grid lo-grid">
+      <article class="card lo-card">
+        <header class="lo-card__header">
+          <div class="lo-card__heading">
+            <h2 class="lo-card__title">Listing owner performance</h2>
+            <p class="lo-card__subtitle">Daily sales and spend totals derived from regular data</p>
+          </div>
+          <div class="filter-actions">
+            <button
+              type="button"
+              class="filter-clear-button"
+              id="lo-filter-clear-button"
+              aria-label="Clear listing owner filters"
+              title="Clear filters"
+              hidden
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+            <button type="button" class="filter-button lo-card__filter-button" id="lo-filter-button" aria-haspopup="dialog" aria-expanded="false">Filters</button>
+          </div>
+        </header>
+        <nav class="sub-tab-nav" aria-label="Listing owner metrics">
+          <button class="sub-tab-button lo-sub-tab-button active" id="lo-sales-button" type="button" data-subtab="sales" aria-controls="lo-sales-panel" aria-selected="true">Sales</button>
+          <button class="sub-tab-button lo-sub-tab-button" id="lo-spend-button" type="button" data-subtab="spend" aria-controls="lo-spend-panel" aria-selected="false">Spend</button>
+        </nav>
+        <div class="sub-tab-panel lo-sub-tab-panel active" id="lo-sales-panel" data-subtab="sales" role="region" aria-labelledby="lo-sales-button">
+          <div class="table-container lo-table-container">
+            <div class="lo-table-scroll">
+              <table id="lo-sales-table" class="lo-table"></table>
+            </div>
+          </div>
+        </div>
+        <div class="sub-tab-panel lo-sub-tab-panel" id="lo-spend-panel" data-subtab="spend" role="region" aria-labelledby="lo-spend-button" aria-hidden="true">
+          <div class="table-container lo-table-container">
+            <div class="lo-table-scroll">
+              <table id="lo-spend-table" class="lo-table"></table>
+            </div>
+          </div>
+        </div>
+      </article>
+    </section>
+  </div>
+  <div class="tab-panel" id="tab-platform" data-tab="platform" role="tabpanel" aria-labelledby="tab-platform-button" aria-hidden="true">
+    <section class="grid">
+      <article class="card lo-card">
+        <header class="lo-card__header">
+          <div class="lo-card__heading">
+            <h2 class="lo-card__title">Store wise Daily Sales</h2>
+            <p class="lo-card__subtitle">Daily sales and NET totals grouped by store from regular data</p>
+          </div>
+          <div class="filter-actions">
+            <button
+              type="button"
+              class="filter-clear-button"
+              id="platform-filter-clear-button"
+              aria-label="Clear store filters"
+              title="Clear filters"
+              hidden
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+            <button type="button" class="filter-button lo-card__filter-button" id="platform-filter-button" aria-haspopup="dialog" aria-expanded="false">Filters</button>
+          </div>
+        </header>
+        <nav class="sub-tab-nav" aria-label="Store metrics">
+          <button class="sub-tab-button platform-tab-button active" id="platform-sales-button" type="button" data-subtab="sales" aria-controls="platform-sales-panel" aria-selected="true">Sales</button>
+          <button class="sub-tab-button platform-tab-button" id="platform-net-button" type="button" data-subtab="net" aria-controls="platform-net-panel" aria-selected="false">NET</button>
+        </nav>
+        <div class="sub-tab-panel platform-tab-panel active" id="platform-sales-panel" data-subtab="sales" role="region" aria-labelledby="platform-sales-button">
+          <div class="table-container lo-table-container">
+            <div class="lo-table-scroll">
+              <table id="platform-sales-table" class="lo-table"></table>
+            </div>
+          </div>
+        </div>
+        <div class="sub-tab-panel platform-tab-panel" id="platform-net-panel" data-subtab="net" role="region" aria-labelledby="platform-net-button" aria-hidden="true">
+          <div class="table-container lo-table-container">
+            <div class="lo-table-scroll">
+              <table id="platform-net-table" class="lo-table"></table>
+            </div>
+          </div>
+        </div>
+      </article>
+    </section>
+  </div>
+  <div class="tab-panel" id="tab-new-product" data-tab="new-product" role="tabpanel" aria-labelledby="tab-new-product-button" aria-hidden="true">
+    <div class="new-product-status" id="new-product-status" role="status" hidden></div>
+    <section class="grid new-product-grid">
+      <article class="card new-product-card">
+        <header class="new-product-card__header">
+          <div class="new-product-card__heading">
+            <h2 class="new-product-card__title">New product targets vs performance</h2>
+            <p class="new-product-card__subtitle" id="new-product-target-subtitle">Pivot metrics derived from the Main sheet dataset</p>
+          </div>
+          <div class="filter-actions">
+            <button
+              type="button"
+              class="filter-clear-button"
+              id="new-product-target-filter-clear-button"
+              aria-label="Clear new product filters"
+              title="Clear filters"
+              hidden
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+            <button type="button" class="filter-button" id="new-product-target-filter-button" aria-haspopup="dialog" aria-expanded="false">Filter rows</button>
+          </div>
+        </header>
+        <div class="new-product-table-container">
+          <div class="new-product-table-wrapper">
+            <table id="new-product-target-table" class="display new-product-table" style="width:100%"></table>
+          </div>
+        </div>
+      </article>
+      <article class="card new-product-card">
+        <header class="new-product-card__header">
+          <div class="new-product-card__heading">
+            <h2 class="new-product-card__title">New product targets vs performance (pivot 2)</h2>
+            <p class="new-product-card__subtitle" id="new-product-secondary-subtitle">Pivot metrics derived from the Main sheet dataset</p>
+          </div>
+          <div class="filter-actions">
+            <button
+              type="button"
+              class="filter-clear-button"
+              id="new-product-secondary-filter-clear-button"
+              aria-label="Clear new product filters"
+              title="Clear filters"
+              hidden
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+            <button type="button" class="filter-button" id="new-product-secondary-filter-button" aria-haspopup="dialog" aria-expanded="false">Filter rows</button>
+          </div>
+        </header>
+        <div class="new-product-table-container">
+          <div class="new-product-table-wrapper">
+            <table id="new-product-secondary-table" class="display new-product-table" style="width:100%"></table>
+          </div>
+        </div>
+      </article>
+    </section>
+  </div>
+  <div class="tab-panel" id="tab-sku-summary" data-tab="sku-summary" role="tabpanel" aria-labelledby="tab-sku-summary-button" aria-hidden="true">
+    <section class="grid">
+      <article class="card sku-card">
+        <header class="sku-card__header">
+          <h2 class="sku-card__title">SKU wise summary</h2>
+          <p class="sku-card__subtitle">Pivoted averages, fees, and totals by SKU directly from the workbook</p>
+          <div class="sku-card__toolbar" data-active="false">
+            <div class="filter-actions">
+              <button
+                type="button"
+                class="filter-clear-button"
+                id="sku-filter-clear-button"
+                aria-label="Clear SKU summary filters"
+                title="Clear filters"
+                hidden
+              >
+                <span aria-hidden="true">&times;</span>
+              </button>
+              <button type="button" class="filter-button sku-card__filter-button" id="sku-filter-button" aria-haspopup="dialog" aria-expanded="false">Filters</button>
+            </div>
+            <div class="sku-card__pagination" id="sku-summary-pagination" aria-label="SKU wise summary pagination" aria-hidden="true"></div>
+          </div>
+        </header>
+        <div class="table-container sku-table-container">
+          <div class="sku-table-scroll">
+            <table id="sku-summary-table" class="sku-table"></table>
+          </div>
+        </div>
+      </article>
+    </section>
+  </div>
+  <div class="tab-panel" id="tab-dashboard" data-tab="dashboard" role="tabpanel" aria-labelledby="tab-dashboard-button" aria-hidden="true">
+    <section class="grid dashboard-grid">
+      <article class="card dashboard-card">
+        <header class="dashboard-card__header">
+          <div class="dashboard-card__heading">
+            <h2 class="dashboard-card__title">Name wise targets &amp; performance</h2>
+            <p class="dashboard-card__subtitle">Aggregated Main sheet totals grouped by NAME (Excel dashboard pivot 1)</p>
+          </div>
+          <div class="dashboard-card__toolbar">
+            <div class="filter-actions">
+              <button
+                type="button"
+                class="filter-clear-button"
+                id="dashboard-name-row-filter-clear"
+                aria-label="Clear Name pivot filters"
+                title="Clear filters"
+                data-pivot="name"
+                hidden
+              >
+                <span aria-hidden="true">&times;</span>
+              </button>
+              <button
+                type="button"
+                class="filter-button dashboard-card__filter-button"
+                id="dashboard-name-row-filter-button"
+                data-pivot="name"
+                aria-haspopup="dialog"
+                aria-expanded="false"
+                data-active="false"
+              >
+                Filter rows
+              </button>
+            </div>
+          </div>
+        </header>
+        <div class="dashboard-table-container">
+          <div class="dashboard-table-scroll">
+            <table id="dashboard-table-name" class="dashboard-table"></table>
+          </div>
+        </div>
+      </article>
+      <article class="card dashboard-card">
+        <header class="dashboard-card__header">
+          <div class="dashboard-card__heading">
+            <h2 class="dashboard-card__title">eBay performance snapshot</h2>
+            <p class="dashboard-card__subtitle">Main sheet eBay metrics grouped by EBAY owner (Excel dashboard pivot 2)</p>
+          </div>
+          <div class="dashboard-card__toolbar">
+            <div class="filter-actions">
+              <button
+                type="button"
+                class="filter-clear-button"
+                id="dashboard-ebay-row-filter-clear"
+                aria-label="Clear eBay pivot filters"
+                title="Clear filters"
+                data-pivot="ebay"
+                hidden
+              >
+                <span aria-hidden="true">&times;</span>
+              </button>
+              <button
+                type="button"
+                class="filter-button dashboard-card__filter-button"
+                id="dashboard-ebay-row-filter-button"
+                data-pivot="ebay"
+                aria-haspopup="dialog"
+                aria-expanded="false"
+                data-active="false"
+              >
+                Filter rows
+              </button>
+            </div>
+          </div>
+        </header>
+        <div class="dashboard-table-container">
+          <div class="dashboard-table-scroll">
+            <table id="dashboard-table-ebay" class="dashboard-table"></table>
+          </div>
+        </div>
+      </article>
+      <article class="card dashboard-card">
+        <header class="dashboard-card__header">
+          <div class="dashboard-card__heading">
+            <h2 class="dashboard-card__title">Website performance snapshot</h2>
+            <p class="dashboard-card__subtitle">Website-focused metrics grouped by WEBSITE lead (Excel dashboard pivot 3)</p>
+          </div>
+          <div class="dashboard-card__toolbar">
+            <div class="filter-actions">
+              <button
+                type="button"
+                class="filter-clear-button"
+                id="dashboard-website-row-filter-clear"
+                aria-label="Clear Website pivot filters"
+                title="Clear filters"
+                data-pivot="website"
+                hidden
+              >
+                <span aria-hidden="true">&times;</span>
+              </button>
+              <button
+                type="button"
+                class="filter-button dashboard-card__filter-button"
+                id="dashboard-website-row-filter-button"
+                data-pivot="website"
+                aria-haspopup="dialog"
+                aria-expanded="false"
+                data-active="false"
+              >
+                Filter rows
+              </button>
+            </div>
+          </div>
+        </header>
+        <div class="dashboard-table-container">
+          <div class="dashboard-table-scroll">
+            <table id="dashboard-table-website" class="dashboard-table"></table>
+          </div>
+        </div>
+      </article>
+      <article class="card dashboard-card dashboard-card--full">
+        <header class="dashboard-card__header">
+          <div class="dashboard-card__heading">
+            <h2 class="dashboard-card__title">Channel performance summary</h2>
+            <p class="dashboard-card__subtitle">Direct table from Dashboard worksheet (cells A41 to O60)</p>
+          </div>
+          <div class="dashboard-card__toolbar">
+            <div class="dashboard-card__quick-filter-group" id="dashboard-summary-store-filter-group">
+              <div
+                class="dashboard-card__quick-filter"
+                id="dashboard-summary-store-filter"
+                data-active="false"
+              >
+                <span class="dashboard-card__quick-filter-label">Store</span>
+                <button
+                  type="button"
+                  class="dashboard-card__quick-filter-toggle"
+                  id="dashboard-summary-store-filter-toggle"
+                  aria-haspopup="true"
+                  aria-expanded="false"
+                  disabled
+                >
+                  All stores
+                </button>
+              </div>
+              <div class="dashboard-card__quick-filter-menu" id="dashboard-summary-store-filter-menu" hidden>
+                <div class="dashboard-card__quick-filter-menu-inner">
+                  <label class="dashboard-card__quick-filter-select-all" for="dashboard-summary-store-filter-select-all">
+                    <input type="checkbox" id="dashboard-summary-store-filter-select-all" />
+                    <span>Select all</span>
+                  </label>
+                  <div class="dashboard-card__quick-filter-options" id="dashboard-summary-store-filter-options"></div>
+                  <p class="dashboard-card__quick-filter-menu-empty" id="dashboard-summary-store-filter-menu-empty" hidden>
+                    No stores available
+                  </p>
+                  <div class="dashboard-card__quick-filter-actions">
+                    <button
+                      type="button"
+                      class="dashboard-card__quick-filter-action"
+                      id="dashboard-summary-store-filter-reset"
+                    >
+                      Reset
+                    </button>
+                    <button
+                      type="button"
+                      class="dashboard-card__quick-filter-action dashboard-card__quick-filter-action--primary"
+                      id="dashboard-summary-store-filter-apply"
+                    >
+                      Apply
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p class="dashboard-card__quick-filter-empty" id="dashboard-summary-store-filter-empty" hidden>
+              No stores available
+            </p>
+          </div>
+        </header>
+        <div class="dashboard-table-container">
+          <div class="dashboard-table-scroll">
+            <table id="dashboard-table-summary" class="dashboard-table"></table>
+          </div>
+        </div>
+      </article>
+    </section>
+  </div>
+  <div class="tab-panel" id="tab-main" data-tab="main" role="tabpanel" aria-labelledby="tab-main-button" aria-hidden="true">
+    <section class="grid">
+      <article class="card regular-card main-card">
+        <header class="regular-card__header">
+          <div class="regular-card__heading">
+            <h2 class="regular-card__title">Main Performance</h2>
+            <p class="regular-card__subtitle">Detailed metrics sourced from the Main worksheet</p>
+          </div>
+          <div class="regular-card__controls">
+            <div class="filter-actions">
+              <button
+                type="button"
+                class="filter-clear-button"
+                id="main-filter-clear-button"
+                aria-label="Clear main filters"
+                title="Clear filters"
+                hidden
+              >
+                <span aria-hidden="true">&times;</span>
+              </button>
+              <button type="button" class="regular-card__filter-button filter-button" id="main-filter-button" aria-haspopup="dialog" aria-expanded="false" data-active="false">Filters</button>
+            </div>
+            <div class="regular-card__pagination" id="main-table-pagination" aria-label="Main table pagination"></div>
+          </div>
+        </header>
+        <div class="table-container regular-table-container">
+          <table id="main-table" class="display" style="width:100%"></table>
+        </div>
+      </article>
+    </section>
+  </div>
+  <div class="tab-panel active" id="tab-regular" data-tab="regular" role="tabpanel" aria-labelledby="tab-regular-button" aria-hidden="false">
+    <section class="grid">
+      <article class="card regular-card">
+        <header class="regular-card__header">
+          <div class="regular-card__heading">
+            <h2 class="regular-card__title">Regular Performance</h2>
+            <p class="regular-card__subtitle">Detailed order and spend metrics across all listings</p>
+          </div>
+          <div class="regular-card__controls">
+            <div class="filter-actions">
+              <button
+                type="button"
+                class="filter-clear-button"
+                id="regular-filter-clear-button"
+                aria-label="Clear regular filters"
+                title="Clear filters"
+                hidden
+              >
+                <span aria-hidden="true">&times;</span>
+              </button>
+              <button type="button" class="regular-card__filter-button filter-button" id="regular-filter-button" aria-haspopup="dialog" aria-expanded="false" data-active="false">Filters</button>
+            </div>
+            <div class="regular-card__pagination" id="regular-table-pagination" aria-label="Regular table pagination"></div>
+          </div>
+        </header>
+        <div class="table-container regular-table-container">
+          <table id="regularTable" class="display" style="width:100%"></table>
+        </div>
+      </article>
+    </section>
+  </div>
+  <div class="regular-filter" id="new-product-target-filter" hidden aria-hidden="true">
+    <div class="regular-filter__backdrop"></div>
+    <div class="regular-filter__dialog" role="dialog" aria-modal="true" aria-labelledby="new-product-target-filter-title">
+      <div class="regular-filter__header">
+        <h3 class="regular-filter__title" id="new-product-target-filter-title">Filter pivot rows</h3>
+        <button type="button" class="regular-filter__close" aria-label="Close filters">&times;</button>
+      </div>
+      <div class="regular-filter__field">
+        <span class="regular-filter__label" id="new-product-target-filter-field-label">Field</span>
+        <div class="regular-filter__field-options" id="new-product-target-filter-field-options" role="group" aria-labelledby="new-product-target-filter-field-label"></div>
+      </div>
+      <div class="regular-filter__options" id="new-product-target-filter-options" role="group" aria-label="Filter values"></div>
+      <p class="regular-filter__empty" id="new-product-target-filter-empty" hidden>No filter values available</p>
+      <div class="regular-filter__footer">
+        <button type="button" class="regular-filter__reset" id="new-product-target-filter-reset">Reset</button>
+        <button type="button" class="regular-filter__apply" id="new-product-target-filter-apply">Apply</button>
+      </div>
+    </div>
+  </div>
+  <div class="regular-filter" id="new-product-secondary-filter" hidden aria-hidden="true">
+    <div class="regular-filter__backdrop"></div>
+    <div class="regular-filter__dialog" role="dialog" aria-modal="true" aria-labelledby="new-product-secondary-filter-title">
+      <div class="regular-filter__header">
+        <h3 class="regular-filter__title" id="new-product-secondary-filter-title">Filter pivot rows</h3>
+        <button type="button" class="regular-filter__close" aria-label="Close filters">&times;</button>
+      </div>
+      <div class="regular-filter__field">
+        <span class="regular-filter__label" id="new-product-secondary-filter-field-label">Field</span>
+        <div class="regular-filter__field-options" id="new-product-secondary-filter-field-options" role="group" aria-labelledby="new-product-secondary-filter-field-label"></div>
+      </div>
+      <div class="regular-filter__options" id="new-product-secondary-filter-options" role="group" aria-label="Filter values"></div>
+      <p class="regular-filter__empty" id="new-product-secondary-filter-empty" hidden>No filter values available</p>
+      <div class="regular-filter__footer">
+        <button type="button" class="regular-filter__reset" id="new-product-secondary-filter-reset">Reset</button>
+        <button type="button" class="regular-filter__apply" id="new-product-secondary-filter-apply">Apply</button>
+      </div>
+    </div>
+  </div>
+  <div class="regular-filter" id="sales-gap-filter" hidden aria-hidden="true">
+    <div class="regular-filter__backdrop"></div>
+    <div class="regular-filter__dialog" role="dialog" aria-modal="true" aria-labelledby="sales-gap-filter-title">
+      <div class="regular-filter__header">
+        <h3 class="regular-filter__title" id="sales-gap-filter-title">Filter Sales GAP rows</h3>
+        <button type="button" class="regular-filter__close" aria-label="Close filters">&times;</button>
+      </div>
+      <div class="regular-filter__field">
+        <span class="regular-filter__label" id="sales-gap-filter-field-label">Field</span>
+        <div class="regular-filter__field-options" id="sales-gap-filter-field-options" role="group" aria-labelledby="sales-gap-filter-field-label"></div>
+      </div>
+      <div class="regular-filter__options" id="sales-gap-filter-options" role="group" aria-label="Filter values"></div>
+      <p class="regular-filter__empty" id="sales-gap-filter-empty" hidden>No filter values available</p>
+      <div class="regular-filter__footer">
+        <button type="button" class="regular-filter__reset" id="sales-gap-filter-reset">Reset</button>
+        <button type="button" class="regular-filter__apply" id="sales-gap-filter-apply">Apply</button>
+      </div>
+    </div>
+  </div>
+  <div class="regular-filter" id="sku-gap-filter" hidden aria-hidden="true">
+    <div class="regular-filter__backdrop"></div>
+    <div class="regular-filter__dialog" role="dialog" aria-modal="true" aria-labelledby="sku-gap-filter-title">
+      <div class="regular-filter__header">
+        <h3 class="regular-filter__title" id="sku-gap-filter-title">Filter SKU GAP rows</h3>
+        <button type="button" class="regular-filter__close" aria-label="Close filters">&times;</button>
+      </div>
+      <div class="regular-filter__field">
+        <span class="regular-filter__label" id="sku-gap-filter-field-label">Field</span>
+        <div class="regular-filter__field-options" id="sku-gap-filter-field-options" role="group" aria-labelledby="sku-gap-filter-field-label"></div>
+      </div>
+      <div class="regular-filter__options" id="sku-gap-filter-options" role="group" aria-label="Filter values"></div>
+      <p class="regular-filter__empty" id="sku-gap-filter-empty" hidden>No filter values available</p>
+      <div class="regular-filter__footer">
+        <button type="button" class="regular-filter__reset" id="sku-gap-filter-reset">Reset</button>
+        <button type="button" class="regular-filter__apply" id="sku-gap-filter-apply">Apply</button>
+      </div>
+    </div>
+  </div>
+  <div class="regular-filter main-filter" id="main-filter" hidden aria-hidden="true">
+    <div class="regular-filter__backdrop"></div>
+    <div class="regular-filter__dialog" role="dialog" aria-modal="true" aria-labelledby="main-filter-title">
+      <div class="regular-filter__header">
+        <h3 class="regular-filter__title" id="main-filter-title">Filter main data</h3>
+        <button type="button" class="regular-filter__close" aria-label="Close filters">&times;</button>
+      </div>
+      <div class="regular-filter__field">
+        <label class="regular-filter__label" for="main-filter-column">Column</label>
+        <select id="main-filter-column" class="regular-filter__select"></select>
+      </div>
+      <div class="regular-filter__field">
+        <label class="regular-filter__label" for="main-filter-search">Search</label>
+        <input id="main-filter-search" class="regular-filter__search" type="search" placeholder="Search values" autocomplete="off" />
+      </div>
+      <label class="regular-filter__select-all" for="main-filter-select-all">
+        <input type="checkbox" id="main-filter-select-all" />
+        <span>Select all</span>
+      </label>
+      <div class="regular-filter__options" id="main-filter-options" role="group" aria-label="Filter values"></div>
+      <p class="regular-filter__empty" id="main-filter-empty" hidden>No matches found</p>
+      <div class="regular-filter__footer">
+        <button type="button" class="regular-filter__reset" id="main-filter-reset">Reset</button>
+        <button type="button" class="regular-filter__apply" id="main-filter-apply">Apply</button>
+      </div>
+    </div>
+  </div>
+  <div class="regular-filter" id="dashboard-pivot-filter" hidden aria-hidden="true">
+    <div class="regular-filter__backdrop"></div>
+    <div class="regular-filter__dialog" role="dialog" aria-modal="true" aria-labelledby="dashboard-pivot-filter-title">
+      <div class="regular-filter__header">
+        <h3 class="regular-filter__title" id="dashboard-pivot-filter-title">Filter dashboard pivot rows</h3>
+        <button type="button" class="regular-filter__close" aria-label="Close filters">&times;</button>
+      </div>
+      <div class="regular-filter__field">
+        <label
+          class="regular-filter__label"
+          for="dashboard-pivot-filter-field-options"
+          id="dashboard-pivot-filter-field-label"
+        >
+          Field
+        </label>
+        <select class="regular-filter__select" id="dashboard-pivot-filter-field-options"></select>
+      </div>
+      <label class="regular-filter__select-all" for="dashboard-pivot-filter-select-all">
+        <input type="checkbox" id="dashboard-pivot-filter-select-all" />
+        <span>Select all</span>
+      </label>
+      <div class="regular-filter__options" id="dashboard-pivot-filter-options" role="group" aria-label="Filter values"></div>
+      <p class="regular-filter__empty" id="dashboard-pivot-filter-empty" hidden>No filter values available</p>
+      <div class="regular-filter__footer">
+        <button type="button" class="regular-filter__reset" id="dashboard-pivot-filter-reset">Reset</button>
+        <button type="button" class="regular-filter__apply" id="dashboard-pivot-filter-apply">Apply</button>
+      </div>
+    </div>
+  </div>
+  <div class="regular-filter" id="regular-filter" hidden aria-hidden="true">
+    <div class="regular-filter__backdrop"></div>
+    <div class="regular-filter__dialog" role="dialog" aria-modal="true" aria-labelledby="regular-filter-title">
+      <div class="regular-filter__header">
+        <h3 class="regular-filter__title" id="regular-filter-title">Filter regular data</h3>
+        <button type="button" class="regular-filter__close" aria-label="Close filters">&times;</button>
+      </div>
+      <div class="regular-filter__field">
+        <label class="regular-filter__label" for="regular-filter-column">Column</label>
+        <select id="regular-filter-column" class="regular-filter__select"></select>
+      </div>
+      <div class="regular-filter__field">
+        <label class="regular-filter__label" for="regular-filter-search">Search</label>
+        <input id="regular-filter-search" class="regular-filter__search" type="search" placeholder="Search values" autocomplete="off" />
+      </div>
+      <label class="regular-filter__select-all" for="regular-filter-select-all">
+        <input type="checkbox" id="regular-filter-select-all" />
+        <span>Select all</span>
+      </label>
+      <div class="regular-filter__options" id="regular-filter-options" role="group" aria-label="Filter values"></div>
+      <p class="regular-filter__empty" id="regular-filter-empty" hidden>No matches found</p>
+      <div class="regular-filter__footer">
+        <button type="button" class="regular-filter__reset" id="regular-filter-reset">Reset</button>
+        <button type="button" class="regular-filter__apply" id="regular-filter-apply">Apply</button>
+      </div>
+    </div>
+  </div>
+  <script src="./analysis/js/analysis.js"></script>
+
 </body>
 </html>
