@@ -150,6 +150,24 @@
       return null;
     }
 
+    const isoDateMatch = rawText.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s]|$)/);
+    if (isoDateMatch) {
+      const year = Number(isoDateMatch[1]);
+      const month = Number(isoDateMatch[2]);
+      const day = Number(isoDateMatch[3]);
+      if (
+        Number.isFinite(year)
+        && Number.isFinite(month)
+        && Number.isFinite(day)
+        && month >= 1
+        && month <= 12
+        && day >= 1
+        && day <= 31
+      ) {
+        return buildMetadata(year, month, day, 'day');
+      }
+    }
+
     const quarterFromText = parseQuarterFromText(rawText);
     if (quarterFromText) {
       return quarterFromText;

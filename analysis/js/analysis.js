@@ -5195,6 +5195,32 @@ const tabButtons = document.querySelectorAll('.tab-button');
       );
     }
 
+    if (typeof window !== 'undefined') {
+      window.addEventListener('load', () => {
+        updateTabIndicator(activeTabId);
+        scrollActiveTabIntoView(activeTabId);
+        updateTabNavScrollShadows();
+      });
+    }
+
+    if (typeof document !== 'undefined' && document && document.fonts) {
+      const handleFontMetricsChange = () => {
+        updateTabIndicator(activeTabId);
+        scrollActiveTabIntoView(activeTabId);
+        updateTabNavScrollShadows();
+      };
+      const fontsReady = document.fonts.ready;
+      if (fontsReady && typeof fontsReady.then === 'function') {
+        fontsReady
+          .then(handleFontMetricsChange)
+          .catch(() => {});
+      }
+      if (typeof document.fonts.addEventListener === 'function') {
+        document.fonts.addEventListener('loadingdone', handleFontMetricsChange);
+        document.fonts.addEventListener('loadingerror', handleFontMetricsChange);
+      }
+    }
+
     function ensureHeaderMenu() {
       if (!headerMenuElement) {
         headerMenuElement = document.createElement('div');
