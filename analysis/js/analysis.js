@@ -7827,7 +7827,10 @@ const tabButtons = document.querySelectorAll('.tab-button');
         return -1;
       };
 
-      const skuIndex = resolveColumnIndex('SKU_2', 'SKU2', 'SKU 2', 'SKU');
+      const plainSkuIndex = resolveColumnIndex('Plain SKU', 'PlainSku', 'PlainSKU');
+      const skuIndex = plainSkuIndex !== -1
+        ? plainSkuIndex
+        : resolveColumnIndex('SKU_2', 'SKU2', 'SKU 2', 'SKU');
       const salePriceIndex = resolveColumnIndex('Sale Price + Shipping');
       const carrierFeeIndex = resolveColumnIndex('CARRIER FEE');
       const marketplaceFeeIndex = resolveColumnIndex('Ebay/ Amazon');
@@ -7852,6 +7855,8 @@ const tabButtons = document.querySelectorAll('.tab-button');
       if (requiredIndices.some((index) => index === -1)) {
         return { columns: [], rows: [], totals: null };
       }
+
+      const skuColumnLabel = plainSkuIndex !== -1 ? 'Plain SKU' : 'SKU';
 
       const summary = new Map();
       const totalsAccumulator = {
@@ -8002,7 +8007,7 @@ const tabButtons = document.querySelectorAll('.tab-button');
       };
 
       const columns = [
-        { key: 'sku', label: 'SKU', type: 'string' },
+        { key: 'sku', label: skuColumnLabel, type: 'string' },
         { key: 'average_of_sale_price_shipping', label: 'Average of Sale Price + Shipping', type: 'decimal' },
         { key: 'average_of_carrier_fee', label: 'Average of CARRIER FEE', type: 'decimal' },
         { key: 'average_of_ebay_amazon', label: 'Average of Ebay/ Amazon', type: 'decimal' },
