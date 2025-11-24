@@ -310,10 +310,20 @@ const tabButtons = document.querySelectorAll('.tab-button');
       if (!normalised.length) {
         return false;
       }
+
+      // Columns that describe cumulative metrics (for example, "till date" targets)
+      // should continue to be treated as numeric even though their labels contain the
+      // word "date". Those columns were previously formatted as calendar dates,
+      // causing revenue and unit metrics to display incorrect values.
+      const NON_DATE_PHRASES = ['till date', 'till-date', 'till_date'];
+      if (NON_DATE_PHRASES.some((phrase) => normalised.includes(phrase))) {
+        return false;
+      }
+
       if (normalised === 'checkout' || normalised === 'date') {
         return true;
       }
-      return normalised.includes(' date');
+      return normalised.endsWith(' date');
     };
     const TOTAL_ROW_LABEL = 'Grand Total';
     const TOTAL_ROW_LABEL_NORMALISED = TOTAL_ROW_LABEL.trim().toLowerCase();
