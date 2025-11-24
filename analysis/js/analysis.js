@@ -270,7 +270,38 @@ const tabButtons = document.querySelectorAll('.tab-button');
         return '';
       },
     };
+    const workbookDate1904 = {
+      enabled: false,
+    };
+    const parseExcelSerialWithWorkbookBase = (value) => {
+      if (typeof XLSX === 'undefined' || !XLSX.SSF || typeof XLSX.SSF.parse_date_code !== 'function') {
+        return null;
+      }
+      const serial = (() => {
+        if (typeof value === 'number' && Number.isFinite(value)) {
+          return value;
+        }
+        if (typeof value === 'string' && /^\d+(?:\.\d+)?$/.test(value.trim())) {
+          const numeric = Number(value.trim());
+          return Number.isNaN(numeric) ? null : numeric;
+        }
+        return null;
+      })();
+      if (serial === null) {
+        return null;
+      }
+      const parsed = XLSX.SSF.parse_date_code(serial, { date1904: workbookDate1904.enabled });
+      if (!parsed || !parsed.y || !parsed.m || !parsed.d) {
+        return null;
+      }
+      const date = new Date(Date.UTC(parsed.y, parsed.m - 1, parsed.d));
+      return Number.isNaN(date.getTime()) ? null : date;
+    };
     const parseDateValue = (value) => {
+      const serialDate = parseExcelSerialWithWorkbookBase(value);
+      if (serialDate) {
+        return serialDate;
+      }
       if (typeof window.toYMD === 'function') {
         const ymd = window.toYMD(value);
         if (ymd) {
@@ -285,6 +316,13 @@ const tabButtons = document.querySelectorAll('.tab-button');
       return null;
     };
     const formatDateValue = (value) => {
+      const serialDate = parseExcelSerialWithWorkbookBase(value);
+      if (serialDate) {
+        const formatted = displayDateFormatter.format(serialDate);
+        if (formatted) {
+          return formatted;
+        }
+      }
       if (typeof window.formatDDMMYYYY === 'function') {
         const formatted = window.formatDDMMYYYY(value);
         if (formatted) {
@@ -2065,6 +2103,11 @@ const tabButtons = document.querySelectorAll('.tab-button');
         .then((payload) => {
           if (!payload || typeof payload !== 'object' || !payload.workbook) {
             throw new Error('Excel workbook is unavailable');
+          }
+          if (payload.workbook && payload.workbook.Workbook && payload.workbook.Workbook.WBProps) {
+            workbookDate1904.enabled = payload.workbook.Workbook.WBProps.date1904 === true;
+          } else {
+            workbookDate1904.enabled = false;
           }
           workbookVersionInfo = payload.version || null;
           if (workbookVersionInfo) {
@@ -6553,18 +6596,7 @@ const tabButtons = document.querySelectorAll('.tab-button');
     }
 
     function parseExcelSerialToDate(value) {
-      if (typeof window.toYMD === 'function') {
-        const ymd = window.toYMD(value);
-        if (ymd) {
-          const date = new Date(Date.UTC(ymd.y, ymd.m - 1, ymd.d));
-          return Number.isNaN(date.getTime()) ? null : date;
-        }
-      }
-      if (value instanceof Date && !Number.isNaN(value.getTime())) {
-        const date = new Date(Date.UTC(value.getUTCFullYear(), value.getUTCMonth(), value.getUTCDate()));
-        return Number.isNaN(date.getTime()) ? null : date;
-      }
-      return null;
+      return parseDateValue(value);
     }
 
     function formatExcelSerialDate(value) {
