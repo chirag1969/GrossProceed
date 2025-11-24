@@ -97,9 +97,9 @@
     }
     if (cell instanceof Date && !Number.isNaN(cell.getTime())) {
       const utcDate = new Date(Date.UTC(
-        cell.getUTCFullYear(),
-        cell.getUTCMonth(),
-        cell.getUTCDate(),
+        cell.getFullYear(),
+        cell.getMonth(),
+        cell.getDate(),
       ));
       const formatted = formatDateOnly(utcDate);
       return formatted || '';
