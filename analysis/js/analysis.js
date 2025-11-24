@@ -1754,14 +1754,17 @@ const tabButtons = document.querySelectorAll('.tab-button');
       if (cell === null || cell === undefined) {
         return '';
       }
+      if (cell instanceof Date && !Number.isNaN(cell.getTime())) {
+        return cell;
+      }
       if (typeof cell === 'number') {
-        return Number.isFinite(cell) ? String(cell) : '';
+        return Number.isFinite(cell) ? cell : '';
       }
       if (typeof cell === 'boolean') {
         return cell ? 'TRUE' : 'FALSE';
       }
-      const text = String(cell);
-      return text.trim().length ? text : '';
+      const text = String(cell).trim();
+      return text.length ? text : '';
     }
 
     function isPlaceholderColumnName(name) {
@@ -6601,7 +6604,10 @@ const tabButtons = document.querySelectorAll('.tab-button');
       const numericValue = parseNumericValue(value);
       if (numericValue !== null) {
         const decimals = ZERO_DECIMAL_COLUMNS.has(normalizedColumn) ? 0 : 2;
-        return numericValue.toFixed(decimals);
+        if (decimals === 0) {
+          return integerFormatter.format(numericValue);
+        }
+        return numberFormatter.format(numericValue);
       }
       return typeof value === 'string' ? value : String(value ?? '');
     }
