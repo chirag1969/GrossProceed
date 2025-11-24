@@ -182,7 +182,7 @@
     if (value instanceof Date && !Number.isNaN(value.getTime())) {
       return finaliseMetadataForValue(
         value,
-        buildMetadata(value.getUTCFullYear(), value.getUTCMonth() + 1, value.getUTCDate(), 'day'),
+        buildMetadata(value.getFullYear(), value.getMonth() + 1, value.getDate(), 'day'),
       );
     }
 
