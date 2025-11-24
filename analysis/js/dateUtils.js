@@ -8,21 +8,11 @@
   const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const DATE_TEXT_INDICATOR_PATTERN = /[-/.,:\s]|T|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec/i;
 
-  function shouldIncrementDay(sourceValue, metadata) {
+  function shouldIncrementDay(_sourceValue, metadata) {
     if (!metadata || metadata.grain !== 'day') {
       return false;
     }
-    if (sourceValue instanceof Date) {
-      return true;
-    }
-    if (typeof sourceValue !== 'string') {
-      return false;
-    }
-    const trimmed = sourceValue.trim();
-    if (!trimmed.length) {
-      return false;
-    }
-    return DATE_TEXT_INDICATOR_PATTERN.test(trimmed);
+    return metadata.source === 'local-parse';
   }
 
   function incrementMetadataDay(metadata) {
@@ -265,10 +255,11 @@
     const parsed = Date.parse(rawText);
     if (!Number.isNaN(parsed)) {
       const date = new Date(parsed);
-      return finaliseMetadataForValue(
-        rawText,
-        buildMetadata(date.getUTCFullYear(), date.getUTCMonth() + 1, date.getUTCDate(), 'day'),
-      );
+      const parsedMetadata = buildMetadata(date.getUTCFullYear(), date.getUTCMonth() + 1, date.getUTCDate(), 'day');
+      if (parsedMetadata) {
+        parsedMetadata.source = 'local-parse';
+      }
+      return finaliseMetadataForValue(rawText, parsedMetadata);
     }
 
     return null;
