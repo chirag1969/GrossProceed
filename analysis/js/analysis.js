@@ -279,7 +279,7 @@ const tabButtons = document.querySelectorAll('.tab-button');
         }
       }
       if (value instanceof Date && !Number.isNaN(value.getTime())) {
-        const date = new Date(Date.UTC(value.getFullYear(), value.getMonth(), value.getDate()));
+        const date = new Date(Date.UTC(value.getUTCFullYear(), value.getUTCMonth(), value.getUTCDate()));
         return Number.isNaN(date.getTime()) ? null : date;
       }
       return null;
